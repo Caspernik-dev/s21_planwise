@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
 import { db } from '@/db'
 import { sql } from 'drizzle-orm'
+import { describe, expect, it } from 'vitest'
 
 describe('smoke', () => {
   it('connects to the database', async () => {
