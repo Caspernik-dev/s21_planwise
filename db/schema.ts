@@ -1,10 +1,12 @@
-import { pgTable, text, timestamp, primaryKey, integer } from 'drizzle-orm/pg-core'
+import { integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull().unique(),
   name: text('name'),
-  passwordHash: text('password_hash'),       // null если OAuth (в будущем)
+  passwordHash: text('password_hash'), // null если OAuth (в будущем)
   emailVerified: timestamp('email_verified', { mode: 'date' }),
   image: text('image'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
@@ -13,7 +15,9 @@ export const users = pgTable('users', {
 export const accounts = pgTable(
   'accounts',
   {
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type').notNull(),
     provider: text('provider').notNull(),
     providerAccountId: text('provider_account_id').notNull(),
@@ -30,7 +34,9 @@ export const accounts = pgTable(
 
 export const sessions = pgTable('sessions', {
   sessionToken: text('session_token').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   expires: timestamp('expires', { mode: 'date' }).notNull(),
 })
 

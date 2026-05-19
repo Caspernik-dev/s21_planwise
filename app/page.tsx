@@ -7,12 +7,9 @@ export default function HomePage() {
         <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700 ring-1 ring-brand-200">
           MVP · хакатон
         </span>
-        <h1 className="mt-6 text-5xl font-semibold text-neutral-900">
-          Классный час за 30 секунд
-        </h1>
+        <h1 className="mt-6 text-5xl font-semibold text-neutral-900">Классный час за 30 секунд</h1>
         <p className="mt-4 text-lg text-neutral-600">
-          ИИ-генератор сценариев внеурочной деятельности с опорой на методички и
-          лайки сообщества.
+          ИИ-генератор сценариев внеурочной деятельности с опорой на методички и лайки сообщества.
         </p>
         <div className="mt-8 flex justify-center gap-3">
           <Link

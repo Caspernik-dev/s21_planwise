@@ -1,10 +1,10 @@
-import NextAuth, { type DefaultSession } from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import { DrizzleAdapter } from '@auth/drizzle-adapter'
-import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { verifyPassword } from '@/lib/auth/password'
+import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import { eq } from 'drizzle-orm'
+import NextAuth, { type DefaultSession } from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
 
 declare module 'next-auth' {
   interface Session {
@@ -14,7 +14,7 @@ declare module 'next-auth' {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
-  session: { strategy: 'jwt' },          // JWT — проще, не требует таблицы sessions для caching
+  session: { strategy: 'jwt' }, // JWT — проще, не требует таблицы sessions для caching
   pages: { signIn: '/login' },
   providers: [
     Credentials({
@@ -23,7 +23,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Пароль', type: 'password' },
       },
       async authorize(credentials) {
-        const email = String(credentials?.email ?? '').toLowerCase().trim()
+        const email = String(credentials?.email ?? '')
+          .toLowerCase()
+          .trim()
         const password = String(credentials?.password ?? '')
         if (!email || !password) return null
 

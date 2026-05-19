@@ -1,12 +1,12 @@
 'use client'
 
-import { useActionState } from 'react'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { registerAction, type RegisterState } from './actions'
+import Link from 'next/link'
+import { useActionState } from 'react'
+import { type RegisterState, registerAction } from './actions'
 
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState<RegisterState, FormData>(registerAction, null)
@@ -31,14 +31,15 @@ export default function RegisterPage() {
               <Label htmlFor="password">Пароль</Label>
               <Input id="password" name="password" type="password" required minLength={8} />
             </div>
-            {state?.error && (
-              <p className="text-sm text-error">{state.error}</p>
-            )}
+            {state?.error && <p className="text-sm text-error">{state.error}</p>}
             <Button type="submit" disabled={pending} size="lg" className="w-full">
               {pending ? 'Регистрируем…' : 'Создать аккаунт'}
             </Button>
             <p className="text-center text-sm text-neutral-600">
-              Уже есть аккаунт? <Link className="text-brand-600 hover:underline" href="/login">Войти</Link>
+              Уже есть аккаунт?{' '}
+              <Link className="text-brand-600 hover:underline" href="/login">
+                Войти
+              </Link>
             </p>
           </form>
         </CardContent>

@@ -15,7 +15,8 @@ const onest = Onest({
 
 export const metadata: Metadata = {
   title: 'Классный час — ИИ-генератор сценариев внеурочки',
-  description: 'Генерация сценариев классных часов, квизов, бесед и игр с опорой на методические материалы',
+  description:
+    'Генерация сценариев классных часов, квизов, бесед и игр с опорой на методические материалы',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

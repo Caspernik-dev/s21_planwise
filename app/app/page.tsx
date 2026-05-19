@@ -9,7 +9,9 @@ export default function DashboardPage() {
         Сейчас — фундамент готов.
       </p>
       <Card>
-        <CardHeader><CardTitle>Скоро</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Скоро</CardTitle>
+        </CardHeader>
         <CardContent className="text-sm text-neutral-600">
           <ul className="list-disc pl-5 space-y-1">
             <li>Генератор сценариев классных часов и квизов</li>

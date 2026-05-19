@@ -1,8 +1,8 @@
 'use server'
 
-import { z } from 'zod'
-import { AuthError } from 'next-auth'
 import { signIn } from '@/auth'
+import { AuthError } from 'next-auth'
+import { z } from 'zod'
 
 function safeNext(raw: unknown): string {
   const s = typeof raw === 'string' ? raw : ''
@@ -10,7 +10,10 @@ function safeNext(raw: unknown): string {
 }
 
 const schema = z.object({
-  email: z.string().email().transform((s) => s.toLowerCase().trim()),
+  email: z
+    .string()
+    .email()
+    .transform((s) => s.toLowerCase().trim()),
   password: z.string().min(1),
 })
 
