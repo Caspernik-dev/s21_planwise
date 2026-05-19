@@ -1,3 +1,5 @@
+5c1974e fix(db): add pgvector extension migration for fresh installs
+2ac3b0f docs: log commits for plan 1
 d15ed2d chore: fix import order in db smoke test
 8609e84 test: db connection and pgvector smoke tests
 a369136 docs: README with setup and scripts
