@@ -8,6 +8,13 @@
       "when": 1779230132360,
       "tag": "0000_lumpy_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779233193250,
+      "tag": "0001_enable_pgvector",
+      "breakpoints": true
     }
   ]
 }
