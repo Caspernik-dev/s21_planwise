@@ -1,8 +1,8 @@
 'use server'
 
 import { z } from 'zod'
-import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
+import { AuthError } from 'next-auth'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { hashPassword } from '@/lib/auth/password'
@@ -33,7 +33,18 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
   const passwordHash = await hashPassword(password)
   await db.insert(users).values({ email, name, passwordHash })
 
-  // авто-вход после регистрации
-  await signIn('credentials', { email, password, redirectTo: '/app' })
-  redirect('/app')
+  // авто-вход после регистрации; signIn выбрасывает NEXT_REDIRECT на успехе
+  try {
+    await signIn('credentials', { email, password, redirectTo: '/app' })
+  } catch (err) {
+    // пропускаем редирект-сигнал Next.js
+    if (err && typeof err === 'object' && 'digest' in err && typeof (err as { digest?: unknown }).digest === 'string' && (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
+      throw err
+    }
+    if (err instanceof AuthError) {
+      return { error: 'Аккаунт создан, но автоматический вход не удался. Войдите вручную.' }
+    }
+    throw err
+  }
+  return null
 }
