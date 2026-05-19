@@ -1,7 +1,15 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "ignore": ["node_modules", ".next", "db/migrations", "coverage"]
+    "ignore": [
+      "node_modules",
+      ".next",
+      "db/migrations",
+      "coverage",
+      "design_example",
+      ".claude",
+      "docs"
+    ]
   },
   "formatter": {
     "enabled": true,
