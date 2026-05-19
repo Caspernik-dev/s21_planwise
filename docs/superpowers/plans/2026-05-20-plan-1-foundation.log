@@ -1,0 +1,17 @@
+d15ed2d chore: fix import order in db smoke test
+8609e84 test: db connection and pgvector smoke tests
+a369136 docs: README with setup and scripts
+e2f183d chore(biome): ignore design_example, .claude, docs in lint
+c7009b8 chore: biome linter and formatter, apply initial formatting
+f7221f3 feat(app): protected /app layout with navbar and logout
+4495738 fix(auth): prevent open-redirect via login next param
+4f75e19 feat(auth): login page with credentials
+7f706d0 fix(auth): preserve next-auth signIn redirect and surface auth errors
+e55273c feat(auth): register page with server action and auto-login
+0f2e83e feat(auth): next-auth v5 with credentials provider and /app middleware gate
+af7732a feat(auth): bcrypt password helpers with tests
+2b7958e feat: drizzle setup, auth schema, initial migration
+eb682a5 feat: postgres+pgvector via docker compose
+3d40125 feat: shadcn-style ui primitives (button, input, label, card)
+46a9480 feat: tailwind + design tokens from design_example, minimal landing
+5ac985d chore: scaffold next.js project with pinned deps
