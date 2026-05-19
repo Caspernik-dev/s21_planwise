@@ -4,6 +4,11 @@ import { z } from 'zod'
 import { AuthError } from 'next-auth'
 import { signIn } from '@/auth'
 
+function safeNext(raw: unknown): string {
+  const s = typeof raw === 'string' ? raw : ''
+  return s.startsWith('/') && !s.startsWith('//') ? s : '/app'
+}
+
 const schema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
   password: z.string().min(1),
@@ -28,7 +33,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   })
   if (!parsed.success) return { error: 'Введите корректные данные' }
 
-  const next = String(formData.get('next') ?? '/app')
+  const next = safeNext(formData.get('next'))
 
   try {
     await signIn('credentials', { ...parsed.data, redirectTo: next })

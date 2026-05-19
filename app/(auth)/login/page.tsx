@@ -11,7 +11,8 @@ import { loginAction, type LoginState } from './actions'
 
 function LoginForm() {
   const params = useSearchParams()
-  const next = params.get('next') ?? '/app'
+  const rawNext = params.get('next')
+  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/app'
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, null)
 
   return (
