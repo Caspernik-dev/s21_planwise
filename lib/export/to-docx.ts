@@ -53,5 +53,5 @@ export async function renderScenarioDocx(
   content: ScenarioContent,
   meta: ExportMeta,
 ): Promise<Buffer> {
-  return Packer.toBuffer(buildScenarioDocx(content, meta)) as Promise<Buffer>
+  return Packer.toBuffer(buildScenarioDocx(content, meta))
 }
