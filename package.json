@@ -19,7 +19,8 @@
     "ingest:seed": "tsx scripts/ingest-seed.ts",
     "ingest:razgovor": "tsx scripts/ingest-razgovor.ts",
     "calibrate": "tsx scripts/calibrate-threshold.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "set:admin": "tsx scripts/set-admin.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
