@@ -1,7 +1,9 @@
 import { baseUrlFrom } from '@/lib/auth/base-url'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('baseUrlFrom', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
   it('строит https из x-forwarded-proto + host', () => {
     expect(baseUrlFrom('kc.example.com', 'https')).toBe('https://kc.example.com')
   })
@@ -14,13 +16,7 @@ describe('baseUrlFrom', () => {
     )
   })
   it('падает на localhost при отсутствии host и env', () => {
-    const orig = process.env.AUTH_URL
-    delete process.env.AUTH_URL
-    try {
-      expect(baseUrlFrom(null, null)).toBe('http://localhost:3000')
-    } finally {
-      if (orig === undefined) delete process.env.AUTH_URL
-      else process.env.AUTH_URL = orig
-    }
+    vi.stubEnv('AUTH_URL', undefined)
+    expect(baseUrlFrom(null, null)).toBe('http://localhost:3000')
   })
 })
