@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { db } from '@/db'
 import { filterByThreshold } from '@/lib/community/prematch'
 import { embed } from '@/lib/gigachat/embeddings'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 
@@ -31,6 +32,16 @@ function toCard(r: Record<string, unknown>): LibraryCard {
 export async function searchSharedAction(query: string): Promise<LibraryCard[]> {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+
+  const rlS = await checkRateLimit({
+    key: 'search',
+    subject: session.user.id,
+    email: session.user.email,
+    limit: 60,
+    windowMs: 60_000,
+  })
+  if (!rlS.allowed) return []
+
   const q = query.trim()
 
   if (q.length === 0) {

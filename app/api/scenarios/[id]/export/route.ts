@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { db } from '@/db'
 import { scenarios } from '@/db/schema'
 import { isExportFormat, renderScenarioExport } from '@/lib/export'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { and, eq } from 'drizzle-orm'
 import type { NextRequest } from 'next/server'
 
@@ -10,6 +11,15 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user?.id) return new Response('Unauthorized', { status: 401 })
+
+  const rlEx = await checkRateLimit({
+    key: 'export',
+    subject: session.user.id,
+    email: session.user.email,
+    limit: 100,
+    windowMs: 86_400_000,
+  })
+  if (!rlEx.allowed) return new Response('Превышен дневной лимит экспорта', { status: 429 })
 
   const format = req.nextUrl.searchParams.get('format')
   if (!isExportFormat(format)) return new Response('Unsupported format', { status: 400 })

@@ -6,6 +6,7 @@ import { planTopics, workPlans } from '@/db/schema'
 import { parseFile } from '@/lib/parse'
 import { detectAndAnonymize } from '@/lib/pii'
 import { parsePlanTopics } from '@/lib/plan/parse-topics'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { redirect } from 'next/navigation'
 
 export interface AnalyzeResult {
@@ -24,6 +25,15 @@ export async function analyzePlanAction(
 ): Promise<AnalyzeResult> {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+
+  const rlUp = await checkRateLimit({
+    key: 'upload',
+    subject: session.user.id,
+    email: session.user.email,
+    limit: 20,
+    windowMs: 86_400_000,
+  })
+  if (!rlUp.allowed) return { error: 'Превышен дневной лимит загрузок. Попробуйте завтра.' }
 
   const file = formData.get('file')
   if (!(file instanceof File) || file.size === 0) return { error: 'Выберите файл плана.' }
