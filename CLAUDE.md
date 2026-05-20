@@ -116,6 +116,14 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Планы:** `docs/superpowers/plans/2026-05-20-plan-N-*.md` — 8 последовательных фаз. Plan 1 (Foundation) написан; 2–8 пишутся по факту завершения предыдущего.
 - **Стиль-референс:** `design_example/` (Next+Tailwind+shadcn, токены в `design_example/tailwind.config.ts`).
 
+### Статус реализации (обновлять при завершении фазы)
+- **Plan 1 «Foundation» — ГОТОВ.** Ветка `feat/foundation`, тег `foundation-done` (19 коммитов). Реализовано через subagent-driven (имплементер + spec-review + code-review на каждую из 14 задач + финальный холистический ревью).
+  - Что работает: Next.js 15 монолит, дизайн-токены из design_example, shadcn-примитивы (Button/Input/Label/Card), Postgres+pgvector в Docker (pgvector ставится миграцией `0001`), Drizzle + 4 auth-таблицы, bcryptjs (TDD), Auth.js v5 credentials+JWT, middleware-гейт `/app/*`, страницы `/login` `/register` (server actions с обработкой NEXT_REDIRECT + AuthError + защита от open-redirect), защищённый `/app` shell с Navbar+logout, Biome, Vitest (6/6).
+  - Гейты зелёные: `pnpm test` (6/6), `pnpm lint`, `pnpm build`, fresh `db:up && db:migrate`.
+  - **Технический долг → Plan 8:** CSRF на `/app/logout`; rate-limit на login/register; `AUTH_URL` derive из request; auth integration-тесты; таблицы `sessions`/`verificationTokens` пока пустые (оставлены под будущий OAuth). Edge-bundle тянет `postgres` через adapter — работает (JWT-стратегия), но при переходе на `strategy:'database'` сломается.
+  - **GigaChat-ключи** уже в `.env.local` (`GIGACHAT_AUTH_KEY` = base64 client_id:client_secret, отдельный client_id не нужен; `GIGACHAT_SCOPE=GIGACHAT_API_PERS`).
+- **Plan 2 «Generation v0 single-shot» — СЛЕДУЮЩИЙ, ещё не написан.** Форма `/app/new`, GigaChat-клиент (OAuth `ngw.devices.sberbank.ru:9443/api/v2/oauth` → access_token 30 мин, кэш), генерация без RAG/без стрима, zod-валидация ScenarioContent, нормализация хронометража, сохранение в `scenarios`, read-only просмотр. Юнит-тесты клиента с моком fetch; реальное API нужно только для финального phase-verify.
+
 ### Конвенции работы
 - **Один коммит на задачу плана.** Атомарность для отката.
 - **TDD для `lib/pii`, `lib/rag/score`, валидаторов и любой нетривиальной логики.** Тесты сначала.
