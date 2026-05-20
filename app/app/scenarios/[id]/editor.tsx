@@ -324,7 +324,7 @@ export function ScenarioEditor({
             {message ?? (dirty ? 'Есть несохранённые изменения' : 'Все изменения сохранены')}
           </span>
           <Button type="button" onClick={save} disabled={pending || !dirty}>
-            {pending ? 'Сохранение…' : 'Сохранить'}
+            {pending && regenKey === null ? 'Сохранение…' : 'Сохранить'}
           </Button>
         </div>
       </div>
