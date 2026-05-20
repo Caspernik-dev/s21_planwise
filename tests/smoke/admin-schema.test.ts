@@ -1,4 +1,5 @@
 import { db } from '@/db'
+import { generationStats } from '@/lib/admin/stats'
 import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 
@@ -14,5 +15,10 @@ describe('admin schema', () => {
         WHERE table_name='users' AND column_name='role'
       ) AS ok`)
     expect((r[0] as { ok: boolean }).ok).toBe(true)
+  })
+  it('generationStats возвращает числа и массив byDay', async () => {
+    const s = await generationStats(db)
+    expect(typeof s.total).toBe('number')
+    expect(Array.isArray(s.byDay)).toBe(true)
   })
 })
