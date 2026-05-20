@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { generationInputSchema, scenarioContentSchema } from '@/lib/scenario/schema'
+import { describe, expect, it } from 'vitest'
 
 const validContent = {
   title: 'Дружба и взаимопомощь',
@@ -10,7 +10,9 @@ const validContent = {
       kind: 'engage',
       title: 'Введение',
       duration_min: 5,
-      activities: [{ type: 'discussion', text: 'Что такое дружба?', questions: ['Кого вы считаете другом?'] }],
+      activities: [
+        { type: 'discussion', text: 'Что такое дружба?', questions: ['Кого вы считаете другом?'] },
+      ],
     },
     {
       kind: 'main',

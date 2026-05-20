@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import type { ScenarioContent } from '@/lib/scenario/schema'
 import { normalizeChronometry } from '@/lib/scenario/normalize'
+import type { ScenarioContent } from '@/lib/scenario/schema'
+import { describe, expect, it } from 'vitest'
 
 function content(durations: number[]): ScenarioContent {
   return {

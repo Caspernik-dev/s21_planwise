@@ -15,7 +15,7 @@ export function normalizeChronometry(
       ? stages.map((s) => (s.duration_min / current) * targetMin)
       : stages.map(() => targetMin / n)
 
-  let durations = raw.map((v) => Math.max(1, Math.floor(v)))
+  const durations = raw.map((v) => Math.max(1, Math.floor(v)))
 
   let diff = targetMin - durations.reduce((a, v) => a + v, 0)
   let i = 0

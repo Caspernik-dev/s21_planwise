@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { __resetTokenCacheForTests, getAccessToken } from '@/lib/gigachat/token'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() => {
   __resetTokenCacheForTests()

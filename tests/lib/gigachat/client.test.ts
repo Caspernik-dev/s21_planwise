@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { __resetTokenCacheForTests } from '@/lib/gigachat/token'
 import { chatCompletion } from '@/lib/gigachat/client'
+import { __resetTokenCacheForTests } from '@/lib/gigachat/token'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() => {
   __resetTokenCacheForTests()
@@ -50,8 +50,8 @@ describe('chatCompletion', () => {
     await chatCompletion([{ role: 'user', content: 'hi' }], { temperature: 0.3 })
 
     const chatCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('/chat/completions'))
-    expect(chatCall).toBeTruthy()
-    const [url, init] = chatCall!
+    if (!chatCall) throw new Error('chat call not found')
+    const [url, init] = chatCall
     expect(url).toBe('https://giga.example/api/v1/chat/completions')
     expect(init.headers.Authorization).toBe('Bearer tok')
     const payload = JSON.parse(String(init.body))

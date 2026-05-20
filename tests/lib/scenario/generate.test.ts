@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
 import { generateScenario } from '@/lib/scenario/generate'
 import type { GenerationInput } from '@/lib/scenario/schema'
+import { describe, expect, it, vi } from 'vitest'
 
 const input: GenerationInput = {
   direction: 'Патриотическое',
@@ -15,9 +15,24 @@ const validJson = JSON.stringify({
   goals: ['Воспитание уважения к подвигу народа'],
   materials: ['Проектор'],
   stages: [
-    { kind: 'engage', title: 'Вступление', duration_min: 10, activities: [{ type: 'discussion', text: 'Что вы знаете о войне?' }] },
-    { kind: 'main', title: 'Основная часть', duration_min: 40, activities: [{ type: 'task', text: 'Письмо ветерану' }] },
-    { kind: 'reflection', title: 'Итог', duration_min: 10, activities: [{ type: 'discussion', text: 'Что запомнилось?' }] },
+    {
+      kind: 'engage',
+      title: 'Вступление',
+      duration_min: 10,
+      activities: [{ type: 'discussion', text: 'Что вы знаете о войне?' }],
+    },
+    {
+      kind: 'main',
+      title: 'Основная часть',
+      duration_min: 40,
+      activities: [{ type: 'task', text: 'Письмо ветерану' }],
+    },
+    {
+      kind: 'reflection',
+      title: 'Итог',
+      duration_min: 10,
+      activities: [{ type: 'discussion', text: 'Что запомнилось?' }],
+    },
   ],
   adaptations: { simpler: 'Меньше дат', harder: 'Доклад' },
 })
@@ -25,7 +40,7 @@ const validJson = JSON.stringify({
 describe('generateScenario', () => {
   it('parses JSON wrapped in markdown fences and normalizes chronometry', async () => {
     const chat = vi.fn().mockResolvedValue({
-      content: '```json\n' + validJson + '\n```',
+      content: ['```json', validJson, '```'].join('\n'),
       usage: { promptTokens: 100, completionTokens: 200 },
     })
     const { content, meta } = await generateScenario(input, { chat })
@@ -41,7 +56,10 @@ describe('generateScenario', () => {
     const chat = vi
       .fn()
       .mockResolvedValueOnce({ content: 'это не json вообще', usage: null })
-      .mockResolvedValueOnce({ content: validJson, usage: { promptTokens: 50, completionTokens: 60 } })
+      .mockResolvedValueOnce({
+        content: validJson,
+        usage: { promptTokens: 50, completionTokens: 60 },
+      })
     const { content, meta } = await generateScenario(input, { chat })
     expect(content.title).toBe('День Победы')
     expect(meta.repaired).toBe(true)

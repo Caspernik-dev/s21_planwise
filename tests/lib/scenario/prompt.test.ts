@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { PROMPT_VERSION, buildMessages } from '@/lib/scenario/prompt'
+import { describe, expect, it } from 'vitest'
 
 const input = {
   direction: 'Патриотическое' as const,

@@ -1,5 +1,5 @@
-import { getGigaConfig } from '@/lib/gigachat/config'
 import { chatCompletion } from '@/lib/gigachat/client'
+import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { normalizeChronometry } from './normalize'
 import { PROMPT_VERSION, buildMessages } from './prompt'

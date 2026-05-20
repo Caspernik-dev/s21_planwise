@@ -1,5 +1,5 @@
-import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 import type { GenerationInput, GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
+import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: text('id')

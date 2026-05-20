@@ -1,6 +1,6 @@
 import { getGigaConfig } from './config'
-import type { OAuthResponse } from './types'
 import { getDispatcher } from './dispatcher'
+import type { OAuthResponse } from './types'
 
 type CacheEntry = { token: string; expiresAt: number }
 let cache: CacheEntry | null = null
