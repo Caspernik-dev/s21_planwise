@@ -21,7 +21,11 @@ type RetrieveFn = (q: {
   topic: string
 }) => Promise<Array<{ id: string; chunkText: string; documentTitle: string; sectionKind: string }>>
 
-export type GenerateDeps = { chat?: ChatFn; retrieve?: RetrieveFn }
+export type GenerateDeps = {
+  chat?: ChatFn
+  retrieve?: RetrieveFn
+  prematch?: typeof prematchShared
+}
 
 function extractJson(raw: string): unknown {
   let s = raw.trim()
@@ -79,9 +83,10 @@ export async function generateScenario(
     console.error('RAG retrieval failed, generating without methodology:', e)
   }
 
+  const prematch = deps.prematch ?? prematchShared
   let sharedExamples: SharedExampleForPrompt[] = []
   try {
-    const matches = await prematchShared(
+    const matches = await prematch(
       { direction: input.direction, grade: input.grade, topic: input.topic, format: input.format },
       { topK: 2 },
     )
