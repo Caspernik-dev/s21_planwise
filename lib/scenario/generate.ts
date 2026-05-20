@@ -1,10 +1,11 @@
+import { prematchShared } from '@/lib/community/prematch'
 import { chatCompletion } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { normalizeChronometry } from './normalize'
 import { PROMPT_VERSION, buildMessages } from './prompt'
-import type { RagChunkForPrompt } from './prompt'
+import type { RagChunkForPrompt, SharedExampleForPrompt } from './prompt'
 import {
   type GenerationInput,
   type GenerationMeta,
@@ -78,7 +79,23 @@ export async function generateScenario(
     console.error('RAG retrieval failed, generating without methodology:', e)
   }
 
-  const messages = buildMessages(input, ragChunks)
+  let sharedExamples: SharedExampleForPrompt[] = []
+  try {
+    const matches = await prematchShared(
+      { direction: input.direction, grade: input.grade, topic: input.topic, format: input.format },
+      { topK: 2 },
+    )
+    sharedExamples = matches.map((m) => ({
+      title: m.title,
+      summary: ((m.anonymizedContent as { stages?: Array<{ title: string }> }).stages ?? [])
+        .map((s) => s.title)
+        .join(' → '),
+    }))
+  } catch (e) {
+    console.error('shared examples fetch failed (non-fatal):', e)
+  }
+
+  const messages = buildMessages(input, ragChunks, sharedExamples)
 
   const first = await chat(messages, { temperature: 0.4 })
   let usage = first.usage

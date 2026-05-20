@@ -6,6 +6,8 @@ export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: stri
 
 export type RagChunkForPrompt = { text: string; documentTitle: string; sectionKind: string }
 
+export type SharedExampleForPrompt = { title: string; summary: string }
+
 const SCHEMA_HINT = `Структура JSON (строго соблюдай ключи и типы):
 {
   "title": string,
@@ -31,6 +33,7 @@ const SCHEMA_HINT = `Структура JSON (строго соблюдай кл
 export function buildMessages(
   input: GenerationInput,
   ragChunks: RagChunkForPrompt[] = [],
+  sharedExamples: SharedExampleForPrompt[] = [],
 ): ChatMessage[] {
   const system = [
     'Ты — методист внеурочной деятельности в школе РФ.',
@@ -53,6 +56,15 @@ export function buildMessages(
         ]
       : []
 
+  const examples =
+    sharedExamples.length > 0
+      ? [
+          '',
+          '[GOOD_EXAMPLES] (удачные сценарии коллег по похожим темам — ориентир по структуре, не копируй текст):',
+          ...sharedExamples.map((e, i) => `(${i + 1}) ${e.title}: ${e.summary}`),
+        ]
+      : []
+
   const user = [
     'Сгенерируй сценарий внеурочного занятия со следующими параметрами:',
     `- Направление воспитания: ${input.direction}`,
@@ -61,6 +73,7 @@ export function buildMessages(
     `- Длительность: ${input.durationMin} минут`,
     `- Формат: ${input.format}`,
     ...methodology,
+    ...examples,
   ].join('\n')
 
   return [
