@@ -32,6 +32,7 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-hook-form": "^7.53.2",
     "tailwind-merge": "^2.5.5",
+    "undici": "^8.3.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
