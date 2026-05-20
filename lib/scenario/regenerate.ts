@@ -4,6 +4,7 @@ import type { ChatMessage, RagChunkForPrompt } from './prompt'
 import { type ScenarioStage, activitySchema } from './schema'
 
 type ChatFn = (messages: GigaMessage[], opts?: { temperature?: number }) => Promise<ChatResult>
+type Activity = ScenarioStage['activities'][number]
 
 export type RegenerateArgs = {
   scenario: { direction: string; grade: number; topic: string; format: string; title: string }
@@ -76,9 +77,10 @@ function extractJson(raw: string): unknown {
   return JSON.parse(s.slice(start, end + 1))
 }
 
-function tryParse(raw: string) {
+function tryParse(raw: string): Activity | null {
   try {
-    return activitySchema.safeParse(extractJson(raw))
+    const parsed = activitySchema.safeParse(extractJson(raw))
+    return parsed.success ? parsed.data : null
   } catch {
     return null
   }
@@ -93,7 +95,7 @@ export async function regenerateActivity(args: RegenerateArgs, deps: RegenerateD
   const first = await chat(messages, { temperature: 0.7 })
   let parsed = tryParse(first.content)
 
-  if (!parsed?.success) {
+  if (!parsed) {
     const repairMessages: GigaMessage[] = [
       ...messages,
       { role: 'assistant', content: first.content },
@@ -107,6 +109,6 @@ export async function regenerateActivity(args: RegenerateArgs, deps: RegenerateD
     parsed = tryParse(second.content)
   }
 
-  if (!parsed?.success) throw new Error('GigaChat вернул невалидную активность после repair')
-  return parsed.data
+  if (!parsed) throw new Error('GigaChat вернул невалидную активность после repair')
+  return parsed
 }
