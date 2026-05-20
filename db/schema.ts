@@ -1,5 +1,5 @@
 import type { GenerationInput, GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
-import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 import { tsvector, vector } from './types'
 
 export const users = pgTable('users', {
@@ -84,6 +84,37 @@ export const scenarioVersions = pgTable('scenario_versions', {
     .notNull()
     .references(() => scenarios.id, { onDelete: 'cascade' }),
   content: jsonb('content').$type<ScenarioContent>().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const workPlans = pgTable('work_plans', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  originalFilename: text('original_filename'),
+  rawText: text('raw_text').notNull(), // хранится анонимизированный текст (или оригинал при согласии)
+  anonymized: boolean('anonymized').notNull().default(true),
+  piiFoundCount: integer('pii_found_count').notNull().default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const planTopics = pgTable('plan_topics', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  workPlanId: text('work_plan_id')
+    .notNull()
+    .references(() => workPlans.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  plannedDate: text('planned_date'),
+  orderIdx: integer('order_idx').notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
