@@ -2,8 +2,8 @@ import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/db'
-import { planTopics, scenarios, workPlans } from '@/db/schema'
-import { and, desc, eq, isNotNull } from 'drizzle-orm'
+import { planTopics, scenarios, sharedScenarios, workPlans } from '@/db/schema'
+import { and, count, desc, eq, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -51,6 +51,9 @@ export default async function DashboardPage() {
     return { ...p, total: ts.length, done: ts.filter((t) => coveredIds.has(t.id)).length }
   })
 
+  const [sharedCountRow] = await db.select({ value: count() }).from(sharedScenarios)
+  const sharedCount = sharedCountRow?.value ?? 0
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -59,6 +62,15 @@ export default async function DashboardPage() {
           <Link href="/app/new">Создать сценарий</Link>
         </Button>
       </div>
+
+      <Link href="/app/library">
+        <Card className="transition hover:shadow-hover">
+          <CardHeader>
+            <CardTitle className="text-base">Библиотека сообщества</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-neutral-600">{sharedCount} сценариев</CardContent>
+        </Card>
+      </Link>
 
       {planStats.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
