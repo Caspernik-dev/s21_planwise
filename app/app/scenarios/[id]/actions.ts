@@ -37,11 +37,13 @@ export async function saveScenarioAction(
   if (!owned) return { ok: false, error: 'Сценарий не найден' }
 
   const content: ScenarioContent = parsed.data
-  await db
-    .update(scenarios)
-    .set({ title: content.title, content, updatedAt: new Date() })
-    .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, userId)))
-  await db.insert(scenarioVersions).values({ scenarioId, content })
+  await db.transaction(async (tx) => {
+    await tx
+      .update(scenarios)
+      .set({ title: content.title, content, updatedAt: new Date() })
+      .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, userId)))
+    await tx.insert(scenarioVersions).values({ scenarioId, content })
+  })
 
   revalidatePath(`/app/scenarios/${scenarioId}`)
   return { ok: true }
