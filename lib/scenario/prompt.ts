@@ -1,6 +1,6 @@
-import type { GenerationInput } from './schema'
+import type { GenerationInput, ScenarioSkeleton } from './schema'
 
-export const PROMPT_VERSION = 'v1-rag-2026-05-20'
+export const PROMPT_VERSION = 'v2-stream-2026-05-20'
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -74,6 +74,104 @@ export function buildMessages(
     `- Формат: ${input.format}`,
     ...methodology,
     ...examples,
+  ].join('\n')
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ]
+}
+
+const SKELETON_SCHEMA_HINT = `Структура JSON каркаса (СТРОГО только эти ключи, без details-полей):
+{
+  "title": string,
+  "goals": string[],            // 1-4 воспитательных результата
+  "stages": [                   // минимум 3 этапа: вовлечение, основная часть, рефлексия
+    { "kind": "engage" | "main" | "reflection", "title": string, "duration_min": number }
+  ]
+}`
+
+export function buildSkeletonMessages(
+  input: GenerationInput,
+  ragChunks: RagChunkForPrompt[] = [],
+  sharedExamples: SharedExampleForPrompt[] = [],
+): ChatMessage[] {
+  const system = [
+    'Ты — методист внеурочной деятельности в школе РФ.',
+    'Сначала ты строишь только КАРКАС сценария: название, цели и список этапов с длительностью.',
+    'Отвечаешь строго JSON, без markdown и пояснений. Без реальных имён детей.',
+    '',
+    SKELETON_SCHEMA_HINT,
+    '',
+    'Верни ТОЛЬКО валидный JSON-объект каркаса. Сумма duration_min ≈ длительности занятия.',
+  ].join('\n')
+
+  const methodology =
+    ragChunks.length > 0
+      ? [
+          '',
+          '[RELEVANT_METHODOLOGY] (ориентир по структуре, не копируй дословно):',
+          ...ragChunks.map((c, i) => `(${i + 1}) [${c.documentTitle}] ${c.text}`),
+        ]
+      : []
+  const examples =
+    sharedExamples.length > 0
+      ? [
+          '',
+          '[GOOD_EXAMPLES] (удачные сценарии коллег — ориентир по структуре):',
+          ...sharedExamples.map((e, i) => `(${i + 1}) ${e.title}: ${e.summary}`),
+        ]
+      : []
+
+  const user = [
+    'Построй каркас сценария внеурочного занятия:',
+    `- Направление воспитания: ${input.direction}`,
+    `- Класс: ${input.grade}`,
+    `- Тема: ${input.topic}`,
+    `- Длительность: ${input.durationMin} минут`,
+    `- Формат: ${input.format}`,
+    ...methodology,
+    ...examples,
+  ].join('\n')
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ]
+}
+
+export function buildDetailsMessages(
+  input: GenerationInput,
+  skeleton: ScenarioSkeleton,
+  ragChunks: RagChunkForPrompt[] = [],
+): ChatMessage[] {
+  const system = [
+    'Ты — методист внеурочной деятельности в школе РФ.',
+    'Тебе дан готовый каркас сценария. Заполни его деталями, СОХРАНИВ названия этапов,',
+    'их порядок и длительность (duration_min). Добавь materials, activities (с конкретными',
+    'вопросами, не общими) и adaptations. Активная роль детей, обязательная рефлексия.',
+    'Отвечаешь строго JSON по полной схеме, без markdown. Без реальных имён детей.',
+    '',
+    SCHEMA_HINT,
+    '',
+    'Верни ТОЛЬКО валидный JSON-объект по полной схеме.',
+  ].join('\n')
+
+  const methodology =
+    ragChunks.length > 0
+      ? [
+          '',
+          '[RELEVANT_METHODOLOGY] (опирайся, но не копируй):',
+          ...ragChunks.map((c, i) => `(${i + 1}) [${c.documentTitle}] ${c.text}`),
+        ]
+      : []
+
+  const user = [
+    'Заполни деталями этот каркас сценария:',
+    JSON.stringify(skeleton),
+    '',
+    `Параметры: направление ${input.direction}, ${input.grade} класс, тема «${input.topic}», ${input.durationMin} минут, формат ${input.format}.`,
+    ...methodology,
   ].join('\n')
 
   return [

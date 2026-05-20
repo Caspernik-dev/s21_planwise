@@ -38,6 +38,20 @@ export const generationInputSchema = z.object({
 
 export type GenerationInput = z.infer<typeof generationInputSchema>
 
+export const skeletonStageSchema = z.object({
+  kind: z.enum(['engage', 'main', 'reflection']),
+  title: z.string().min(1),
+  duration_min: z.coerce.number().int().min(0),
+})
+
+export const skeletonSchema = z.object({
+  title: z.string().min(1),
+  goals: z.array(z.string().min(1)).min(1),
+  stages: z.array(skeletonStageSchema).min(1),
+})
+
+export type ScenarioSkeleton = z.infer<typeof skeletonSchema>
+
 export type GenerationMeta = {
   model: string
   promptVersion: string
