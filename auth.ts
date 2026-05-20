@@ -8,7 +8,7 @@ import Credentials from 'next-auth/providers/credentials'
 
 declare module 'next-auth' {
   interface Session {
-    user: { id: string; email: string; name?: string | null } & DefaultSession['user']
+    user: { id: string; email: string; name?: string | null; role: string } & DefaultSession['user']
   }
 }
 
@@ -35,17 +35,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const ok = await verifyPassword(password, user.passwordHash)
         if (!ok) return null
 
-        return { id: user.id, email: user.email, name: user.name ?? null }
+        return { id: user.id, email: user.email, name: user.name ?? null, role: user.role }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id as string
+      if (user) {
+        token.id = user.id as string
+        token.role = (user as { role?: string }).role ?? 'user'
+      }
       return token
     },
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string
+      session.user.role = (token.role as string) ?? 'user'
       return session
     },
   },
