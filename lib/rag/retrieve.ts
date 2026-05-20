@@ -79,6 +79,7 @@ export async function retrieveChunks(
   const d = { ...defaults(), ...deps }
   const lang = query.lang ?? process.env.PG_TSV_LANG ?? 'russian'
   const [qvec] = await d.embed([`${query.direction ?? ''} ${query.topic}`.trim()])
+  if (!qvec) throw new Error('retrieveChunks: embed returned no query vector')
 
   const base: Omit<QueryArgs, 'direction'> = {
     qvec,
