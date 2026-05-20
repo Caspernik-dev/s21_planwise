@@ -74,7 +74,7 @@ export async function* streamScenario(
     try {
       return getGigaConfig().model
     } catch {
-      return process.env.GIGACHAT_MODEL ?? 'GigaChat'
+      return process.env.GIGACHAT_MODEL ?? 'GigaChat-Max'
     }
   })()
   const started = Date.now()
