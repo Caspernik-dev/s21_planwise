@@ -31,7 +31,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
 
   const asciiName = `scenario-${row.id}.${ext}`
-  const utf8Name = encodeURIComponent(`${row.content.title}.${ext}`)
+  const utf8Name = encodeURIComponent(`${row.content.title}.${ext}`).replace(
+    /['*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
   return new Response(new Uint8Array(body), {
     headers: {
       'Content-Type': contentType,
