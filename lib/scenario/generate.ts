@@ -58,7 +58,7 @@ export async function generateScenario(
     try {
       return getGigaConfig()
     } catch {
-      return { model: process.env.GIGACHAT_MODEL ?? 'GigaChat-Max' }
+      return { model: process.env.GIGACHAT_MODEL ?? 'GigaChat-2-Max' }
     }
   })()
 
