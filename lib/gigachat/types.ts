@@ -32,3 +32,8 @@ export type ChatResult = {
   content: string
   usage: { promptTokens: number; completionTokens: number } | null
 }
+
+export type EmbeddingsResponse = {
+  data: Array<{ embedding: number[]; index: number }>
+  model?: string
+}
