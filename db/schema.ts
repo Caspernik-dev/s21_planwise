@@ -222,3 +222,16 @@ export const sharedScenarios = pgTable(
     dirIdx: index('shared_direction_idx').on(t.direction),
   }),
 )
+
+export const rateBuckets = pgTable(
+  'rate_buckets',
+  {
+    key: text('key').notNull(),
+    subject: text('subject').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    count: integer('count').notNull().default(0),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.key, t.subject, t.windowStart] }),
+  }),
+)
