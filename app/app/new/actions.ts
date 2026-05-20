@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth'
 import { prematchShared } from '@/lib/community/prematch'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { generationInputSchema } from '@/lib/scenario/schema'
 
 export type PrematchCard = {
@@ -16,6 +17,14 @@ export type PrematchCard = {
 export async function prematchAction(formData: FormData): Promise<PrematchCard[]> {
   const session = await auth()
   if (!session?.user?.id) return []
+  const rl = await checkRateLimit({
+    key: 'prematch',
+    subject: session.user.id,
+    email: session.user.email,
+    limit: Number(process.env.MAX_PREMATCH_PER_DAY ?? '60'),
+    windowMs: 86_400_000,
+  })
+  if (!rl.allowed) return []
   const parsed = generationInputSchema.safeParse({
     direction: formData.get('direction'),
     grade: formData.get('grade'),

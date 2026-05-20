@@ -7,6 +7,7 @@ import { type SharedRow, sharedToScenarioInsert } from '@/lib/community/copy'
 import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
 import { resolveShareTarget } from '@/lib/community/share-target'
 import { retrieveChunks } from '@/lib/rag/retrieve'
+import { checkRateLimit } from '@/lib/ratelimit'
 import type { RagChunkForPrompt } from '@/lib/scenario/prompt'
 import { regenerateActivity } from '@/lib/scenario/regenerate'
 import { type ScenarioContent, scenarioContentSchema } from '@/lib/scenario/schema'
@@ -64,6 +65,17 @@ export async function regenerateActivityAction(
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
   const userId = session.user.id
+
+  const rl = await checkRateLimit({
+    key: 'regenerate',
+    subject: userId,
+    email: session.user.email,
+    limit: Number(process.env.MAX_REGEN_PER_DAY ?? '40'),
+    windowMs: 86_400_000,
+  })
+  if (!rl.allowed) {
+    return { ok: false, error: 'Дневной лимит регенераций исчерпан. Попробуйте позже.' }
+  }
 
   const owned = await loadOwned(scenarioId, userId)
   if (!owned) return { ok: false, error: 'Сценарий не найден' }
@@ -217,6 +229,15 @@ export async function useSharedAsIsAction(sharedId: string): Promise<void> {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
   const userId = session.user.id
+
+  const rl = await checkRateLimit({
+    key: 'use-shared',
+    subject: userId,
+    email: session.user.email,
+    limit: Number(process.env.MAX_COPY_PER_DAY ?? '50'),
+    windowMs: 86_400_000,
+  })
+  if (!rl.allowed) redirect('/app/library?error=rate')
 
   const [shared] = await db
     .select({
