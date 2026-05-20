@@ -1,5 +1,6 @@
 'use client'
 
+import { bindScenarioAction } from '@/app/app/calendar/actions'
 import { LikeShareControls } from '@/components/community/LikeShareControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,8 +37,19 @@ export function ScenarioEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [piiWarning, setPiiWarning] = useState<string | null>(null)
   const [regenKey, setRegenKey] = useState<string | null>(null)
+  const [eventDate, setEventDate] = useState('')
+  const [calNote, setCalNote] = useState<string | null>(null)
 
   const dirty = JSON.stringify(content) !== savedJson
+
+  function bindToDate() {
+    if (!eventDate) return
+    setCalNote(null)
+    startTransition(async () => {
+      const res = await bindScenarioAction(meta.id, eventDate)
+      setCalNote(res.ok ? 'Сценарий привязан к календарю' : res.error)
+    })
+  }
 
   function update(fn: (c: ScenarioContent) => ScenarioContent) {
     setMessage(null)
@@ -135,6 +147,25 @@ export function ScenarioEditor({
               <Link href="/app">К дашборду</Link>
             </Button>
           </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="h-9 rounded-md px-2 text-sm ring-1 ring-neutral-200"
+              aria-label="Дата для привязки к календарю"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending || !eventDate}
+              onClick={bindToDate}
+            >
+              На дату
+            </Button>
+          </div>
+          {calNote && <span className="text-sm text-brand-700">{calNote}</span>}
           <LikeShareControls
             scenarioId={meta.id}
             initialLiked={initialLiked}
