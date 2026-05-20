@@ -27,7 +27,6 @@ function collectGroup(text: string, re: RegExp, type: PiiType, group: number): P
 const PHONE = /(?:\+7|8)[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}/g
 const EMAIL = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
 const SNILS = /\b\d{3}-\d{3}-\d{3}[\s-]?\d{2}\b/g
-const INN = /\b\d{12}\b|\b\d{10}\b/g
 // Паспорт/ИНН/ДР — только рядом с контекстным словом. Группа 1 = само значение.
 const PASSPORT_CTX = /паспорт[^\d]{0,15}(\d{4}\s?\d{6})/gi
 const INN_CTX = /инн[^\d]{0,10}(\d{10,12})/gi
@@ -42,12 +41,10 @@ export function detectPatterns(text: string): PiiMatch[] {
     ...collect(text, EMAIL, 'email'),
     ...collect(text, SNILS, 'snils'),
     ...collectGroup(text, PASSPORT_CTX, 'passport', 1),
-    // ИНН детектим ТОЛЬКО в контексте слова «ИНН». Голый INN экспортируем, но не используем
-    // здесь — иначе ловит любые длинные числа (номера кабинетов и т.п.).
+    // ИНН детектим ТОЛЬКО в контексте слова «ИНН» — иначе ловит любые длинные числа
+    // (номера кабинетов и т.п.).
     ...collectGroup(text, INN_CTX, 'inn', 1),
     ...collectGroup(text, DOB_CTX, 'dob', 1),
     ...collect(text, ADDRESS, 'address'),
   ]
 }
-
-export { INN, PHONE, EMAIL, SNILS }

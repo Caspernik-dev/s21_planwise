@@ -73,9 +73,7 @@ export function UploadPlanForm() {
 
             <form action={saveFormAction} className="space-y-3">
               <input type="hidden" name="filename" value={ok.filename} />
-              <input type="hidden" name="anonymizedText" value={ok.anonymized} />
               <input type="hidden" name="originalText" value={ok.original} />
-              <input type="hidden" name="piiFoundCount" value={ok.replacements.length} />
               <input type="hidden" name="useOriginal" value={useOriginal ? 'on' : 'off'} />
               <input type="hidden" name="consent" value={consent ? 'on' : 'off'} />
 

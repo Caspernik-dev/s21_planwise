@@ -57,16 +57,17 @@ export async function savePlanAction(_prev: SaveResult, formData: FormData): Pro
 
   const filename = String(formData.get('filename') ?? '')
   const useOriginal = formData.get('useOriginal') === 'on'
-  const anonymizedText = String(formData.get('anonymizedText') ?? '')
   const originalText = String(formData.get('originalText') ?? '')
-  const piiFoundCount = Number(formData.get('piiFoundCount') ?? 0)
 
   // Согласие на отправку необезличенных данных — только при явном чекбоксе.
   if (useOriginal && formData.get('consent') !== 'on') {
     return { error: 'Для сохранения без обезличивания подтвердите согласие.' }
   }
 
-  const text = useOriginal ? originalText : anonymizedText
+  // Пересчитываем обезличивание на сервере — не доверяем клиентским полям.
+  const report = detectAndAnonymize(originalText)
+  const text = useOriginal ? originalText : report.anonymized
+  const piiFoundCount = report.replacements.length
   if (!text || text.length < 10) return { error: 'Пустой текст плана.' }
 
   const topics = parsePlanTopics(text)
