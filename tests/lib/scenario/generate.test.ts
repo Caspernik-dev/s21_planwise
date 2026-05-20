@@ -43,7 +43,7 @@ describe('generateScenario', () => {
       content: ['```json', validJson, '```'].join('\n'),
       usage: { promptTokens: 100, completionTokens: 200 },
     })
-    const { content, meta } = await generateScenario(input, { chat })
+    const { content, meta } = await generateScenario(input, { chat, retrieve: async () => [] })
     expect(content.title).toBe('День Победы')
     expect(content.stages.reduce((a, s) => a + s.duration_min, 0)).toBe(30)
     expect(meta.normalized).toBe(true)
@@ -60,7 +60,7 @@ describe('generateScenario', () => {
         content: validJson,
         usage: { promptTokens: 50, completionTokens: 60 },
       })
-    const { content, meta } = await generateScenario(input, { chat })
+    const { content, meta } = await generateScenario(input, { chat, retrieve: async () => [] })
     expect(content.title).toBe('День Победы')
     expect(meta.repaired).toBe(true)
     expect(chat).toHaveBeenCalledTimes(2)
@@ -68,13 +68,36 @@ describe('generateScenario', () => {
 
   it('throws when repair also fails', async () => {
     const chat = vi.fn().mockResolvedValue({ content: 'мусор', usage: null })
-    await expect(generateScenario(input, { chat })).rejects.toThrow(/валидн/i)
+    await expect(generateScenario(input, { chat, retrieve: async () => [] })).rejects.toThrow(
+      /валидн/i,
+    )
     expect(chat).toHaveBeenCalledTimes(2)
   })
 
   it('throws when schema validation fails even with valid JSON', async () => {
     const chat = vi.fn().mockResolvedValue({ content: JSON.stringify({ title: 'x' }), usage: null })
-    await expect(generateScenario(input, { chat })).rejects.toThrow()
+    await expect(generateScenario(input, { chat, retrieve: async () => [] })).rejects.toThrow()
     expect(chat).toHaveBeenCalledTimes(2)
+  })
+
+  it('passes retrieved chunks into the prompt and records usedChunkIds', async () => {
+    const chat = vi.fn().mockResolvedValue({ content: validJson, usage: null })
+    const retrieve = vi.fn(async () => [
+      { id: 'c1', chunkText: 'фрагмент', documentTitle: 'Методичка', sectionKind: 'stage' },
+    ])
+    const { meta } = await generateScenario(input, { chat, retrieve })
+    expect(meta.usedChunkIds).toEqual(['c1'])
+    const sentUser = chat.mock.calls[0][0].find((m: { role: string }) => m.role === 'user').content
+    expect(sentUser).toContain('фрагмент')
+  })
+
+  it('still generates when retrieval throws', async () => {
+    const chat = vi.fn().mockResolvedValue({ content: validJson, usage: null })
+    const retrieve = vi.fn(async () => {
+      throw new Error('db down')
+    })
+    const { content, meta } = await generateScenario(input, { chat, retrieve })
+    expect(content.title).toBeTruthy()
+    expect(meta.usedChunkIds).toEqual([])
   })
 })

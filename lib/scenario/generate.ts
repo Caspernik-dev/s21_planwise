@@ -1,8 +1,10 @@
 import { chatCompletion } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
+import { retrieveChunks } from '@/lib/rag/retrieve'
 import { normalizeChronometry } from './normalize'
 import { PROMPT_VERSION, buildMessages } from './prompt'
+import type { RagChunkForPrompt } from './prompt'
 import {
   type GenerationInput,
   type GenerationMeta,
@@ -12,7 +14,13 @@ import {
 
 type ChatFn = (messages: GigaMessage[], opts?: { temperature?: number }) => Promise<ChatResult>
 
-export type GenerateDeps = { chat?: ChatFn }
+type RetrieveFn = (q: {
+  direction: string | null
+  grade: number
+  topic: string
+}) => Promise<Array<{ id: string; chunkText: string; documentTitle: string; sectionKind: string }>>
+
+export type GenerateDeps = { chat?: ChatFn; retrieve?: RetrieveFn }
 
 function extractJson(raw: string): unknown {
   let s = raw.trim()
@@ -50,7 +58,27 @@ export async function generateScenario(
   })()
 
   const started = Date.now()
-  const messages = buildMessages(input)
+
+  const retrieve = deps.retrieve ?? ((q) => retrieveChunks(q))
+  let ragChunks: RagChunkForPrompt[] = []
+  let usedChunkIds: string[] = []
+  try {
+    const found = await retrieve({
+      direction: input.direction,
+      grade: input.grade,
+      topic: input.topic,
+    })
+    ragChunks = found.map((c) => ({
+      text: c.chunkText,
+      documentTitle: c.documentTitle,
+      sectionKind: c.sectionKind,
+    }))
+    usedChunkIds = found.map((c) => c.id)
+  } catch (e) {
+    console.error('RAG retrieval failed, generating without methodology:', e)
+  }
+
+  const messages = buildMessages(input, ragChunks)
 
   const first = await chat(messages, { temperature: 0.4 })
   let usage = first.usage
@@ -86,6 +114,7 @@ export async function generateScenario(
     normalized: changed,
     usage,
     latencyMs: Date.now() - started,
+    usedChunkIds,
   }
 
   return { content, meta }

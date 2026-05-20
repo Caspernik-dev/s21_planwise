@@ -45,4 +45,5 @@ export type GenerationMeta = {
   normalized: boolean
   usage: { promptTokens: number; completionTokens: number } | null
   latencyMs: number
+  usedChunkIds: string[]
 }

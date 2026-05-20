@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { generations, scenarioVersions, scenarios } from '@/db/schema'
 import { generateScenario } from '@/lib/scenario/generate'
 import { generationInputSchema } from '@/lib/scenario/schema'
+import { sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 
 export type NewScenarioState = { error?: string } | null
@@ -60,6 +61,16 @@ export async function generateScenarioAction(
       latencyMs: meta.latencyMs,
       status: 'ok',
     })
+
+    try {
+      const { embed } = await import('@/lib/gigachat/embeddings')
+      const [vec] = await embed([`${input.direction} ${input.topic} ${content.title}`])
+      await db.execute(
+        sql`UPDATE scenarios SET embedding = ${`[${vec.join(',')}]`}::vector WHERE id = ${scenarioId}`,
+      )
+    } catch (e) {
+      console.error('scenario embedding failed (non-fatal):', e)
+    }
   } catch (e) {
     await db
       .insert(generations)

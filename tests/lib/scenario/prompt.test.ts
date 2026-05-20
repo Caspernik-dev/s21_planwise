@@ -36,4 +36,38 @@ describe('buildMessages', () => {
     expect(typeof PROMPT_VERSION).toBe('string')
     expect(PROMPT_VERSION.length).toBeGreaterThan(0)
   })
+
+  it('includes RELEVANT_METHODOLOGY block when rag chunks provided', () => {
+    const msgs = buildMessages(
+      {
+        direction: 'Гражданское',
+        grade: 6,
+        topic: 'дружба',
+        durationMin: 30,
+        format: 'классный час',
+      },
+      [
+        {
+          text: 'Методический фрагмент про дружбу.',
+          documentTitle: 'Методичка',
+          sectionKind: 'stage',
+        },
+      ],
+    )
+    const user = msgs.find((m) => m.role === 'user')?.content ?? ''
+    expect(user).toContain('RELEVANT_METHODOLOGY')
+    expect(user).toContain('Методический фрагмент про дружбу.')
+  })
+
+  it('omits methodology block when no chunks provided', () => {
+    const msgs = buildMessages({
+      direction: 'Гражданское',
+      grade: 6,
+      topic: 'дружба',
+      durationMin: 30,
+      format: 'классный час',
+    })
+    const user = msgs.find((m) => m.role === 'user')?.content ?? ''
+    expect(user).not.toContain('RELEVANT_METHODOLOGY')
+  })
 })
