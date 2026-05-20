@@ -11,6 +11,13 @@ const DEMO_EMAIL = process.env.SEED_DEMO_EMAIL ?? 'demo@klassniychas.ru'
 const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? 'demo12345'
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_PROD_SEED) {
+    console.error(
+      'Отказ: seed демо-аккаунта с дефолтным паролем запрещён в production. Установите ALLOW_PROD_SEED=1, если это осознанное действие.',
+    )
+    process.exit(1)
+  }
+
   const [existing] = await db.select().from(users).where(eq(users.email, DEMO_EMAIL)).limit(1)
   if (existing) {
     console.log(`Демо-аккаунт уже существует: ${DEMO_EMAIL} (id=${existing.id})`)
