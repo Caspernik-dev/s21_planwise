@@ -179,19 +179,28 @@ async function main() {
   // а ESM-импорты хойстятся выше config() → DATABASE_URL не успевает загрузиться.
   const { generateScenario } = await import('@/lib/scenario/generate')
   await mkdir(DIR, { recursive: true })
+  let ok = 0
+  let failed = 0
   for (const item of MATRIX) {
-    const { content } = await generateScenario(item.input, { retrieve: async () => [] })
-    const md = scenarioToMarkdown(content, {
-      title: content.title,
-      direction: item.input.direction,
-      gradeRange: item.gradeRange,
-      gradeMin: item.gradeMin,
-      gradeMax: item.gradeMax,
-    })
-    await writeFile(join(DIR, item.file), md, 'utf8')
-    console.log(`written ${item.file} (${content.title})`)
+    try {
+      const { content } = await generateScenario(item.input, { retrieve: async () => [] })
+      const md = scenarioToMarkdown(content, {
+        title: content.title,
+        direction: item.input.direction,
+        gradeRange: item.gradeRange,
+        gradeMin: item.gradeMin,
+        gradeMax: item.gradeMax,
+      })
+      await writeFile(join(DIR, item.file), md, 'utf8')
+      ok += 1
+      console.log(`written ${item.file} (${content.title})`)
+    } catch (e) {
+      // 2-Max иногда возвращает невалидный JSON — не валим весь батч, пропускаем элемент.
+      failed += 1
+      console.warn(`SKIP ${item.file}: ${(e as Error).message}`)
+    }
   }
-  console.log('\nГотово. Проверь файлы глазами перед коммитом и ingest.')
+  console.log(`\nГотово: ${ok} ok, ${failed} пропущено. Проверь файлы перед ingest.`)
   process.exit(0)
 }
 
