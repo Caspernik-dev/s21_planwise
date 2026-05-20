@@ -35,6 +35,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const ok = await verifyPassword(password, user.passwordHash)
         if (!ok) return null
 
+        const { logEvent } = await import('@/lib/events/log')
+        await logEvent('login', { userId: user.id })
+
         return { id: user.id, email: user.email, name: user.name ?? null, role: user.role }
       },
     }),

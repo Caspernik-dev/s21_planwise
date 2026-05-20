@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { db } from '@/db'
 import { scenarios } from '@/db/schema'
+import { logEvent } from '@/lib/events/log'
 import { isExportFormat, renderScenarioExport } from '@/lib/export'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { and, eq } from 'drizzle-orm'
@@ -39,6 +40,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     durationMin: row.durationMin,
     format: row.format,
   })
+
+  await logEvent('export', { userId: session.user.id, meta: { format } })
 
   const asciiName = `scenario-${row.id}.${ext}`
   const utf8Name = encodeURIComponent(`${row.content.title}.${ext}`).replace(

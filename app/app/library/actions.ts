@@ -44,6 +44,11 @@ export async function searchSharedAction(query: string): Promise<LibraryCard[]> 
 
   const q = query.trim()
 
+  if (q.length > 0) {
+    const { logEvent } = await import('@/lib/events/log')
+    await logEvent('search', { userId: session.user.id, meta: { query: q } })
+  }
+
   if (q.length === 0) {
     const rows = await db.execute(sql`
       SELECT id, like_count AS "likeCount", direction, format,
