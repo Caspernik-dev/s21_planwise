@@ -34,6 +34,7 @@ export function ScenarioEditor({
   const dirty = JSON.stringify(content) !== savedJson
 
   function update(fn: (c: ScenarioContent) => ScenarioContent) {
+    setMessage(null)
     setContent((c) => fn(c))
   }
 
@@ -125,6 +126,7 @@ export function ScenarioEditor({
               // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
               key={`goal-${i}`}
               value={g}
+              aria-label={`Цель ${i + 1}`}
               onChange={(e) =>
                 update((c) => {
                   const goals = c.goals.slice()
@@ -148,6 +150,7 @@ export function ScenarioEditor({
                 // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
                 key={`mat-${i}`}
                 value={m}
+                aria-label={`Материал ${i + 1}`}
                 onChange={(e) =>
                   update((c) => {
                     const materials = c.materials.slice()
