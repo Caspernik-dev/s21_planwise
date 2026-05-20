@@ -82,7 +82,7 @@ export const scenarios = pgTable('scenarios', {
   content: jsonb('content').$type<ScenarioContent>().notNull(),
   inputContext: jsonb('input_context').$type<GenerationInput>().notNull(),
   generationMeta: jsonb('generation_meta').$type<GenerationMeta>(),
-  embedding: vector('embedding', { dimensions: 1024 }),
+  embedding: vector('embedding', { dimensions: 2560 }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 })
@@ -176,7 +176,7 @@ export const ragChunks = pgTable('rag_chunks', {
       stage_idx?: number
     }>()
     .notNull(),
-  embedding: vector('embedding', { dimensions: 1024 }).notNull(),
+  embedding: vector('embedding', { dimensions: 2560 }).notNull(),
   tsv: tsvector('tsv'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
@@ -214,7 +214,7 @@ export const sharedScenarios = pgTable(
     durationMin: integer('duration_min').notNull(),
     format: text('format').notNull(),
     topic: text('topic').notNull(),
-    embedding: vector('embedding', { dimensions: 1024 }),
+    embedding: vector('embedding', { dimensions: 2560 }),
     likeCount: integer('like_count').notNull().default(1),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },

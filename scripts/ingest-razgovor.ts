@@ -4,7 +4,6 @@ config()
 
 import { embed } from '@/lib/gigachat/embeddings'
 import { ingestDocument } from '@/lib/rag/ingest'
-import { drizzleIngestDb } from '@/lib/rag/ingest-db'
 import pdf from 'pdf-parse'
 
 const BASE = process.env.RAZGOVOR_BASE ?? 'https://разговорыоважном.рф'
@@ -52,6 +51,9 @@ function parseUrlMeta(u: string): { gradeRange: string; variant: string } {
 }
 
 async function main() {
+  // Ленивый импорт ПОСЛЕ config(): @/lib/rag/ingest-db тянет @/db, который
+  // конструирует postgres-клиент на этапе загрузки модуля, а ESM-импорты хойстятся.
+  const { drizzleIngestDb } = await import('@/lib/rag/ingest-db')
   const sitemap = await fetchText(SITEMAP)
   const dateUrls = extractUrls(sitemap)
     .filter((u) => /\/\d{2}-\d{2}-\d{4}\/?$/.test(u))
