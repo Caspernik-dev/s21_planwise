@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { db } from '@/db'
-import { scenarios } from '@/db/schema'
+import { likes, scenarios } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { notFound, redirect } from 'next/navigation'
 import { ScenarioEditor } from './editor'
@@ -18,6 +18,12 @@ export default async function ScenarioPage({ params }: { params: Promise<{ id: s
 
   if (!scenario) notFound()
 
+  const [like] = await db
+    .select({ optInShare: likes.optInShare })
+    .from(likes)
+    .where(and(eq(likes.userId, session.user.id), eq(likes.scenarioId, id)))
+    .limit(1)
+
   return (
     <ScenarioEditor
       meta={{
@@ -28,6 +34,8 @@ export default async function ScenarioPage({ params }: { params: Promise<{ id: s
         format: scenario.format,
       }}
       initialContent={scenario.content}
+      initialLiked={!!like}
+      initialShared={like?.optInShare ?? false}
     />
   )
 }

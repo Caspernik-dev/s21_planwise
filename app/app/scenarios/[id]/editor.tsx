@@ -1,5 +1,6 @@
 'use client'
 
+import { LikeShareControls } from '@/components/community/LikeShareControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -21,9 +22,13 @@ type Meta = { id: string; direction: string; grade: number; durationMin: number;
 export function ScenarioEditor({
   meta,
   initialContent,
+  initialLiked,
+  initialShared,
 }: {
   meta: Meta
   initialContent: ScenarioContent
+  initialLiked: boolean
+  initialShared: boolean
 }) {
   const [content, setContent] = useState<ScenarioContent>(initialContent)
   const [savedJson, setSavedJson] = useState(() => JSON.stringify(initialContent))
@@ -123,6 +128,11 @@ export function ScenarioEditor({
               <Link href="/app">К дашборду</Link>
             </Button>
           </div>
+          <LikeShareControls
+            scenarioId={meta.id}
+            initialLiked={initialLiked}
+            initialShared={initialShared}
+          />
           {dirty && (
             <p className="text-xs text-neutral-500">
               Сохраните, чтобы экспорт включал последние изменения
