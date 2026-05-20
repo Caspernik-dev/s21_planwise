@@ -15,6 +15,9 @@ export function AppNavbar({
           <Link href="/app/new" className="hover:text-neutral-900">
             Создать
           </Link>
+          <Link href="/app/library" className="hover:text-neutral-900">
+            Библиотека
+          </Link>
           <Link href="/app/plans" className="hover:text-neutral-900">
             Планы
           </Link>
