@@ -9,11 +9,12 @@ export type SeedMeta = {
 }
 
 export function scenarioToMarkdown(content: ScenarioContent, meta: SeedMeta): string {
+  const q = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
   const fm = [
     '---',
-    `title: ${meta.title}`,
-    `direction: ${meta.direction}`,
-    `grade_range: ${meta.gradeRange}`,
+    `title: ${q(meta.title)}`,
+    `direction: ${q(meta.direction)}`,
+    `grade_range: ${q(meta.gradeRange)}`,
     `grade_min: ${meta.gradeMin}`,
     `grade_max: ${meta.gradeMax}`,
     '---',

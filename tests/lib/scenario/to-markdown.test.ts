@@ -1,4 +1,5 @@
 import { scenarioToMarkdown } from '@/lib/scenario/to-markdown'
+import matter from 'gray-matter'
 import { describe, expect, it } from 'vitest'
 
 const content = {
@@ -40,9 +41,9 @@ describe('scenarioToMarkdown', () => {
   it('emits YAML frontmatter with required keys', () => {
     const md = scenarioToMarkdown(content, meta)
     expect(md).toMatch(/^---\n/)
-    expect(md).toContain('title: Дружба в классе')
-    expect(md).toContain('direction: Духовно-нравственное')
-    expect(md).toContain('grade_range: 1-2')
+    expect(md).toContain('title: "Дружба в классе"')
+    expect(md).toContain('direction: "Духовно-нравственное"')
+    expect(md).toContain('grade_range: "1-2"')
     expect(md).toContain('grade_min: 1')
     expect(md).toContain('grade_max: 2')
   })
@@ -59,5 +60,26 @@ describe('scenarioToMarkdown', () => {
     const md = scenarioToMarkdown(content, meta)
     expect(md).toContain('Вспомните, как помог друг.')
     expect(md).toContain('Что ты почувствовал?')
+  })
+
+  it('round-trips through gray-matter when title/direction contain colons and quotes', () => {
+    const tricky = {
+      ...content,
+      title: 'Профессии: кем быть?',
+    }
+    const trickyMeta = {
+      title: 'Профессии: кем быть?',
+      direction: 'Трудовое: выбор пути',
+      gradeRange: '8-9',
+      gradeMin: 8,
+      gradeMax: 9,
+    }
+    const md = scenarioToMarkdown(tricky, trickyMeta)
+    const parsed = matter(md)
+    expect(parsed.data.title).toBe('Профессии: кем быть?')
+    expect(parsed.data.direction).toBe('Трудовое: выбор пути')
+    expect(parsed.data.grade_range).toBe('8-9')
+    expect(parsed.data.grade_min).toBe(8)
+    expect(parsed.data.grade_max).toBe(9)
   })
 })
