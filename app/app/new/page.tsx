@@ -1,19 +1,15 @@
 'use client'
 
 import { SharedCard } from '@/components/community/SharedCard'
+import { GenerationStream } from '@/components/generation/GenerationStream'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DIRECTIONS, DURATIONS, FORMATS, GRADES } from '@/lib/scenario/options'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useActionState, useRef, useState, useTransition } from 'react'
-import {
-  type NewScenarioState,
-  type PrematchCard,
-  generateScenarioAction,
-  prematchAction,
-} from './actions'
+import { Suspense, useRef, useState, useTransition } from 'react'
+import { type PrematchCard, prematchAction } from './actions'
 
 const selectClass =
   'flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
@@ -22,13 +18,31 @@ function NewScenarioForm() {
   const sp = useSearchParams()
   const topic = sp.get('topic') ?? ''
   const planTopicId = sp.get('planTopicId') ?? ''
-  const [state, formAction, pending] = useActionState<NewScenarioState, FormData>(
-    generateScenarioAction,
-    null,
-  )
   const formRef = useRef<HTMLFormElement>(null)
   const [matches, setMatches] = useState<PrematchCard[] | null>(null)
   const [matching, startMatch] = useTransition()
+  const [generating, setGenerating] = useState<Record<string, unknown> | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  function onGenerate(e?: React.FormEvent) {
+    e?.preventDefault()
+    if (!formRef.current) return
+    const fd = new FormData(formRef.current)
+    const payload = {
+      direction: fd.get('direction'),
+      grade: fd.get('grade'),
+      topic: fd.get('topic'),
+      durationMin: fd.get('durationMin'),
+      format: fd.get('format'),
+      planTopicId: fd.get('planTopicId') || undefined,
+    }
+    if (!payload.topic || String(payload.topic).trim().length === 0) {
+      setFormError('Укажите тему')
+      return
+    }
+    setFormError(null)
+    setGenerating(payload)
+  }
 
   function onPrematch() {
     if (!formRef.current) return
@@ -36,11 +50,20 @@ function NewScenarioForm() {
     startMatch(async () => {
       const found = await prematchAction(fd)
       if (found.length === 0) {
-        formRef.current?.requestSubmit()
+        onGenerate()
       } else {
         setMatches(found)
       }
     })
+  }
+
+  if (generating) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-6 text-3xl font-semibold text-neutral-900">Новый сценарий</h1>
+        <GenerationStream payload={generating} />
+      </div>
+    )
   }
 
   return (
@@ -51,7 +74,7 @@ function NewScenarioForm() {
           <CardTitle>Параметры занятия</CardTitle>
         </CardHeader>
         <CardContent>
-          <form ref={formRef} action={formAction} className="space-y-4">
+          <form ref={formRef} onSubmit={onGenerate} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="direction">Направление воспитания</Label>
               <select
@@ -127,25 +150,19 @@ function NewScenarioForm() {
               />
             </div>
 
-            {state?.error && <p className="text-sm text-error">{state.error}</p>}
+            {formError && <p className="text-sm text-error">{formError}</p>}
 
             {planTopicId && <input type="hidden" name="planTopicId" value={planTopicId} />}
 
-            {pending ? (
-              <Button type="submit" disabled size="lg" className="w-full">
-                Генерируем… (до 30 секунд)
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={onPrematch}
-                disabled={matching}
-                size="lg"
-                className="w-full"
-              >
-                {matching ? 'Ищем похожие…' : 'Подобрать похожие'}
-              </Button>
-            )}
+            <Button
+              type="button"
+              onClick={onPrematch}
+              disabled={matching}
+              size="lg"
+              className="w-full"
+            >
+              {matching ? 'Ищем похожие…' : 'Подобрать похожие'}
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -163,19 +180,10 @@ function NewScenarioForm() {
             ))}
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              disabled={pending}
-              onClick={() => formRef.current?.requestSubmit()}
-            >
-              {pending ? 'Генерируем…' : 'Сгенерировать новый'}
+            <Button type="button" onClick={() => onGenerate()}>
+              Сгенерировать новый
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={() => setMatches(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setMatches(null)}>
               Изменить параметры
             </Button>
           </div>
