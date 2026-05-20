@@ -5,13 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DIRECTIONS, DURATIONS, FORMATS, GRADES } from '@/lib/scenario/options'
-import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useActionState } from 'react'
 import { type NewScenarioState, generateScenarioAction } from './actions'
 
 const selectClass =
   'flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
 
-export default function NewScenarioPage() {
+function NewScenarioForm() {
+  const sp = useSearchParams()
+  const topic = sp.get('topic') ?? ''
+  const planTopicId = sp.get('planTopicId') ?? ''
   const [state, formAction, pending] = useActionState<NewScenarioState, FormData>(
     generateScenarioAction,
     null,
@@ -97,10 +101,13 @@ export default function NewScenarioPage() {
                 required
                 maxLength={200}
                 placeholder="Например: Дружба и взаимопомощь"
+                defaultValue={topic}
               />
             </div>
 
             {state?.error && <p className="text-sm text-error">{state.error}</p>}
+
+            {planTopicId && <input type="hidden" name="planTopicId" value={planTopicId} />}
 
             <Button type="submit" disabled={pending} size="lg" className="w-full">
               {pending ? 'Генерируем… (до 30 секунд)' : 'Сгенерировать сценарий'}
@@ -109,5 +116,13 @@ export default function NewScenarioPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function NewScenarioPage() {
+  return (
+    <Suspense>
+      <NewScenarioForm />
+    </Suspense>
   )
 }

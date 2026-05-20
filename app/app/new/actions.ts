@@ -2,10 +2,10 @@
 
 import { auth } from '@/auth'
 import { db } from '@/db'
-import { generations, scenarioVersions, scenarios } from '@/db/schema'
+import { generations, planTopics, scenarioVersions, scenarios } from '@/db/schema'
 import { generateScenario } from '@/lib/scenario/generate'
 import { generationInputSchema } from '@/lib/scenario/schema'
-import { sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 
 export type NewScenarioState = { error?: string } | null
@@ -17,6 +17,17 @@ export async function generateScenarioAction(
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
   const userId = session.user.id
+
+  const rawTopicId = formData.get('planTopicId')
+  let sourcePlanTopicId: string | null = null
+  if (typeof rawTopicId === 'string' && rawTopicId.length > 0) {
+    const [t] = await db
+      .select({ id: planTopics.id })
+      .from(planTopics)
+      .where(and(eq(planTopics.id, rawTopicId), eq(planTopics.userId, userId)))
+      .limit(1)
+    if (t) sourcePlanTopicId = t.id
+  }
 
   const parsed = generationInputSchema.safeParse({
     direction: formData.get('direction'),
@@ -44,6 +55,7 @@ export async function generateScenarioAction(
         durationMin: input.durationMin,
         format: input.format,
         topic: input.topic,
+        sourcePlanTopicId,
         content,
         inputContext: input,
         generationMeta: meta,
