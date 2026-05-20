@@ -111,9 +111,24 @@ export function ScenarioEditor({
             )}
           </div>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/app">К дашборду</Link>
-        </Button>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <a href={`/api/scenarios/${meta.id}/export?format=pdf`}>PDF</a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href={`/api/scenarios/${meta.id}/export?format=docx`}>DOCX</a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/app">К дашборду</Link>
+            </Button>
+          </div>
+          {dirty && (
+            <p className="text-xs text-neutral-500">
+              Сохраните, чтобы экспорт включал последние изменения
+            </p>
+          )}
+        </div>
       </div>
 
       <Card>
