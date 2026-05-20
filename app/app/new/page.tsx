@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CALENDAR_EVENTS } from '@/lib/calendar-events'
 import { DIRECTIONS, DURATIONS, FORMATS, GRADES } from '@/lib/scenario/options'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useRef, useState, useTransition } from 'react'
@@ -18,7 +19,10 @@ function NewScenarioForm() {
   const sp = useSearchParams()
   const topic = sp.get('topic') ?? ''
   const planTopicId = sp.get('planTopicId') ?? ''
+  const calendarDate = sp.get('calendarDate') ?? ''
   const formRef = useRef<HTMLFormElement>(null)
+  const [source, setSource] = useState<'manual' | 'calendar'>(calendarDate ? 'calendar' : 'manual')
+  const [topicValue, setTopicValue] = useState(topic)
   const [matches, setMatches] = useState<PrematchCard[] | null>(null)
   const [matching, startMatch] = useTransition()
   const [generating, setGenerating] = useState<Record<string, unknown> | null>(null)
@@ -138,6 +142,47 @@ function NewScenarioForm() {
               </select>
             </div>
 
+            <div className="flex gap-2">
+              {(
+                [
+                  ['manual', 'Вручную'],
+                  ['calendar', 'Календарь поводов'],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setSource(v)}
+                  className={`rounded-full px-3 py-1 text-sm ring-1 transition ${
+                    source === v
+                      ? 'bg-brand-500 text-white ring-brand-500'
+                      : 'bg-neutral-0 text-neutral-600 ring-neutral-200 hover:bg-neutral-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {source === 'calendar' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="occasion">Повод</Label>
+                <select
+                  id="occasion"
+                  className={selectClass}
+                  defaultValue={CALENDAR_EVENTS.find((e) => e.date === calendarDate)?.title ?? ''}
+                  onChange={(e) => setTopicValue(e.target.value)}
+                >
+                  <option value="">— выберите повод —</option>
+                  {CALENDAR_EVENTS.map((o) => (
+                    <option key={o.date} value={o.title}>
+                      {o.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label htmlFor="topic">Тема</Label>
               <Input
@@ -146,7 +191,8 @@ function NewScenarioForm() {
                 required
                 maxLength={200}
                 placeholder="Например: Дружба и взаимопомощь"
-                defaultValue={topic}
+                value={topicValue}
+                onChange={(e) => setTopicValue(e.target.value)}
               />
             </div>
 

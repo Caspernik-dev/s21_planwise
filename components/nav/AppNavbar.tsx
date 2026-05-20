@@ -21,6 +21,9 @@ export function AppNavbar({
           <Link href="/app/plans" className="hover:text-neutral-900">
             Планы
           </Link>
+          <Link href="/app/calendar" className="hover:text-neutral-900">
+            Календарь
+          </Link>
         </nav>
         <div className="flex items-center gap-3">
           <span className="text-sm text-neutral-600">{userName ?? userEmail}</span>
