@@ -1,8 +1,9 @@
 // GigaChat использует сертификаты «Минцифры РФ». Если в окружении нет корневого
-// сертификата и GIGACHAT_INSECURE_TLS=true — отключаем проверку TLS на уровне
-// процесса (только dev). Node-овский глобальный fetch уважает
-// NODE_TLS_REJECT_UNAUTHORIZED; userland-undici Agent через опцию `dispatcher`
-// несовместим со встроенным fetch (Node 24 → UND_ERR_INVALID_ARG).
+// сертификата и GIGACHAT_INSECURE_TLS=true — отключаем проверку TLS.
+// ВНИМАНИЕ: NODE_TLS_REJECT_UNAUTHORIZED=0 действует НА ВЕСЬ ПРОЦЕСС (все исходящие
+// TLS-соединения, не только GigaChat), и необратимо до перезапуска. Только dev/демо.
+// Node-овский глобальный fetch уважает NODE_TLS_REJECT_UNAUTHORIZED; userland-undici
+// Agent через опцию `dispatcher` несовместим со встроенным fetch (Node 24 → UND_ERR_INVALID_ARG).
 // Прод: ставить корневой сертификат через NODE_EXTRA_CA_CERTS и держать флаг false.
 let applied = false
 

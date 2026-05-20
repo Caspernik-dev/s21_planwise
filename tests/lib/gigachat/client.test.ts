@@ -16,23 +16,25 @@ afterEach(() => {
 })
 
 function stubFlow(chatContent: string) {
-  const fetchMock = vi.fn(async (url: string) => {
-    if (String(url).includes('/oauth')) {
+  const fetchMock = vi.fn(
+    async (url: string, _init: { headers: Record<string, string>; body?: string }) => {
+      if (String(url).includes('/oauth')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ access_token: 'tok', expires_at: Date.now() + 30 * 60 * 1000 }),
+        }
+      }
       return {
         ok: true,
         status: 200,
-        json: async () => ({ access_token: 'tok', expires_at: Date.now() + 30 * 60 * 1000 }),
+        json: async () => ({
+          choices: [{ message: { role: 'assistant', content: chatContent } }],
+          usage: { prompt_tokens: 11, completion_tokens: 22, total_tokens: 33 },
+        }),
       }
-    }
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
-        choices: [{ message: { role: 'assistant', content: chatContent } }],
-        usage: { prompt_tokens: 11, completion_tokens: 22, total_tokens: 33 },
-      }),
-    }
-  })
+    },
+  )
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -61,16 +63,18 @@ describe('chatCompletion', () => {
   })
 
   it('throws on chat non-ok', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      if (String(url).includes('/oauth')) {
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ access_token: 'tok', expires_at: Date.now() + 1_800_000 }),
+    const fetchMock = vi.fn(
+      async (url: string, _init: { headers: Record<string, string>; body?: string }) => {
+        if (String(url).includes('/oauth')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ access_token: 'tok', expires_at: Date.now() + 1_800_000 }),
+          }
         }
-      }
-      return { ok: false, status: 500, text: async () => 'boom' }
-    })
+        return { ok: false, status: 500, text: async () => 'boom' }
+      },
+    )
     vi.stubGlobal('fetch', fetchMock)
     await expect(chatCompletion([{ role: 'user', content: 'hi' }])).rejects.toThrow(/GigaChat chat/)
   })
