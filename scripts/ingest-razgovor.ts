@@ -79,6 +79,7 @@ async function main() {
         const text = parsed.text?.trim()
         if (!text || text.length < 200) {
           console.warn(`skip empty pdf ${pdfUrl}`)
+          await sleep(DELAY_MS)
           continue
         }
         const { gradeRange, variant } = parseUrlMeta(pdfUrl)
