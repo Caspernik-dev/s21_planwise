@@ -11,6 +11,14 @@ export function AppNavbar({
         <Link href="/app" className="text-base font-display font-semibold text-neutral-900">
           Классный час
         </Link>
+        <nav className="flex items-center gap-4 text-sm text-neutral-600">
+          <Link href="/app/new" className="hover:text-neutral-900">
+            Создать
+          </Link>
+          <Link href="/app/plans" className="hover:text-neutral-900">
+            Планы
+          </Link>
+        </nav>
         <div className="flex items-center gap-3">
           <span className="text-sm text-neutral-600">{userName ?? userEmail}</span>
           <form action="/app/logout" method="post">

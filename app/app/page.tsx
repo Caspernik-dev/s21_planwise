@@ -2,8 +2,8 @@ import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/db'
-import { scenarios } from '@/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { planTopics, scenarios, workPlans } from '@/db/schema'
+import { and, desc, eq, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -25,6 +25,32 @@ export default async function DashboardPage() {
     .orderBy(desc(scenarios.createdAt))
     .limit(10)
 
+  const plans = await db
+    .select({ id: workPlans.id, title: workPlans.title })
+    .from(workPlans)
+    .where(eq(workPlans.userId, session.user.id))
+    .orderBy(desc(workPlans.createdAt))
+    .limit(3)
+
+  const topicRows = await db
+    .select({ id: planTopics.id, workPlanId: planTopics.workPlanId })
+    .from(planTopics)
+    .where(eq(planTopics.userId, session.user.id))
+  const coveredIds = new Set(
+    (
+      await db
+        .select({ t: scenarios.sourcePlanTopicId })
+        .from(scenarios)
+        .where(and(eq(scenarios.userId, session.user.id), isNotNull(scenarios.sourcePlanTopicId)))
+    )
+      .map((r) => r.t)
+      .filter((x): x is string => !!x),
+  )
+  const planStats = plans.map((p) => {
+    const ts = topicRows.filter((t) => t.workPlanId === p.id)
+    return { ...p, total: ts.length, done: ts.filter((t) => coveredIds.has(t.id)).length }
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -33,6 +59,23 @@ export default async function DashboardPage() {
           <Link href="/app/new">Создать сценарий</Link>
         </Button>
       </div>
+
+      {planStats.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {planStats.map((p) => (
+            <Link key={p.id} href={`/app/plans/${p.id}`}>
+              <Card className="h-full transition hover:shadow-hover">
+                <CardHeader>
+                  <CardTitle className="text-base">{p.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-neutral-600">
+                  Закрыто {p.done}/{p.total} тем
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {recent.length === 0 ? (
         <Card>
