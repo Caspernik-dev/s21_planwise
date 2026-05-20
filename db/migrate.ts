@@ -1,5 +1,11 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
 import { drizzle } from 'drizzle-orm/postgres-js'
+
+// Next.js грузит .env.local автоматически, но этот standalone-скрипт — нет.
+// Грузим .env.local (приоритет), затем .env как fallback.
+config({ path: '.env.local' })
+config()
+
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 
