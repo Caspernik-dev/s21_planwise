@@ -2,8 +2,6 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 config()
 
-import { db } from '@/db'
-import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
 async function main() {
@@ -12,6 +10,10 @@ async function main() {
     console.error('Использование: pnpm set:admin <email>')
     process.exit(1)
   }
+  // Динамический импорт ПОСЛЕ config(): @/db конструирует postgres-клиент на этапе
+  // загрузки модуля, а ESM-импорты хойстятся выше config() — поэтому грузим лениво.
+  const { db } = await import('@/db')
+  const { users } = await import('@/db/schema')
   const res = await db
     .update(users)
     .set({ role: 'admin' })
