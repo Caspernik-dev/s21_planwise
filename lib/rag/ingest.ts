@@ -70,6 +70,10 @@ export async function ingestDocument(
 
   const embeddings = await deps.embed(toInsert.map((c) => c.text))
 
+  if (embeddings.length !== toInsert.length) {
+    throw new Error(`embed returned ${embeddings.length} vectors for ${toInsert.length} chunks`)
+  }
+
   for (let i = 0; i < toInsert.length; i++) {
     const c = toInsert[i]
     await deps.db.insertChunk({

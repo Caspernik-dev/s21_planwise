@@ -32,6 +32,7 @@ export const drizzleIngestDb: IngestDb = {
   },
 
   async insertChunk(chunk) {
+    // vec строится из number[] (не пользовательский ввод) → безопасно интерполировать как ::vector литерал
     const vec = `[${chunk.embedding.join(',')}]`
     await db.execute(sql`
       INSERT INTO rag_chunks (id, document_id, chunk_text, chunk_hash, chunk_meta, embedding, tsv)
