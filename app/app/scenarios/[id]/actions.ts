@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { db } from '@/db'
 import { generations, likes, scenarioVersions, scenarios, sharedScenarios } from '@/db/schema'
+import { type SharedRow, sharedToScenarioInsert } from '@/lib/community/copy'
 import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
 import { resolveShareTarget } from '@/lib/community/share-target'
 import { retrieveChunks } from '@/lib/rag/retrieve'
@@ -210,4 +211,35 @@ export async function likeScenarioAction(
 
   revalidatePath(`/app/scenarios/${scenarioId}`)
   return { ok: true, liked: true, shared }
+}
+
+export async function useSharedAsIsAction(sharedId: string): Promise<void> {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+
+  const [shared] = await db
+    .select({
+      id: sharedScenarios.id,
+      anonymizedContent: sharedScenarios.anonymizedContent,
+      direction: sharedScenarios.direction,
+      grade: sharedScenarios.grade,
+      durationMin: sharedScenarios.durationMin,
+      format: sharedScenarios.format,
+      topic: sharedScenarios.topic,
+    })
+    .from(sharedScenarios)
+    .where(eq(sharedScenarios.id, sharedId))
+    .limit(1)
+  if (!shared) redirect('/app/library')
+
+  const [row] = await db
+    .insert(scenarios)
+    .values(sharedToScenarioInsert(shared as SharedRow, userId))
+    .returning({ id: scenarios.id })
+  await db
+    .insert(scenarioVersions)
+    .values({ scenarioId: row.id, content: shared.anonymizedContent })
+
+  redirect(`/app/scenarios/${row.id}`)
 }
