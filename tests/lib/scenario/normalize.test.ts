@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest'
+import type { ScenarioContent } from '@/lib/scenario/schema'
+import { normalizeChronometry } from '@/lib/scenario/normalize'
+
+function content(durations: number[]): ScenarioContent {
+  return {
+    title: 't',
+    goals: ['g'],
+    materials: [],
+    stages: durations.map((d, i) => ({
+      kind: i === 0 ? 'engage' : i === durations.length - 1 ? 'reflection' : 'main',
+      title: `s${i}`,
+      duration_min: d,
+      activities: [{ type: 'discussion', text: 'x' }],
+    })),
+    adaptations: { simpler: 's', harder: 'h' },
+  }
+}
+
+describe('normalizeChronometry', () => {
+  it('leaves content unchanged when sum already equals target', () => {
+    const { content: out, changed } = normalizeChronometry(content([5, 20, 5]), 30)
+    expect(out.stages.map((s) => s.duration_min)).toEqual([5, 20, 5])
+    expect(changed).toBe(false)
+  })
+
+  it('scales down proportionally and preserves exact total', () => {
+    const { content: out, changed } = normalizeChronometry(content([10, 40, 10]), 30)
+    const total = out.stages.reduce((a, s) => a + s.duration_min, 0)
+    expect(total).toBe(30)
+    expect(changed).toBe(true)
+  })
+
+  it('scales up and preserves exact total', () => {
+    const { content: out } = normalizeChronometry(content([5, 10, 5]), 45)
+    expect(out.stages.reduce((a, s) => a + s.duration_min, 0)).toBe(45)
+  })
+
+  it('keeps every stage at least 1 minute', () => {
+    const { content: out } = normalizeChronometry(content([1, 1, 100]), 5)
+    expect(out.stages.every((s) => s.duration_min >= 1)).toBe(true)
+    expect(out.stages.reduce((a, s) => a + s.duration_min, 0)).toBe(5)
+  })
+
+  it('handles zero total defensively (distributes target evenly)', () => {
+    const { content: out } = normalizeChronometry(content([0, 0]), 10)
+    expect(out.stages.reduce((a, s) => a + s.duration_min, 0)).toBe(10)
+    expect(out.stages.every((s) => s.duration_min >= 1)).toBe(true)
+  })
+})
