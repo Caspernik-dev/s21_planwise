@@ -1,5 +1,5 @@
 import { getGigaConfig } from './config'
-import { getDispatcher } from './dispatcher'
+import { ensureInsecureTls } from './tls'
 import { getAccessToken } from './token'
 import type { ChatCompletionResponse, ChatResult, GigaMessage } from './types'
 
@@ -10,6 +10,7 @@ export async function chatCompletion(
   opts: ChatOptions = {},
 ): Promise<ChatResult> {
   const cfg = getGigaConfig()
+  ensureInsecureTls(cfg.insecureTls)
   const token = await getAccessToken()
 
   const res = await fetch(`${cfg.apiBase}/chat/completions`, {
@@ -26,8 +27,6 @@ export async function chatCompletion(
       max_tokens: opts.maxTokens ?? 2400,
       stream: false,
     }),
-    // @ts-expect-error undici-only option, игнорируется в тестовом моке
-    dispatcher: getDispatcher(cfg.insecureTls),
   })
 
   if (!res.ok) {

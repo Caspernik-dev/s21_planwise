@@ -1,5 +1,5 @@
 import { getGigaConfig } from './config'
-import { getDispatcher } from './dispatcher'
+import { ensureInsecureTls } from './tls'
 import type { OAuthResponse } from './types'
 
 type CacheEntry = { token: string; expiresAt: number }
@@ -17,6 +17,7 @@ export async function getAccessToken(): Promise<string> {
   }
 
   const cfg = getGigaConfig()
+  ensureInsecureTls(cfg.insecureTls)
   const body = new URLSearchParams({ scope: cfg.scope })
 
   const res = await fetch(cfg.oauthUrl, {
@@ -28,8 +29,6 @@ export async function getAccessToken(): Promise<string> {
       Accept: 'application/json',
     },
     body,
-    // @ts-expect-error undici-only option, игнорируется в тестовом моке
-    dispatcher: getDispatcher(cfg.insecureTls),
   })
 
   if (!res.ok) {
