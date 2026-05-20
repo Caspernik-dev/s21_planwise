@@ -48,8 +48,9 @@ function renderBlock(b: DocBlock, i: number) {
     case 'bullets':
       return (
         <View key={i}>
-          {b.items.map((it) => (
-            <View key={it} style={styles.bulletRow}>
+          {b.items.map((it, j) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable ordered list, index is safe
+            <View key={j} style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={styles.bulletText}>{it}</Text>
             </View>
@@ -59,8 +60,9 @@ function renderBlock(b: DocBlock, i: number) {
     case 'metaTable':
       return (
         <View key={i} style={styles.metaTable}>
-          {b.rows.map((r) => (
-            <View key={r.label} style={styles.metaRow}>
+          {b.rows.map((r, j) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable ordered list, index is safe
+            <View key={j} style={styles.metaRow}>
               <Text style={styles.metaLabel}>{r.label}</Text>
               <Text style={styles.metaValue}>{r.value}</Text>
             </View>
