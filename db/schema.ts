@@ -1,5 +1,6 @@
 import type { GenerationInput, GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
 import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import { tsvector, vector } from './types'
 
 export const users = pgTable('users', {
   id: text('id')
@@ -70,6 +71,7 @@ export const scenarios = pgTable('scenarios', {
   content: jsonb('content').$type<ScenarioContent>().notNull(),
   inputContext: jsonb('input_context').$type<GenerationInput>().notNull(),
   generationMeta: jsonb('generation_meta').$type<GenerationMeta>(),
+  embedding: vector('embedding', { dimensions: 1024 }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 })
@@ -97,5 +99,42 @@ export const generations = pgTable('generations', {
   completionTokens: integer('completion_tokens'),
   latencyMs: integer('latency_ms'),
   status: text('status').notNull(), // 'ok' | 'error'
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const ragDocuments = pgTable('rag_documents', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  source: text('source').notNull(),
+  title: text('title').notNull(),
+  gradeRange: text('grade_range'),
+  direction: text('direction'),
+  rawUrl: text('raw_url').notNull().unique(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const ragChunks = pgTable('rag_chunks', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  documentId: text('document_id')
+    .notNull()
+    .references(() => ragDocuments.id, { onDelete: 'cascade' }),
+  chunkText: text('chunk_text').notNull(),
+  chunkHash: text('chunk_hash').notNull().unique(),
+  chunkMeta: jsonb('chunk_meta')
+    .$type<{
+      source: string
+      document_title: string
+      direction: string | null
+      grade_min: number
+      grade_max: number
+      section_kind: string
+      stage_idx?: number
+    }>()
+    .notNull(),
+  embedding: vector('embedding', { dimensions: 1024 }).notNull(),
+  tsv: tsvector('tsv'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })

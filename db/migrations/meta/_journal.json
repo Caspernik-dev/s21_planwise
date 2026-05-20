@@ -22,6 +22,20 @@
       "when": 1779259963363,
       "tag": "0002_wise_raza",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779269316766,
+      "tag": "0003_unusual_misty_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779269328624,
+      "tag": "0004_rag_indexes",
+      "breakpoints": true
     }
   ]
 }
