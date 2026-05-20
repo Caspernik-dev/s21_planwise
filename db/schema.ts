@@ -235,3 +235,24 @@ export const rateBuckets = pgTable(
     pk: primaryKey({ columns: [t.key, t.subject, t.windowStart] }),
   }),
 )
+
+export const calendarEvents = pgTable(
+  'calendar_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    scenarioId: text('scenario_id')
+      .notNull()
+      .references(() => scenarios.id, { onDelete: 'cascade' }),
+    eventDate: text('event_date').notNull(), // ISO YYYY-MM-DD
+    title: text('title').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byUserDate: index('calendar_events_user_date_idx').on(t.userId, t.eventDate),
+  }),
+)
