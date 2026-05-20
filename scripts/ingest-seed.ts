@@ -6,13 +6,15 @@ import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { embed } from '@/lib/gigachat/embeddings'
 import { ingestDocument } from '@/lib/rag/ingest'
-import { drizzleIngestDb } from '@/lib/rag/ingest-db'
 import matter from 'gray-matter'
 
 const DIR = join(process.cwd(), 'content', 'seed-scenarios')
 const LANG = process.env.PG_TSV_LANG ?? 'russian'
 
 async function main() {
+  // Ленивый импорт после config(): @/lib/rag/ingest-db тянет @/db (postgres-клиент
+  // на этапе загрузки модуля), а ESM-импорты хойстятся выше config().
+  const { drizzleIngestDb } = await import('@/lib/rag/ingest-db')
   const files = (await readdir(DIR)).filter((f) => f.endsWith('.md'))
   let totalInserted = 0
   let totalSkipped = 0

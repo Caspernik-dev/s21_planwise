@@ -13,6 +13,16 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3)
 }
 
+// Колонтитулы PDF «Разговоров о важном», попадающие в текст при парсинге:
+// «Методические рекомендации | 5−7 классы 1», «Сценарий занятия | 8−9 классы 2» и т.п.
+// Повторяются на каждой странице и зашумляют чанки — вырезаем их до чанкинга.
+const RUNNING_HEADER_RE =
+  /(методические рекомендации|сценарий занятия)\s*\|\s*\d{1,2}\s*[−–-]\s*\d{1,2}\s*класс(?:ы|ов)?\s*\d*/gi
+
+export function stripPdfBoilerplate(text: string): string {
+  return text.replace(RUNNING_HEADER_RE, ' ').replace(/[ \t]{2,}/g, ' ')
+}
+
 const MD_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*$/
 const KEYWORD_HEADING =
   /^\s*(цель|задачи|ход\s+занятия|этап\s*\d*|основная\s+часть|вовлечение|рефлексия|рефлекси\S*|материалы|оборудование)([\s:#.,].*|$)/i
@@ -93,7 +103,7 @@ function splitByParagraph(body: string): string[] {
 }
 
 export function chunkStructured(text: string): Chunk[] {
-  const sections = splitSections(text)
+  const sections = splitSections(stripPdfBoilerplate(text))
   const chunks: Chunk[] = []
 
   let pending: RawSection | null = null

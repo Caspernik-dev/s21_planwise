@@ -4,7 +4,6 @@ config()
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { generateScenario } from '@/lib/scenario/generate'
 import type { GenerationInput } from '@/lib/scenario/schema'
 import { scenarioToMarkdown } from '@/lib/scenario/to-markdown'
 
@@ -176,6 +175,9 @@ const MATRIX: Array<{
 ]
 
 async function main() {
+  // Ленивый импорт после config(): @/lib/scenario/generate тянет @/db транзитивно,
+  // а ESM-импорты хойстятся выше config() → DATABASE_URL не успевает загрузиться.
+  const { generateScenario } = await import('@/lib/scenario/generate')
   await mkdir(DIR, { recursive: true })
   for (const item of MATRIX) {
     const { content } = await generateScenario(item.input, { retrieve: async () => [] })

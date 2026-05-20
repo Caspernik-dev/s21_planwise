@@ -16,6 +16,7 @@
     "db:studio": "drizzle-kit studio",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
+    "gen:seed": "NODE_OPTIONS=--use-system-ca tsx scripts/gen-seed.ts",
     "ingest:seed": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-seed.ts",
     "ingest:razgovor": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-razgovor.ts",
     "calibrate": "NODE_OPTIONS=--use-system-ca tsx scripts/calibrate-threshold.ts",

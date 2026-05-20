@@ -1,5 +1,24 @@
-import { chunkStructured, estimateTokens } from '@/lib/rag/chunk'
+import { chunkStructured, estimateTokens, stripPdfBoilerplate } from '@/lib/rag/chunk'
 import { describe, expect, it } from 'vitest'
+
+describe('stripPdfBoilerplate', () => {
+  it('вырезает повторяющиеся колонтитулы РоВ, сохраняя содержание', () => {
+    const raw =
+      'Методические рекомендации | 5−7 классы 1 Методические рекомендации | 5−7 классы 2 Цель занятия: показать роль песни в годы войны.'
+    const out = stripPdfBoilerplate(raw)
+    expect(out).not.toMatch(/Методические рекомендации\s*\|/i)
+    expect(out).toContain('Цель занятия: показать роль песни в годы войны.')
+  })
+  it('вырезает колонтитул «Сценарий занятия | 8−9 классы N»', () => {
+    expect(stripPdfBoilerplate('Сценарий занятия | 8−9 классы 2 Текст.')).not.toMatch(
+      /Сценарий занятия\s*\|/i,
+    )
+  })
+  it('не трогает обычный текст без колонтитулов', () => {
+    const t = 'Учитель предлагает обсудить дружбу и взаимопомощь в классе.'
+    expect(stripPdfBoilerplate(t)).toBe(t)
+  })
+})
 
 const para = (label: string, chars: number) => `${label} ${'я'.repeat(chars)}`
 
