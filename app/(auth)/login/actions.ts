@@ -1,7 +1,9 @@
 'use server'
 
 import { signIn } from '@/auth'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { AuthError } from 'next-auth'
+import { headers } from 'next/headers'
 import { z } from 'zod'
 
 function safeNext(raw: unknown): string {
@@ -35,6 +37,19 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     password: formData.get('password'),
   })
   if (!parsed.success) return { error: 'Введите корректные данные' }
+
+  const h = await headers()
+  const fwd = h.get('x-forwarded-for')
+  const ip = (fwd ? fwd.split(',')[0] : (h.get('x-real-ip') ?? 'unknown')).trim()
+  const rl = await checkRateLimit({
+    key: 'login',
+    subject: ip,
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+  })
+  if (!rl.allowed) {
+    return { error: 'Слишком много попыток входа. Повторите через несколько минут.' }
+  }
 
   const next = safeNext(formData.get('next'))
 
