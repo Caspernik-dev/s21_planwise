@@ -34,6 +34,7 @@ export function ScenarioEditor({
   const [savedJson, setSavedJson] = useState(() => JSON.stringify(initialContent))
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState<string | null>(null)
+  const [piiWarning, setPiiWarning] = useState<string | null>(null)
   const [regenKey, setRegenKey] = useState<string | null>(null)
 
   const dirty = JSON.stringify(content) !== savedJson
@@ -69,6 +70,7 @@ export function ScenarioEditor({
     setMessage(null)
     startTransition(async () => {
       const res = await saveScenarioAction(meta.id, content)
+      setPiiWarning(res.ok ? (res.piiWarning ?? null) : null)
       if (res.ok) {
         setSavedJson(JSON.stringify(content))
         setMessage('Сохранено')
@@ -95,6 +97,11 @@ export function ScenarioEditor({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
+      {piiWarning && (
+        <div className="rounded-md bg-warm-50 px-4 py-3 text-sm text-warm-700 ring-1 ring-warm-200">
+          {piiWarning}
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <Input

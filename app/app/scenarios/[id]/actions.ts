@@ -6,6 +6,7 @@ import { generations, likes, scenarioVersions, scenarios, sharedScenarios } from
 import { type SharedRow, sharedToScenarioInsert } from '@/lib/community/copy'
 import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
 import { resolveShareTarget } from '@/lib/community/share-target'
+import { scanScenarioPii } from '@/lib/pii/scenario-scan'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { RagChunkForPrompt } from '@/lib/scenario/prompt'
@@ -24,7 +25,7 @@ async function loadOwned(scenarioId: string, userId: string) {
   return row ?? null
 }
 
-export type SaveResult = { ok: true } | { ok: false; error: string }
+export type SaveResult = { ok: true; piiWarning?: string } | { ok: false; error: string }
 
 export async function saveScenarioAction(
   scenarioId: string,
@@ -49,7 +50,14 @@ export async function saveScenarioAction(
     await tx.insert(scenarioVersions).values({ scenarioId, content })
   })
 
+  const pii = scanScenarioPii(content)
   revalidatePath(`/app/scenarios/${scenarioId}`)
+  if (pii) {
+    return {
+      ok: true,
+      piiWarning: `Внимание: в тексте найдены возможные персональные данные (${pii.kinds.join(', ')}). Они сохранены как есть, но не попадут в библиотеку сообщества без обезличивания.`,
+    }
+  }
   return { ok: true }
 }
 
