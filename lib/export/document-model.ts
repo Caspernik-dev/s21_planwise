@@ -1,7 +1,6 @@
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export type ExportMeta = {
-  title: string
   topic: string
   direction: string
   grade: number
@@ -41,11 +40,15 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   blocks.push({ type: 'heading', level: 2, text: 'Цель' })
   blocks.push({ type: 'bullets', items: content.goals })
 
-  content.stages.forEach((stage, i) => {
-    const heading =
-      stage.kind === 'reflection'
-        ? `Рефлексия (${stage.duration_min} мин)`
-        : `Этап ${i + 1}. ${stage.title} (${stage.duration_min} мин)`
+  let stageNum = 0
+  for (const stage of content.stages) {
+    let heading: string
+    if (stage.kind === 'reflection') {
+      heading = `Рефлексия (${stage.duration_min} мин)`
+    } else {
+      stageNum += 1
+      heading = `Этап ${stageNum}. ${stage.title} (${stage.duration_min} мин)`
+    }
     blocks.push({ type: 'heading', level: 2, text: heading })
 
     for (const act of stage.activities) {
@@ -55,7 +58,7 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
         blocks.push({ type: 'bullets', items: act.questions })
       }
     }
-  })
+  }
 
   if (content.materials.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Материалы' })

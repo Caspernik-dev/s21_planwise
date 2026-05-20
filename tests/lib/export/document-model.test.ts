@@ -7,7 +7,6 @@ import type { ScenarioContent } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
 const meta: ExportMeta = {
-  title: 'Дружба',
   topic: 'О дружбе',
   direction: 'Патриотическое',
   grade: 3,
@@ -93,5 +92,12 @@ describe('buildScenarioDocument', () => {
   it('экспортирует словарь меток типов активностей', () => {
     expect(ACTIVITY_TYPE_LABEL.discussion).toBe('Обсуждение')
     expect(ACTIVITY_TYPE_LABEL.video).toBe('Видео')
+    expect(Object.keys(ACTIVITY_TYPE_LABEL).sort()).toEqual([
+      'discussion',
+      'game',
+      'quiz',
+      'task',
+      'video',
+    ])
   })
 })
