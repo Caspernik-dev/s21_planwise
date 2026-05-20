@@ -14,6 +14,13 @@ describe('baseUrlFrom', () => {
     )
   })
   it('падает на localhost при отсутствии host и env', () => {
-    expect(baseUrlFrom(null, null, undefined)).toBe('http://localhost:3000')
+    const orig = process.env.AUTH_URL
+    delete process.env.AUTH_URL
+    try {
+      expect(baseUrlFrom(null, null)).toBe('http://localhost:3000')
+    } finally {
+      if (orig === undefined) delete process.env.AUTH_URL
+      else process.env.AUTH_URL = orig
+    }
   })
 })
