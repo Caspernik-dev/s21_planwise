@@ -17,7 +17,9 @@
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "ingest:seed": "tsx scripts/ingest-seed.ts",
-    "ingest:razgovor": "tsx scripts/ingest-razgovor.ts"
+    "ingest:razgovor": "tsx scripts/ingest-razgovor.ts",
+    "calibrate": "tsx scripts/calibrate-threshold.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
