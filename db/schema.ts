@@ -1,4 +1,5 @@
-import { integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import type { GenerationInput, GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
 
 export const users = pgTable('users', {
   id: text('id')
@@ -49,3 +50,52 @@ export const verificationTokens = pgTable(
   },
   (t) => ({ pk: primaryKey({ columns: [t.identifier, t.token] }) }),
 )
+
+export const scenarios = pgTable('scenarios', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  direction: text('direction').notNull(),
+  grade: integer('grade').notNull(),
+  durationMin: integer('duration_min').notNull(),
+  format: text('format').notNull(),
+  topic: text('topic').notNull(),
+  // Forward-compat: источники (таблицы plan_topics/shared_scenarios появятся в своих планах).
+  sourcePlanTopicId: text('source_plan_topic_id'),
+  sourceSharedId: text('source_shared_id'),
+  content: jsonb('content').$type<ScenarioContent>().notNull(),
+  inputContext: jsonb('input_context').$type<GenerationInput>().notNull(),
+  generationMeta: jsonb('generation_meta').$type<GenerationMeta>(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const scenarioVersions = pgTable('scenario_versions', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  scenarioId: text('scenario_id')
+    .notNull()
+    .references(() => scenarios.id, { onDelete: 'cascade' }),
+  content: jsonb('content').$type<ScenarioContent>().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const generations = pgTable('generations', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  scenarioId: text('scenario_id').references(() => scenarios.id, { onDelete: 'set null' }),
+  promptTokens: integer('prompt_tokens'),
+  completionTokens: integer('completion_tokens'),
+  latencyMs: integer('latency_ms'),
+  status: text('status').notNull(), // 'ok' | 'error'
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
