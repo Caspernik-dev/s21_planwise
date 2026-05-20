@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { db } from '@/db'
 import { generations, planTopics, scenarioVersions, scenarios } from '@/db/schema'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { generationInputSchema } from '@/lib/scenario/schema'
 import type { GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
 import { streamScenario } from '@/lib/scenario/stream'
@@ -19,6 +20,24 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Проверьте параметры формы' }, { status: 400 })
   }
   const input = parsed.data
+
+  const rl = await checkRateLimit({
+    key: 'generate',
+    subject: userId,
+    email: session.user.email,
+    limit: Number(process.env.MAX_GENERATIONS_PER_DAY ?? '10'),
+    windowMs: 86_400_000,
+  })
+  if (!rl.allowed) {
+    return Response.json(
+      {
+        error: `Дневной лимит генераций исчерпан. Попробуйте через ${Math.ceil(
+          rl.retryAfterSec / 3600,
+        )} ч.`,
+      },
+      { status: 429 },
+    )
+  }
 
   let sourcePlanTopicId: string | null = null
   const rawTopicId = (body as { planTopicId?: unknown })?.planTopicId
