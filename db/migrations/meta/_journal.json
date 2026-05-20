@@ -64,6 +64,13 @@
       "when": 1779299713440,
       "tag": "0008_illegal_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779306857428,
+      "tag": "0009_public_peter_parker",
+      "breakpoints": true
     }
   ]
 }

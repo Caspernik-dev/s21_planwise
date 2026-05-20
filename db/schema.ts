@@ -21,6 +21,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash'), // null если OAuth (в будущем)
   emailVerified: timestamp('email_verified', { mode: 'date' }),
   image: text('image'),
+  role: text('role').notNull().default('user'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
@@ -254,5 +255,21 @@ export const calendarEvents = pgTable(
   },
   (t) => ({
     byUserDate: index('calendar_events_user_date_idx').on(t.userId, t.eventDate),
+  }),
+)
+
+export const events = pgTable(
+  'events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    type: text('type').notNull(), // 'export' | 'login' | 'search'
+    meta: jsonb('meta'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byTypeCreated: index('events_type_created_idx').on(t.type, t.createdAt),
   }),
 )
