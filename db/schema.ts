@@ -1,5 +1,15 @@
 import type { GenerationInput, GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
-import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+} from 'drizzle-orm/pg-core'
 import { tsvector, vector } from './types'
 
 export const users = pgTable('users', {
@@ -169,3 +179,46 @@ export const ragChunks = pgTable('rag_chunks', {
   tsv: tsvector('tsv'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
+
+export const likes = pgTable(
+  'likes',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    scenarioId: text('scenario_id')
+      .notNull()
+      .references(() => scenarios.id, { onDelete: 'cascade' }),
+    optInShare: boolean('opt_in_share').notNull().default(false),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({ uq: unique('likes_user_scenario_uq').on(t.userId, t.scenarioId) }),
+)
+
+export const sharedScenarios = pgTable(
+  'shared_scenarios',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sourceScenarioId: text('source_scenario_id')
+      .notNull()
+      .references(() => scenarios.id, { onDelete: 'cascade' }),
+    anonymizedContent: jsonb('anonymized_content').$type<ScenarioContent>().notNull(),
+    direction: text('direction').notNull(),
+    grade: integer('grade').notNull(),
+    durationMin: integer('duration_min').notNull(),
+    format: text('format').notNull(),
+    topic: text('topic').notNull(),
+    embedding: vector('embedding', { dimensions: 1024 }),
+    likeCount: integer('like_count').notNull().default(1),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    sourceUq: unique('shared_source_scenario_uq').on(t.sourceScenarioId),
+    dirIdx: index('shared_direction_idx').on(t.direction),
+  }),
+)
