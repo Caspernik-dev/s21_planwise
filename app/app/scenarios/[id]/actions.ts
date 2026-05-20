@@ -2,12 +2,14 @@
 
 import { auth } from '@/auth'
 import { db } from '@/db'
-import { generations, scenarioVersions, scenarios } from '@/db/schema'
+import { generations, likes, scenarioVersions, scenarios, sharedScenarios } from '@/db/schema'
+import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
+import { resolveShareTarget } from '@/lib/community/share-target'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import type { RagChunkForPrompt } from '@/lib/scenario/prompt'
 import { regenerateActivity } from '@/lib/scenario/regenerate'
 import { type ScenarioContent, scenarioContentSchema } from '@/lib/scenario/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -114,4 +116,98 @@ export async function regenerateActivityAction(
     console.error('regenerateActivityAction failed:', e)
     return { ok: false, error: 'Не удалось перегенерировать активность' }
   }
+}
+
+export type LikeResult =
+  | { ok: true; liked: boolean; shared: boolean }
+  | { ok: false; error: string; piiBlocked?: boolean }
+
+export async function likeScenarioAction(
+  scenarioId: string,
+  optInShare: boolean,
+): Promise<LikeResult> {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+
+  const owned = await loadOwned(scenarioId, userId)
+  if (!owned) return { ok: false, error: 'Сценарий не найден' }
+
+  const [existing] = await db
+    .select({ id: likes.id, optInShare: likes.optInShare })
+    .from(likes)
+    .where(and(eq(likes.userId, userId), eq(likes.scenarioId, scenarioId)))
+    .limit(1)
+
+  // PII-gate ДО любых записей в shared
+  let cleanResult: Extract<StrictPiiResult, { clean: true }> | null = null
+  if (optInShare) {
+    const check = strictPiiCheck(owned.content)
+    if (!check.clean) {
+      const kinds = Array.from(new Set(check.remaining.map((m) => m.type))).join(', ')
+      return {
+        ok: false,
+        piiBlocked: true,
+        error: `Найдены персональные данные (${kinds}). Уберите их вручную в тексте перед публикацией.`,
+      }
+    }
+    cleanResult = check
+  }
+
+  // upsert лайка
+  if (existing) {
+    await db
+      .update(likes)
+      .set({ optInShare: optInShare || existing.optInShare })
+      .where(eq(likes.id, existing.id))
+  } else {
+    await db.insert(likes).values({ userId, scenarioId, optInShare })
+  }
+
+  let shared = false
+  if (optInShare && cleanResult) {
+    const target = resolveShareTarget(
+      { sourceSharedId: owned.sourceSharedId },
+      { alreadyShared: existing?.optInShare ?? false },
+    )
+    if (target.action === 'increment') {
+      await db
+        .update(sharedScenarios)
+        .set({ likeCount: sql`${sharedScenarios.likeCount} + 1` })
+        .where(eq(sharedScenarios.id, target.sharedId))
+      shared = true
+    } else if (target.action === 'create') {
+      let vec: number[] | null = null
+      try {
+        const { embed } = await import('@/lib/gigachat/embeddings')
+        const text = `${owned.direction} ${owned.topic} ${cleanResult.anonymized.title}`
+        const [v] = await embed([text])
+        vec = v ?? null
+      } catch (e) {
+        console.error('shared embedding failed (non-fatal):', e)
+      }
+      const [row] = await db
+        .insert(sharedScenarios)
+        .values({
+          sourceScenarioId: scenarioId,
+          anonymizedContent: cleanResult.anonymized,
+          direction: owned.direction,
+          grade: owned.grade,
+          durationMin: owned.durationMin,
+          format: owned.format,
+          topic: owned.topic,
+          likeCount: 1,
+        })
+        .returning({ id: sharedScenarios.id })
+      if (vec && row) {
+        await db.execute(
+          sql`UPDATE shared_scenarios SET embedding = ${`[${vec.join(',')}]`}::vector WHERE id = ${row.id}`,
+        )
+      }
+      shared = true
+    }
+  }
+
+  revalidatePath(`/app/scenarios/${scenarioId}`)
+  return { ok: true, liked: true, shared }
 }
