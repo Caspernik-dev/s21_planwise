@@ -4,7 +4,7 @@ services:
     container_name: kc-postgres
     environment:
       POSTGRES_USER: kc
-      POSTGRES_PASSWORD: kc_dev_pwd
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: kc
     ports:
       - '127.0.0.1:5433:5432'
