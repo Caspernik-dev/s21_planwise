@@ -109,6 +109,7 @@ export async function regenerateActivityAction(
     console.error('RAG retrieval failed for regenerate (non-fatal):', e)
   }
 
+  const started = Date.now()
   try {
     const activity = await regenerateActivity(
       {
@@ -126,13 +127,19 @@ export async function regenerateActivityAction(
     )
     await db
       .insert(generations)
-      .values({ userId, scenarioId, latencyMs: null, status: 'ok' })
+      .values({ userId, scenarioId, latencyMs: Date.now() - started, status: 'ok', kind: 'regen' })
       .catch(() => {})
     return { ok: true, activity }
   } catch (e) {
     await db
       .insert(generations)
-      .values({ userId, scenarioId, latencyMs: null, status: 'error' })
+      .values({
+        userId,
+        scenarioId,
+        latencyMs: Date.now() - started,
+        status: 'error',
+        kind: 'regen',
+      })
       .catch(() => {})
     console.error('regenerateActivityAction failed:', e)
     return { ok: false, error: 'Не удалось перегенерировать активность' }

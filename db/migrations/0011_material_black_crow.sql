@@ -1,0 +1,1 @@
+ALTER TABLE "generations" ADD COLUMN "kind" text DEFAULT 'full' NOT NULL;

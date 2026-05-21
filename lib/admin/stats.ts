@@ -9,7 +9,8 @@ export type GenerationStats = {
   total: number
   ok: number
   error: number
-  avgLatencyMs: number | null
+  avgLatencyFullMs: number | null
+  avgLatencyRegenMs: number | null
   byDay: Array<{ day: string; count: number }>
 }
 export async function generationStats(db: Db = realDb): Promise<GenerationStats> {
@@ -18,7 +19,8 @@ export async function generationStats(db: Db = realDb): Promise<GenerationStats>
       SELECT count(*) AS total,
         count(*) FILTER (WHERE status='ok') AS ok,
         count(*) FILTER (WHERE status='error') AS error,
-        round(avg(latency_ms)) AS avg_latency
+        round(avg(latency_ms) FILTER (WHERE kind='full')) AS avg_latency_full,
+        round(avg(latency_ms) FILTER (WHERE kind='regen')) AS avg_latency_regen
       FROM generations`),
   )
   const day = rows(
@@ -32,7 +34,8 @@ export async function generationStats(db: Db = realDb): Promise<GenerationStats>
     total: Number(agg?.total ?? 0),
     ok: Number(agg?.ok ?? 0),
     error: Number(agg?.error ?? 0),
-    avgLatencyMs: agg?.avg_latency == null ? null : Number(agg.avg_latency),
+    avgLatencyFullMs: agg?.avg_latency_full == null ? null : Number(agg.avg_latency_full),
+    avgLatencyRegenMs: agg?.avg_latency_regen == null ? null : Number(agg.avg_latency_regen),
     byDay: day.map((r) => ({ day: String(r.day), count: Number(r.count) })),
   }
 }

@@ -32,7 +32,7 @@ export default async function AdminPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">Статистика</h1>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <KpiCard label="Генераций всего" value={gen.total} />
         <KpiCard
           label="Успешных"
@@ -40,9 +40,18 @@ export default async function AdminPage() {
           hint={`${gen.error} ошибок`}
         />
         <KpiCard
-          label="Средняя задержка"
-          value={gen.avgLatencyMs == null ? '—' : `${gen.avgLatencyMs} мс`}
-          hint="часть стрим-генераций без замера"
+          label="Среднее время генерации"
+          value={
+            gen.avgLatencyFullMs == null ? '—' : `${(gen.avgLatencyFullMs / 1000).toFixed(1)} с`
+          }
+          hint="полная генерация сценария"
+        />
+        <KpiCard
+          label="Среднее время 🎲-регенерации"
+          value={
+            gen.avgLatencyRegenMs == null ? '—' : `${(gen.avgLatencyRegenMs / 1000).toFixed(1)} с`
+          }
+          hint="замена одной активности"
         />
         <KpiCard
           label="Пользователей"

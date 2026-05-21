@@ -141,6 +141,7 @@ export const generations = pgTable('generations', {
   completionTokens: integer('completion_tokens'),
   latencyMs: integer('latency_ms'),
   status: text('status').notNull(), // 'ok' | 'error'
+  kind: text('kind').notNull().default('full'), // 'full' | 'regen'
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
