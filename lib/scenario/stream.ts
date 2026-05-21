@@ -23,6 +23,7 @@ import {
   skeletonSchema,
   stageActivitiesSchema,
 } from './schema'
+import { chunksForStage } from './stage-chunks'
 
 export type StreamEvent =
   | { type: 'phase'; phase: 'skeleton' | 'details' | 'validating' | 'saving' }
@@ -162,7 +163,12 @@ export async function* streamScenario(
     const builtStages: ScenarioContent['stages'] = []
     for (let i = 0; i < skeleton.stages.length; i++) {
       const st = skeleton.stages[i]
-      const msgs = buildStageDetailsMessages(input, skeleton, st, ragChunks)
+      const msgs = buildStageDetailsMessages(
+        input,
+        skeleton,
+        st,
+        chunksForStage(ragChunks, st.kind),
+      )
       const res = await generateValidated(chat, msgs, parseStageActivities, {
         attempts: 3,
         temperature: 0.5,
