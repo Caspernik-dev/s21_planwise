@@ -21,6 +21,7 @@
     "ingest:razgovor": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-razgovor.ts",
     "calibrate": "NODE_OPTIONS=--use-system-ca tsx scripts/calibrate-threshold.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:shared": "NODE_OPTIONS=--use-system-ca tsx scripts/seed-shared.ts",
     "set:admin": "tsx scripts/set-admin.ts"
   },
   "dependencies": {
