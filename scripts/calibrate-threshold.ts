@@ -2,8 +2,6 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 config()
 
-import { db } from '@/db'
-import { embed } from '@/lib/gigachat/embeddings'
 import { sql } from 'drizzle-orm'
 
 // Репрезентативные запросы вида «направление класс тема» по всем направлениям и ступеням.
@@ -35,6 +33,11 @@ const QUERIES = [
 ]
 
 async function main() {
+  // Ленивый импорт ПОСЛЕ config(): @/db конструирует postgres-клиент на этапе
+  // загрузки модуля, а статические ESM-импорты хойстятся выше config().
+  const { db } = await import('@/db')
+  const { embed } = await import('@/lib/gigachat/embeddings')
+
   const sims: number[] = []
   for (const q of QUERIES) {
     const [vec] = await embed([q])
