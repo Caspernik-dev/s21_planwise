@@ -2,8 +2,11 @@ node_modules
 .next
 out
 dist
-.env*.local
+.env
+.env.*
+!.env.example
 *.log
+*.tsbuildinfo
 .DS_Store
 coverage
 .vitest
