@@ -41,6 +41,16 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   blocks.push({ type: 'heading', level: 2, text: 'Цель' })
   blocks.push({ type: 'bullets', items: content.goals })
 
+  if (content.values && content.values.length > 0) {
+    blocks.push({ type: 'heading', level: 2, text: 'Формируемые ценности' })
+    blocks.push({ type: 'bullets', items: content.values })
+  }
+
+  if (content.coreMeanings && content.coreMeanings.length > 0) {
+    blocks.push({ type: 'heading', level: 2, text: 'Основные смыслы' })
+    blocks.push({ type: 'bullets', items: content.coreMeanings })
+  }
+
   let stageNum = 0
   for (const stage of content.stages) {
     let heading: string

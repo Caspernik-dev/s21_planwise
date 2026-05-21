@@ -210,6 +210,56 @@ export function ScenarioEditor({
         </CardContent>
       </Card>
 
+      {content.values && content.values.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Формируемые ценности</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {content.values.map((v, i) => (
+              <Input
+                // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+                key={`val-${i}`}
+                value={v}
+                aria-label={`Ценность ${i + 1}`}
+                onChange={(e) =>
+                  update((c) => {
+                    const values = (c.values ?? []).slice()
+                    values[i] = e.target.value
+                    return { ...c, values }
+                  })
+                }
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {content.coreMeanings && content.coreMeanings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Основные смыслы</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {content.coreMeanings.map((m, i) => (
+              <Textarea
+                // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+                key={`cm-${i}`}
+                value={m}
+                aria-label={`Основной смысл ${i + 1}`}
+                onChange={(e) =>
+                  update((c) => {
+                    const coreMeanings = (c.coreMeanings ?? []).slice()
+                    coreMeanings[i] = e.target.value
+                    return { ...c, coreMeanings }
+                  })
+                }
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {content.materials.length > 0 && (
         <Card>
           <CardHeader>

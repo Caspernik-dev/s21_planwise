@@ -83,6 +83,29 @@ describe('buildScenarioDocument', () => {
     expect(blocks.some((b) => b.type === 'heading' && b.text === 'Материалы')).toBe(false)
   })
 
+  it('выводит ценности и основные смыслы, когда они есть', () => {
+    const blocks = buildScenarioDocument(
+      { ...content, values: ['Дружба'], coreMeanings: ['Друзья поддерживают друг друга'] },
+      meta,
+    )
+    const vIdx = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Формируемые ценности')
+    expect(vIdx).toBeGreaterThan(-1)
+    expect(blocks[vIdx + 1]).toEqual({ type: 'bullets', items: ['Дружба'] })
+    const mIdx = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Основные смыслы')
+    expect(blocks[mIdx + 1]).toEqual({
+      type: 'bullets',
+      items: ['Друзья поддерживают друг друга'],
+    })
+  })
+
+  it('пропускает ценности/смыслы, когда их нет', () => {
+    const blocks = buildScenarioDocument(content, meta)
+    expect(blocks.some((b) => b.type === 'heading' && b.text === 'Формируемые ценности')).toBe(
+      false,
+    )
+    expect(blocks.some((b) => b.type === 'heading' && b.text === 'Основные смыслы')).toBe(false)
+  })
+
   it('выводит адаптации двумя абзацами', () => {
     const blocks = buildScenarioDocument(content, meta)
     expect(blocks).toContainEqual({ type: 'paragraph', text: 'Проще: Меньше вопросов' })
