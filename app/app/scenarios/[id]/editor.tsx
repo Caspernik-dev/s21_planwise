@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { moveActivity, moveStage } from '@/lib/scenario/edit-ops'
+import { formatGrade } from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
@@ -123,7 +124,7 @@ export function ScenarioEditor({
             aria-label="Название сценария"
           />
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            {[meta.direction, `${meta.grade} класс`, `${meta.durationMin} мин`, meta.format].map(
+            {[meta.direction, formatGrade(meta.grade), `${meta.durationMin} мин`, meta.format].map(
               (b) => (
                 <span
                   key={b}

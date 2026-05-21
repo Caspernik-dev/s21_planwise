@@ -1,5 +1,6 @@
 import { chatCompletion } from '@/lib/gigachat/client'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
+import { formatGradeForPrompt } from './options'
 import type { ChatMessage, RagChunkForPrompt } from './prompt'
 import { type ScenarioStage, activitySchema } from './schema'
 
@@ -46,7 +47,7 @@ export function buildActivityMessages(
   const user = [
     'Контекст занятия:',
     `- Направление: ${args.scenario.direction}`,
-    `- Класс: ${args.scenario.grade}`,
+    `- Аудитория: ${formatGradeForPrompt(args.scenario.grade)}`,
     `- Тема: ${args.scenario.topic}`,
     `- Формат: ${args.scenario.format}`,
     `- Название сценария: ${args.scenario.title}`,

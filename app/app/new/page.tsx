@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CALENDAR_EVENTS } from '@/lib/calendar-events'
-import { DIRECTIONS, DURATIONS, FORMATS, GRADES } from '@/lib/scenario/options'
+import { DIRECTIONS, DURATIONS, FORMATS, GRADES, formatGrade } from '@/lib/scenario/options'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useRef, useState, useTransition } from 'react'
 import { type PrematchCard, prematchAction } from './actions'
@@ -98,11 +98,11 @@ function NewScenarioForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="grade">Класс</Label>
+                <Label htmlFor="grade">Класс / аудитория</Label>
                 <select id="grade" name="grade" required className={selectClass} defaultValue="5">
                   {GRADES.map((g) => (
                     <option key={g} value={g}>
-                      {g} класс
+                      {formatGrade(g)}
                     </option>
                   ))}
                 </select>

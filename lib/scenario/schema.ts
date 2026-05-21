@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DIRECTIONS, FORMATS } from './options'
+import { DIRECTIONS, FORMATS, SPO_GRADE } from './options'
 
 export const activitySchema = z.object({
   type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
@@ -30,7 +30,7 @@ export type ScenarioStage = z.infer<typeof stageSchema>
 
 export const generationInputSchema = z.object({
   direction: z.enum(DIRECTIONS),
-  grade: z.coerce.number().int().min(1).max(11),
+  grade: z.coerce.number().int().min(1).max(SPO_GRADE),
   topic: z.string().trim().min(1, 'Укажите тему').max(200),
   durationMin: z.coerce.number().int().min(5).max(120),
   format: z.enum(FORMATS),

@@ -82,11 +82,23 @@ describe('generationInputSchema', () => {
     }
   })
 
-  it('rejects out-of-range grade', () => {
+  it('accepts СПО sentinel grade (12)', () => {
     expect(
       generationInputSchema.safeParse({
         direction: 'Патриотическое',
         grade: '12',
+        topic: 'x',
+        durationMin: '30',
+        format: 'классный час',
+      }).success,
+    ).toBe(true)
+  })
+
+  it('rejects out-of-range grade', () => {
+    expect(
+      generationInputSchema.safeParse({
+        direction: 'Патриотическое',
+        grade: '13',
         topic: 'x',
         durationMin: '30',
         format: 'классный час',

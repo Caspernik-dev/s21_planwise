@@ -13,6 +13,7 @@ import {
   generationStats,
   userStats,
 } from '@/lib/admin/stats'
+import { formatGrade } from '@/lib/scenario/options'
 import { redirect } from 'next/navigation'
 
 export default async function AdminPage() {
@@ -66,7 +67,10 @@ export default async function AdminPage() {
         </SectionCard>
         <SectionCard title="По классу">
           <BarList
-            items={content.byGrade.map((t) => ({ label: `${t.key} класс`, value: t.count }))}
+            items={content.byGrade.map((t) => ({
+              label: formatGrade(Number(t.key)),
+              value: t.count,
+            }))}
           />
         </SectionCard>
         <SectionCard title="По формату">

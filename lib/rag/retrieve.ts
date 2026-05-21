@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { embed as gigaEmbed } from '@/lib/gigachat/embeddings'
+import { SPO_GRADE } from '@/lib/scenario/options'
 import { sql } from 'drizzle-orm'
 import { type Candidate, rankAndDiversify } from './score'
 
@@ -83,7 +84,7 @@ export async function retrieveChunks(
 
   const base: Omit<QueryArgs, 'direction'> = {
     qvec,
-    grade: query.grade,
+    grade: query.grade === SPO_GRADE ? 11 : query.grade,
     topic: query.topic,
     lang,
     limit: d.candidates,

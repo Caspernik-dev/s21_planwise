@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { embed as gigaEmbed } from '@/lib/gigachat/embeddings'
+import { SPO_GRADE } from '@/lib/scenario/options'
 import { sql } from 'drizzle-orm'
 
 export type PrematchQuery = {
@@ -46,6 +47,10 @@ async function queryRowsLive(
   gradeSpan: number,
 ): Promise<SharedMatch[]> {
   const vec = `[${qvec.join(',')}]`
+  const gradeClause =
+    q.grade === SPO_GRADE
+      ? sql`grade = ${SPO_GRADE}`
+      : sql`grade BETWEEN ${q.grade - gradeSpan} AND ${q.grade + gradeSpan}`
   const rows = await db.execute(sql`
     SELECT id, direction, grade, format, topic, like_count AS "likeCount",
       anonymized_content AS "anonymizedContent",
@@ -54,7 +59,7 @@ async function queryRowsLive(
     FROM shared_scenarios
     WHERE direction = ${q.direction}
       AND format = ${q.format}
-      AND grade BETWEEN ${q.grade - gradeSpan} AND ${q.grade + gradeSpan}
+      AND ${gradeClause}
       AND embedding IS NOT NULL
     ORDER BY embedding <=> ${vec}::vector ASC
     LIMIT 20

@@ -1,6 +1,7 @@
+import { formatGradeForPrompt } from './options'
 import type { GenerationInput, ScenarioSkeleton } from './schema'
 
-export const PROMPT_VERSION = 'v3-fulltext-2026-05-21'
+export const PROMPT_VERSION = 'v4-spo-2026-05-21'
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -72,7 +73,7 @@ export function buildMessages(
   const user = [
     'Сгенерируй сценарий внеурочного занятия со следующими параметрами:',
     `- Направление воспитания: ${input.direction}`,
-    `- Класс: ${input.grade}`,
+    `- Аудитория: ${formatGradeForPrompt(input.grade)}`,
     `- Тема: ${input.topic}`,
     `- Длительность: ${input.durationMin} минут`,
     `- Формат: ${input.format}`,
@@ -130,7 +131,7 @@ export function buildSkeletonMessages(
   const user = [
     'Построй каркас сценария внеурочного занятия:',
     `- Направление воспитания: ${input.direction}`,
-    `- Класс: ${input.grade}`,
+    `- Аудитория: ${formatGradeForPrompt(input.grade)}`,
     `- Тема: ${input.topic}`,
     `- Длительность: ${input.durationMin} минут`,
     `- Формат: ${input.format}`,
@@ -179,7 +180,7 @@ export function buildDetailsMessages(
     'Заполни деталями этот каркас сценария:',
     JSON.stringify(skeleton),
     '',
-    `Параметры: направление ${input.direction}, ${input.grade} класс, тема «${input.topic}», ${input.durationMin} минут, формат ${input.format}.`,
+    `Параметры: направление ${input.direction}, ${formatGradeForPrompt(input.grade)}, тема «${input.topic}», ${input.durationMin} минут, формат ${input.format}.`,
     ...methodology,
   ].join('\n')
 

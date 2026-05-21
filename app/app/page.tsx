@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/db'
 import { planTopics, scenarios, sharedScenarios, workPlans } from '@/db/schema'
+import { formatGrade } from '@/lib/scenario/options'
 import { and, count, desc, eq, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -107,7 +108,7 @@ export default async function DashboardPage() {
                   <CardTitle className="text-lg">{s.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2 text-xs">
-                  {[s.direction, `${s.grade} класс`, s.format].map((b) => (
+                  {[s.direction, formatGrade(s.grade), s.format].map((b) => (
                     <span
                       key={b}
                       className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-600"

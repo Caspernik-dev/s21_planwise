@@ -1,3 +1,4 @@
+import { formatGrade } from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export type ExportMeta = {
@@ -31,7 +32,7 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
     rows: [
       { label: 'Тема', value: meta.topic },
       { label: 'Направление', value: meta.direction },
-      { label: 'Класс', value: String(meta.grade) },
+      { label: 'Аудитория', value: formatGrade(meta.grade) },
       { label: 'Длительность', value: `${meta.durationMin} мин` },
       { label: 'Формат', value: meta.format },
     ],

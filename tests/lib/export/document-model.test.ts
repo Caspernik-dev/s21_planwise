@@ -47,7 +47,7 @@ describe('buildScenarioDocument', () => {
     expect(metaBlock.rows).toEqual([
       { label: 'Тема', value: 'О дружбе' },
       { label: 'Направление', value: 'Патриотическое' },
-      { label: 'Класс', value: '3' },
+      { label: 'Аудитория', value: '3 класс' },
       { label: 'Длительность', value: '40 мин' },
       { label: 'Формат', value: 'Беседа' },
     ])
