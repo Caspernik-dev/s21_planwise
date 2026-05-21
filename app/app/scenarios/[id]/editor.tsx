@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { moveActivity, moveStage } from '@/lib/scenario/edit-ops'
+import {
+  addActivity,
+  addStage,
+  moveActivity,
+  moveStage,
+  removeActivity,
+  removeStage,
+} from '@/lib/scenario/edit-ops'
 import { formatGrade } from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import Link from 'next/link'
@@ -273,6 +280,16 @@ export function ScenarioEditor({
                   >
                     ↓
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={content.stages.length <= 1}
+                    onClick={() => update((c) => removeStage(c, si))}
+                    aria-label="Удалить этап"
+                  >
+                    Удалить
+                  </Button>
                 </span>
               </CardTitle>
             </CardHeader>
@@ -317,6 +334,16 @@ export function ScenarioEditor({
                         >
                           {busy ? '…' : '🎲'}
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={stage.activities.length <= 1}
+                          onClick={() => update((c) => removeActivity(c, si, ai))}
+                          aria-label="Удалить активность"
+                        >
+                          ✕
+                        </Button>
                       </span>
                     </div>
                     <Textarea
@@ -346,9 +373,20 @@ export function ScenarioEditor({
                   </div>
                 )
               })}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => update((c) => addActivity(c, si))}
+              >
+                + Активность
+              </Button>
             </CardContent>
           </Card>
         ))}
+        <Button type="button" variant="outline" onClick={() => update((c) => addStage(c))}>
+          + Добавить этап
+        </Button>
       </div>
 
       <Card>
