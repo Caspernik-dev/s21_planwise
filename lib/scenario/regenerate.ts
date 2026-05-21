@@ -1,5 +1,6 @@
 import { chatCompletion } from '@/lib/gigachat/client'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
+import { coerceActivityType } from './coerce'
 import { formatGradeForPrompt } from './options'
 import type { ChatMessage, RagChunkForPrompt } from './prompt'
 import { type ScenarioStage, activitySchema } from './schema'
@@ -80,7 +81,11 @@ function extractJson(raw: string): unknown {
 
 function tryParse(raw: string): Activity | null {
   try {
-    const parsed = activitySchema.safeParse(extractJson(raw))
+    const obj = extractJson(raw)
+    if (obj && typeof obj === 'object') {
+      ;(obj as { type?: unknown }).type = coerceActivityType((obj as { type?: unknown }).type)
+    }
+    const parsed = activitySchema.safeParse(obj)
     return parsed.success ? parsed.data : null
   } catch {
     return null

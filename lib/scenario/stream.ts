@@ -3,6 +3,7 @@ import { chatCompletion, chatCompletionStream } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
+import { coerceContentTypes } from './coerce'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
 import {
@@ -58,7 +59,7 @@ async function collectStream(gen: AsyncGenerator<string, void, unknown>): Promis
 function parseContent(raw: string): ScenarioContent | null {
   const obj = parsePartialJson(raw)
   if (obj === null) return null
-  const parsed = scenarioContentSchema.safeParse(obj)
+  const parsed = scenarioContentSchema.safeParse(coerceContentTypes(obj))
   return parsed.success ? parsed.data : null
 }
 

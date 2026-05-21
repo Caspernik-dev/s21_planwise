@@ -3,6 +3,7 @@ import { chatCompletion } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
+import { coerceContentTypes } from './coerce'
 import { normalizeChronometry } from './normalize'
 import { PROMPT_VERSION, buildMessages } from './prompt'
 import type { RagChunkForPrompt, SharedExampleForPrompt } from './prompt'
@@ -41,7 +42,7 @@ function extractJson(raw: string): unknown {
 
 function tryParse(raw: string): ScenarioContent | null {
   try {
-    const obj = extractJson(raw)
+    const obj = coerceContentTypes(extractJson(raw))
     const parsed = scenarioContentSchema.safeParse(obj)
     return parsed.success ? parsed.data : null
   } catch {
