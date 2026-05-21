@@ -17,6 +17,8 @@ export const stageSchema = z.object({
 export const scenarioContentSchema = z.object({
   title: z.string().min(1),
   goals: z.array(z.string().min(1)).min(1),
+  values: z.array(z.string()).optional(), // формируемые ценности (РоВ)
+  coreMeanings: z.array(z.string()).optional(), // основные смыслы (РоВ)
   materials: z.array(z.string()),
   stages: z.array(stageSchema).min(1),
   adaptations: z.object({
@@ -47,7 +49,16 @@ export const skeletonStageSchema = z.object({
 export const skeletonSchema = z.object({
   title: z.string().min(1),
   goals: z.array(z.string().min(1)).min(1),
+  values: z.array(z.string()).optional(),
+  coreMeanings: z.array(z.string()).optional(),
+  materials: z.array(z.string()).optional(),
+  adaptations: z.object({ simpler: z.string().min(1), harder: z.string().min(1) }).optional(),
   stages: z.array(skeletonStageSchema).min(1),
+})
+
+// Схема ответа per-stage генерации: только активности одного этапа.
+export const stageActivitiesSchema = z.object({
+  activities: z.array(activitySchema).min(1),
 })
 
 export type ScenarioSkeleton = z.infer<typeof skeletonSchema>

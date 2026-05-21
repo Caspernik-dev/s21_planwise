@@ -1,4 +1,10 @@
-import { PROMPT_VERSION, buildMessages } from '@/lib/scenario/prompt'
+import {
+  PROMPT_VERSION,
+  buildMessages,
+  buildSkeletonMessages,
+  buildStageDetailsMessages,
+} from '@/lib/scenario/prompt'
+import type { ScenarioSkeleton } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
 const input = {
@@ -69,5 +75,41 @@ describe('buildMessages', () => {
     })
     const user = msgs.find((m) => m.role === 'user')?.content ?? ''
     expect(user).not.toContain('RELEVANT_METHODOLOGY')
+  })
+})
+
+describe('buildSkeletonMessages', () => {
+  it('каркас требует ценности и основные смыслы', () => {
+    const sys = buildSkeletonMessages(input)[0].content
+    expect(sys).toContain('values')
+    expect(sys).toContain('coreMeanings')
+    expect(sys.toLowerCase()).toContain('основные смыслы')
+  })
+})
+
+describe('buildStageDetailsMessages', () => {
+  const skeleton: ScenarioSkeleton = {
+    title: 'День Победы',
+    goals: ['Уважение к памяти'],
+    coreMeanings: ['Память о подвиге объединяет поколения'],
+    materials: [],
+    stages: [{ kind: 'main', title: 'Разбор историй', duration_min: 20 }],
+  } as ScenarioSkeleton
+
+  it('просит активности одного этапа, передаёт смыслы и название этапа', () => {
+    const msgs = buildStageDetailsMessages(input, skeleton, skeleton.stages[0])
+    const sys = msgs[0].content
+    const user = msgs[1].content
+    expect(sys).toContain('activities')
+    expect(sys).toContain('ТОЛЬКО для этого этапа')
+    expect(user).toContain('Разбор историй')
+    expect(user).toContain('Память о подвиге объединяет поколения')
+  })
+
+  it('включает методички, когда переданы чанки', () => {
+    const msgs = buildStageDetailsMessages(input, skeleton, skeleton.stages[0], [
+      { text: 'фрагмент', documentTitle: 'РоВ', sectionKind: 'stage' },
+    ])
+    expect(msgs[1].content).toContain('RELEVANT_METHODOLOGY')
   })
 })

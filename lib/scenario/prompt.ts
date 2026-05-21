@@ -106,11 +106,15 @@ export function buildMessages(
   ]
 }
 
-const SKELETON_SCHEMA_HINT = `Структура JSON каркаса (СТРОГО только эти ключи, без details-полей):
+const SKELETON_SCHEMA_HINT = `Структура JSON каркаса (БЕЗ активностей — их распишут отдельно):
 {
   "title": string,
-  "goals": string[],            // 1-4 воспитательных результата
-  "stages": [                   // минимум 3 этапа: вовлечение, основная часть, рефлексия
+  "goals": string[],            // 2-4 воспитательных результата
+  "values": string[],           // формируемые ценности (1-3): напр. «дружба», «созидательный труд», «историческая память»
+  "coreMeanings": string[],     // основные смыслы (3-4): ценностные тезисы по теме, КАЖДЫЙ развёрнутой фразой (а не одним словом)
+  "materials": string[],        // что нужно для занятия
+  "adaptations": { "simpler": string, "harder": string },
+  "stages": [                   // минимум 3 этапа: вовлечение (мотивационно-целевой), основная часть, рефлексия (заключительный)
     { "kind": "engage" | "main" | "reflection", "title": string, "duration_min": number }
   ]
 }`
@@ -121,8 +125,11 @@ export function buildSkeletonMessages(
   sharedExamples: SharedExampleForPrompt[] = [],
 ): ChatMessage[] {
   const system = [
-    'Ты — методист внеурочной деятельности в школе РФ.',
-    'Сначала ты строишь только КАРКАС сценария: название, цели и список этапов с длительностью.',
+    'Ты — опытный методист внеурочной деятельности в школе РФ, эталон — «Разговоры о важном».',
+    'Ты строишь КАРКАС сценария: название, цели, формируемые ценности, основные смыслы',
+    '(ценностные тезисы по теме), материалы, адаптации и список этапов с длительностью.',
+    'ОСНОВНЫЕ СМЫСЛЫ — это содержательное ядро: 3-4 развёрнутых тезиса, ЧТО важное должны',
+    'осознать дети по этой теме (не общие слова). Активности на этом шаге НЕ пиши.',
     'Отвечаешь строго JSON, без markdown и пояснений. Без реальных имён детей.',
     '',
     SKELETON_SCHEMA_HINT,
@@ -205,6 +212,81 @@ export function buildDetailsMessages(
     JSON.stringify(skeleton),
     '',
     `Параметры: направление ${input.direction}, ${formatGradeForPrompt(input.grade)}, тема «${input.topic}», ${input.durationMin} минут, формат ${input.format}.`,
+    ...methodology,
+  ].join('\n')
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ]
+}
+
+const STAGE_SCHEMA_HINT = `Верни JSON ТОЛЬКО с активностями ОДНОГО этапа:
+{
+  "activities": [
+    {
+      // type — ВЫБЕРИ СТРОГО одно из пяти: discussion, quiz, game, task, video. НЕ ПРИДУМЫВАЙ другие.
+      // презентация/слайды → video; работа в группах/практическое → task; беседа → discussion.
+      "type": "discussion" | "quiz" | "game" | "task" | "video",
+      "text": string,         // ПЛОТНЫЙ ход: несколько реплик «Учитель: …» (каждая 3-6 предложений) + «Ответы обучающихся.»
+      "questions"?: string[]  // 3-5 развёрнутых разноуровневых вопросов (вовлечение → анализ → личный/ценностный вывод)
+    }
+  ]
+}`
+
+// Промпт для генерации деталей ОДНОГО этапа (per-stage генерация — даёт РоВ-глубину).
+export function buildStageDetailsMessages(
+  input: GenerationInput,
+  skeleton: ScenarioSkeleton,
+  stage: { kind: string; title: string; duration_min: number },
+  ragChunks: RagChunkForPrompt[] = [],
+): ChatMessage[] {
+  const stageRole =
+    stage.kind === 'engage'
+      ? 'мотивационно-целевой этап (эмоциональный старт, включение в тему)'
+      : stage.kind === 'reflection'
+        ? 'заключительный этап (рефлексия, личный вывод каждого)'
+        : 'основная смысловая часть (раскрытие сути темы, интерактив)'
+
+  const system = [
+    'Ты — опытный методист внеурочной деятельности в школе РФ, эталон — «Разговоры о важном».',
+    'Тебе дан каркас занятия и ОДИН его этап. РАСПИШИ ПОДРОБНО активности ТОЛЬКО для этого этапа.',
+    `Этот этап — ${stageRole}.`,
+    'ГЛУБИНА: в поле text ДАВАЙ ПЛОТНЫЙ готовый ход — несколько реплик «Учитель: …» подряд',
+    '(каждая 3-6 развёрнутых предложений) с конкретным содержанием по теме (факты, примеры,',
+    'ценностные смыслы) + пометки «Ответы обучающихся.» там, где отвечают дети.',
+    'НЕ ПИШИ обобщения «учитель рассказывает / показывает видео» — ВМЕСТО этого ДАВАЙ дословную речь.',
+    'Для основной части — 2-3 активности; для старта и рефлексии — обычно 1.',
+    'ВОПРОСЫ — развёрнутые, разноуровневые, по 3-5 на обсуждение.',
+    'Отвечаешь строго JSON, без markdown. Без реальных имён детей.',
+    '',
+    STAGE_SCHEMA_HINT,
+    '',
+    'Верни ТОЛЬКО валидный JSON-объект { "activities": [...] }.',
+  ].join('\n')
+
+  const methodology =
+    ragChunks.length > 0
+      ? [
+          '',
+          '[RELEVANT_METHODOLOGY] (опирайся на факты и стиль, но не копируй дословно):',
+          ...ragChunks.map((c, i) => `(${i + 1}) [${c.documentTitle}] ${c.text}`),
+        ]
+      : []
+
+  const meanings =
+    skeleton.coreMeanings && skeleton.coreMeanings.length > 0
+      ? [
+          '',
+          'Основные смыслы занятия (раскрывай их в этом этапе):',
+          ...skeleton.coreMeanings.map((m) => `• ${m}`),
+        ]
+      : []
+
+  const user = [
+    `Занятие: «${skeleton.title}». Тема «${input.topic}», направление ${input.direction}, ${formatGradeForPrompt(input.grade)}, формат ${input.format}.`,
+    `Распиши этап: «${stage.title}» (${stage.kind}, ${stage.duration_min} мин).`,
+    ...meanings,
     ...methodology,
   ].join('\n')
 
