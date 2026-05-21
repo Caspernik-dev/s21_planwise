@@ -3,7 +3,7 @@ import { chatCompletion, chatCompletionStream } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
-import { coerceContentTypes } from './coerce'
+import { coerceActivityType } from './coerce'
 import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
@@ -11,8 +11,8 @@ import {
   PROMPT_VERSION,
   type RagChunkForPrompt,
   type SharedExampleForPrompt,
-  buildDetailsMessages,
   buildSkeletonMessages,
+  buildStageDetailsMessages,
 } from './prompt'
 import {
   type GenerationInput,
@@ -21,6 +21,7 @@ import {
   type ScenarioSkeleton,
   scenarioContentSchema,
   skeletonSchema,
+  stageActivitiesSchema,
 } from './schema'
 
 export type StreamEvent =
@@ -57,18 +58,28 @@ async function collectStream(gen: AsyncGenerator<string, void, unknown>): Promis
   return buf
 }
 
-function parseContent(raw: string): ScenarioContent | null {
-  const obj = parsePartialJson(raw)
-  if (obj === null) return null
-  const parsed = scenarioContentSchema.safeParse(coerceContentTypes(obj))
-  return parsed.success ? parsed.data : null
-}
+type Activity = ScenarioContent['stages'][number]['activities'][number]
 
 function parseSkeleton(raw: string): ScenarioSkeleton | null {
   const obj = parsePartialJson(raw)
   if (obj === null) return null
   const parsed = skeletonSchema.safeParse(obj)
   return parsed.success ? parsed.data : null
+}
+
+function parseStageActivities(raw: string): Activity[] | null {
+  const obj = parsePartialJson(raw)
+  if (!obj || typeof obj !== 'object') return null
+  const acts = (obj as { activities?: unknown }).activities
+  if (Array.isArray(acts)) {
+    for (const a of acts) {
+      if (a && typeof a === 'object') {
+        ;(a as { type?: unknown }).type = coerceActivityType((a as { type?: unknown }).type)
+      }
+    }
+  }
+  const parsed = stageActivitiesSchema.safeParse(obj)
+  return parsed.success ? parsed.data.activities : null
 }
 
 export async function* streamScenario(
@@ -145,28 +156,46 @@ export async function* streamScenario(
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
 
-    // STAGE 2: details
+    // STAGE 2: детали ПО-ЭТАПНО — отдельный фокусный вызов на каждый этап (РоВ-глубина).
     yield { type: 'phase', phase: 'details' }
-    const dtMessages = buildDetailsMessages(input, skeleton, ragChunks)
-    const dtRaw = await collectStream(chatStream(dtMessages, { temperature: 0.4 }))
-
-    yield { type: 'phase', phase: 'validating' }
-    let content = parseContent(dtRaw)
     let repaired = false
-    if (!content) {
-      repaired = true
-      const rep = await generateValidated(chat, dtMessages, parseContent, {
+    const builtStages: ScenarioContent['stages'] = []
+    for (let i = 0; i < skeleton.stages.length; i++) {
+      const st = skeleton.stages[i]
+      const msgs = buildStageDetailsMessages(input, skeleton, st, ragChunks)
+      const res = await generateValidated(chat, msgs, parseStageActivities, {
         attempts: 3,
-        temperature: 0.3,
-        corrective: 'Ответ невалиден. Верни ТОЛЬКО валидный JSON по полной схеме, без markdown.',
+        temperature: 0.5,
+        corrective:
+          'Ответ невалиден. Верни ТОЛЬКО валидный JSON { "activities": [...] } этого этапа, без markdown.',
       })
-      content = rep?.value ?? null
-    }
-    if (!content) throw new Error('GigaChat вернул невалидный сценарий после ретраев')
-
-    for (let i = 0; i < content.stages.length; i++) {
+      if (!res) throw new Error(`Не удалось сгенерировать этап «${st.title}»`)
+      if (res.attempts > 1) repaired = true
+      builtStages.push({
+        kind: st.kind,
+        title: st.title,
+        duration_min: st.duration_min,
+        activities: res.value,
+      })
       yield { type: 'stage', index: i }
     }
+
+    yield { type: 'phase', phase: 'validating' }
+    const assembled = {
+      title: skeleton.title,
+      goals: skeleton.goals,
+      values: skeleton.values,
+      coreMeanings: skeleton.coreMeanings,
+      materials: skeleton.materials ?? [],
+      adaptations: skeleton.adaptations ?? {
+        simpler: 'Для младших классов упростить формулировки и сократить объём.',
+        harder: 'Для старших классов углубить обсуждение и добавить задания.',
+      },
+      stages: builtStages,
+    }
+    const parsedFull = scenarioContentSchema.safeParse(assembled)
+    if (!parsedFull.success) throw new Error('Собранный сценарий не прошёл валидацию')
+    const content = parsedFull.data
 
     const { content: normalized, changed } = normalizeChronometry(content, input.durationMin)
 

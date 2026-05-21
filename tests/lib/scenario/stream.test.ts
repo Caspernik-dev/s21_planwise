@@ -53,12 +53,21 @@ function chunked(s: string, n = 20): string[] {
   return out
 }
 
+// Каркас идёт через chatStream; детали этапов — через chat (per-stage).
 function makeChatStream() {
-  return async function* chatStream(messages: { role: string; content: string }[]) {
-    const isDetails = messages.some((m) => m.content.includes('Заполни деталями'))
-    const payload = JSON.stringify(isDetails ? FULL : SKELETON)
-    for (const piece of chunked(payload)) yield piece
+  return async function* chatStream() {
+    for (const piece of chunked(JSON.stringify(SKELETON))) yield piece
   }
+}
+
+// chat возвращает активности одного этапа; берём их из FULL по счётчику вызовов.
+function makeStageChat() {
+  let i = 0
+  return vi.fn(async () => {
+    const stage = FULL.stages[Math.min(i, FULL.stages.length - 1)]
+    i++
+    return { content: JSON.stringify({ activities: stage.activities }), usage: null }
+  })
 }
 
 describe('streamScenario', () => {
@@ -67,6 +76,7 @@ describe('streamScenario', () => {
     const events: any[] = []
     for await (const ev of streamScenario(input, {
       chatStream: makeChatStream(),
+      chat: makeStageChat() as any,
       retrieve: async () => [],
       prematch: (async () => []) as any,
       save,
