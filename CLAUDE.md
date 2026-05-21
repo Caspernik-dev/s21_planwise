@@ -178,6 +178,16 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
   - **Ручной шаг:** назначить первого админа `pnpm set:admin <email>` на проде/деве.
   - **Побочный фикс:** тест `tests/lib/auth/base-url.test.ts` стал детерминированным через `vi.stubEnv` (раньше зависел от ambient `AUTH_URL`; `delete` заменён, т.к. Biome `noDelete`).
 
+### Пост-milestone изменения (на master, вне нумерованных планов)
+
+- **Аудитория «СПО» — ГОТОВО** (коммит `d696958`, спека `docs/superpowers/specs/2026-05-21-spo-audience-design.md`). На РоВ кроме классов 1–11 есть категория СПО. Решение: СПО — полноценная аудитория, хранится **sentinel-числом `grade=12`** в существующей `integer`-колонке (БЕЗ миграции). `lib/scenario/options.ts`: `SPO_GRADE=12`, `formatGrade` (→ «СПО»/«N класс») и `formatGradeForPrompt` (→ «обучающиеся СПО…»). zod `grade` max 11→12. Везде, где класс печатается (форма `/app/new`, редактор, дашборд, экспорт `document-model`, admin-статистика), — через `formatGrade`. Промпты через `formatGradeForPrompt`, `PROMPT_VERSION` → `v4-spo-2026-05-21`. **Pre-match:** для СПО точное `grade=12` (не диапазон ±2, чтобы не смешать с 10–11). **RAG retrieve:** для СПО эффективный `grade=11` (методичек с `grade_min/max=12` нет — тянем старшие). Гейты: tsc, 214 тестов, lint, build. Ручной шаг — живая генерация СПО против GigaChat в браузере.
+- **Security/деплой-хардеринг** (коммиты `904c337`, `7e5146a`) — после инцидента с заражением прод-VPS (Mirai-бот через интернет-доступный `next start`; root НЕ получен; вредонос в `~/quarantine`):
+  - **next `15.0.3 → 15.5.18`** (закрыт обход middleware-аутентификации), **drizzle-orm `0.36.4 → 0.45.2`** (закрыта SQL-инъекция).
+  - **Postgres bind `127.0.0.1:5433`** (в `docker-compose.yml`); пароль вынесен в gitignored `.env` как `${POSTGRES_PASSWORD}` (в репо секрета нет).
+  - `.gitignore` ужесточён: `.env`, `.env.*` (кроме `.env.example`), `*.tsbuildinfo`.
+  - Секреты ротированы: `GIGACHAT_AUTH_KEY`, `AUTH_SECRET`, пароль БД.
+- **Прод-окружение (факты, актуальные на 2026-05-21):** VPS `176.108.252.98` (2 vCPU / 4 ГБ + swap 4G в `/etc/fstab`). App запускается **`next start` на `127.0.0.1:3000` за nginx** (`/etc/nginx/sites-available/planwise` → `proxy_pass localhost:3000`), наружу только nginx на `:80`. **`output: 'standalone'` в next.config, но запускается через `next start`** (standalone-предупреждение безвредно; standalone-бандлу не хватает копии `.next/static`). Фаервол **ufw** активен (только `22`, `80`). **Автозапуск (systemd) ещё НЕ настроен** — app переживёт SSH-дисконнект, но не ребут. GitHub-remote: `git@github.com:Caspernik-dev/s21_planwise.git` (ветка `master`).
+
 ### Конвенции работы
 - **Один коммит на задачу плана.** Атомарность для отката.
 - **TDD для `lib/pii`, `lib/rag/score`, валидаторов и любой нетривиальной логики.** Тесты сначала.
