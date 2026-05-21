@@ -1,7 +1,13 @@
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export function scenarioContentToText(content: ScenarioContent): string {
-  const parts: string[] = [content.title, ...content.goals, ...content.materials]
+  const parts: string[] = [
+    content.title,
+    ...content.goals,
+    ...(content.values ?? []),
+    ...(content.coreMeanings ?? []),
+    ...content.materials,
+  ]
   for (const stage of content.stages) {
     parts.push(stage.title)
     for (const a of stage.activities) {
@@ -20,6 +26,8 @@ export function mapContentStrings(
   return {
     title: fn(content.title),
     goals: content.goals.map(fn),
+    values: content.values ? content.values.map(fn) : content.values,
+    coreMeanings: content.coreMeanings ? content.coreMeanings.map(fn) : content.coreMeanings,
     materials: content.materials.map(fn),
     stages: content.stages.map((stage) => ({
       ...stage,
