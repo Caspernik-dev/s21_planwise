@@ -64,7 +64,7 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      <Link href="/app/library">
+      <Link href="/app/library" className="block">
         <Card className="transition hover:shadow-hover">
           <CardHeader>
             <CardTitle className="text-base">Библиотека сообщества</CardTitle>

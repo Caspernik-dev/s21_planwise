@@ -38,6 +38,15 @@ describe('detectPatterns', () => {
 
   it('детектит адрес по ключевым словам', () => {
     expect(types('проживает по адресу ул. Ленина, д. 5, кв. 12')).toContain('address')
+    expect(types('проспект Мира, д. 12')).toContain('address')
+  })
+
+  it('не даёт ложных адресов внутри обычных слов', () => {
+    // «ул»/«пер» как часть слова не должны считаться адресом
+    expect(types('регулярное общение и аккумулятор знаний')).not.toContain('address')
+    expect(types('оперативный разбор и первый шаг')).not.toContain('address')
+    expect(types('формирование взаимопонимания, переход к практике')).not.toContain('address')
+    expect(types('улыбка и улей на занятии')).not.toContain('address')
   })
 
   it('возвращает корректные start/end (срез текста равен value)', () => {
