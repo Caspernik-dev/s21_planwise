@@ -7,11 +7,23 @@ export const DIRECTIONS = [
   'Трудовое',
   'Экологическое',
   'Познавательное',
+  'Семейные ценности',
+  'Профориентация',
+  'Здоровый образ жизни',
 ] as const
 
-export const FORMATS = ['классный час', 'беседа', 'квиз', 'игра', 'мастерская'] as const
+export const FORMATS = [
+  'классный час',
+  'беседа',
+  'квиз',
+  'игра',
+  'мастерская',
+  'киноклуб',
+  'дебаты',
+  'проектная сессия',
+] as const
 
-export const DURATIONS = [20, 30, 45] as const
+export const DURATIONS = [20, 30, 40, 60] as const
 
 export const SPO_GRADE = 12
 
