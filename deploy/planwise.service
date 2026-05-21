@@ -1,0 +1,30 @@
+[Unit]
+Description=Planwise (Next.js) — Классный час
+Documentation=https://github.com/Caspernik-dev/s21_planwise
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=nikit
+Group=nikit
+WorkingDirectory=/home/nikit/planwise
+
+# Next.js автозагружает .env / .env.local / .env.production из WorkingDirectory.
+# NODE_OPTIONS повторяет ручной прод-запуск: системные CA (сертификаты Минцифры)
+# + ограничение heap под 4 ГБ RAM VPS.
+Environment="NODE_OPTIONS=--use-system-ca --max-old-space-size=2048"
+# У unit нет nvm в PATH — указываем каталог node/pnpm явно.
+# ВАЖНО: при смене версии Node через nvm обновить путь здесь и в ExecStart.
+Environment=PATH=/home/nikit/.nvm/versions/node/v24.15.0/bin:/usr/local/bin:/usr/bin:/bin
+
+ExecStart=/home/nikit/.nvm/versions/node/v24.15.0/bin/pnpm exec next start -H 127.0.0.1 -p 3000
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/home/nikit/app.log
+StandardError=append:/home/nikit/app.log
+
+[Install]
+WantedBy=multi-user.target
