@@ -74,12 +74,12 @@ describe('generateScenario', () => {
     expect(chat).toHaveBeenCalledTimes(2)
   })
 
-  it('throws when repair also fails', async () => {
+  it('throws when all retries fail', async () => {
     const chat = vi.fn().mockResolvedValue({ content: 'мусор', usage: null })
     await expect(
       generateScenario(input, { chat, retrieve: async () => [], prematch: async () => [] }),
     ).rejects.toThrow(/валидн/i)
-    expect(chat).toHaveBeenCalledTimes(2)
+    expect(chat).toHaveBeenCalledTimes(3)
   })
 
   it('throws when schema validation fails even with valid JSON', async () => {
@@ -87,7 +87,7 @@ describe('generateScenario', () => {
     await expect(
       generateScenario(input, { chat, retrieve: async () => [], prematch: async () => [] }),
     ).rejects.toThrow()
-    expect(chat).toHaveBeenCalledTimes(2)
+    expect(chat).toHaveBeenCalledTimes(3)
   })
 
   it('passes retrieved chunks into the prompt and records usedChunkIds', async () => {

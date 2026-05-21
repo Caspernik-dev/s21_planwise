@@ -4,6 +4,7 @@ import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { coerceContentTypes } from './coerce'
+import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
 import {
@@ -60,6 +61,13 @@ function parseContent(raw: string): ScenarioContent | null {
   const obj = parsePartialJson(raw)
   if (obj === null) return null
   const parsed = scenarioContentSchema.safeParse(coerceContentTypes(obj))
+  return parsed.success ? parsed.data : null
+}
+
+function parseSkeleton(raw: string): ScenarioSkeleton | null {
+  const obj = parsePartialJson(raw)
+  if (obj === null) return null
+  const parsed = skeletonSchema.safeParse(obj)
   return parsed.success ? parsed.data : null
 }
 
@@ -126,15 +134,14 @@ export async function* streamScenario(
     const skRaw = await collectStream(chatStream(skMessages, { temperature: 0.4 }))
     const skObj = parsePartialJson(skRaw)
     if (skObj) yield { type: 'skeleton', data: skObj }
-    let skeleton = skeletonSchema.safeParse(skObj).data as ScenarioSkeleton | undefined
+    let skeleton = parseSkeleton(skRaw) ?? undefined
     if (!skeleton) {
-      const rep = await chat(
-        [...skMessages, { role: 'user', content: 'Верни ТОЛЬКО валидный JSON каркаса по схеме.' }],
-        { temperature: 0.2 },
-      )
-      skeleton = skeletonSchema.safeParse(parsePartialJson(rep.content)).data as
-        | ScenarioSkeleton
-        | undefined
+      const rep = await generateValidated(chat, skMessages, parseSkeleton, {
+        attempts: 3,
+        temperature: 0.3,
+        corrective: 'Каркас невалиден. Верни ТОЛЬКО валидный JSON каркаса строго по схеме.',
+      })
+      skeleton = rep?.value
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
 
@@ -148,17 +155,14 @@ export async function* streamScenario(
     let repaired = false
     if (!content) {
       repaired = true
-      const rep = await chat(
-        [
-          ...dtMessages,
-          { role: 'assistant', content: dtRaw },
-          { role: 'user', content: 'Ответ невалиден. Верни ТОЛЬКО валидный JSON по полной схеме.' },
-        ],
-        { temperature: 0.2 },
-      )
-      content = parseContent(rep.content)
+      const rep = await generateValidated(chat, dtMessages, parseContent, {
+        attempts: 3,
+        temperature: 0.3,
+        corrective: 'Ответ невалиден. Верни ТОЛЬКО валидный JSON по полной схеме, без markdown.',
+      })
+      content = rep?.value ?? null
     }
-    if (!content) throw new Error('GigaChat вернул невалидный сценарий после repair')
+    if (!content) throw new Error('GigaChat вернул невалидный сценарий после ретраев')
 
     for (let i = 0; i < content.stages.length; i++) {
       yield { type: 'stage', index: i }

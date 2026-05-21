@@ -4,6 +4,7 @@ import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { coerceContentTypes } from './coerce'
+import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { PROMPT_VERSION, buildMessages } from './prompt'
 import type { RagChunkForPrompt, SharedExampleForPrompt } from './prompt'
@@ -103,32 +104,17 @@ export async function generateScenario(
 
   const messages = buildMessages(input, ragChunks, sharedExamples)
 
-  const first = await chat(messages, { temperature: 0.4 })
-  let usage = first.usage
-  let parsed = tryParse(first.content)
-  let repaired = false
-
-  if (!parsed) {
-    repaired = true
-    const repairMessages: GigaMessage[] = [
-      ...messages,
-      { role: 'assistant', content: first.content },
-      {
-        role: 'user',
-        content:
-          'Ответ был невалидным. Верни ТОЛЬКО валидный JSON-объект строго по описанной схеме, без markdown и пояснений.',
-      },
-    ]
-    const second = await chat(repairMessages, { temperature: 0.2 })
-    usage = second.usage ?? usage
-    parsed = tryParse(second.content)
+  const result = await generateValidated(chat, messages, tryParse, {
+    attempts: 3,
+    temperature: 0.4,
+  })
+  if (!result) {
+    throw new Error('GigaChat вернул невалидный сценарий после нескольких попыток')
   }
+  const usage = result.usage
+  const repaired = result.attempts > 1
 
-  if (!parsed) {
-    throw new Error('GigaChat вернул невалидный сценарий после repair-попытки')
-  }
-
-  const { content, changed } = normalizeChronometry(parsed, input.durationMin)
+  const { content, changed } = normalizeChronometry(result.value, input.durationMin)
 
   const meta: GenerationMeta = {
     model: cfg.model,
