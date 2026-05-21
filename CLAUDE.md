@@ -115,6 +115,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Spec (утверждён 2026-05-20):** `docs/superpowers/specs/2026-05-20-klassniy-chas-design.md` — единственный источник истины по продукту.
 - **Планы:** `docs/superpowers/plans/2026-05-20-plan-N-*.md` — 9 последовательных фаз (1 Foundation … 9 Demo-readiness). Все ГОТОВЫ.
 - **Стиль-референс:** `design_example/` (Next+Tailwind+shadcn, токены в `design_example/tailwind.config.ts`).
+- **Backlog доработок:** `docs/backlog.md` — живой трекер оставшихся задач (что сделано / критично / фичи / прод / артефакты кейса). Обновлять при закрытии пунктов.
 
 ### Статус реализации (обновлять при завершении фазы)
 - **Plan 1 «Foundation» — ГОТОВ.** Ветка `feat/foundation`, тег `foundation-done` (19 коммитов). Реализовано через subagent-driven (имплементер + spec-review + code-review на каждую из 14 задач + финальный холистический ревью).
