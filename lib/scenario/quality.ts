@@ -3,7 +3,7 @@ import type { ScenarioContent } from './schema'
 // Детерминированный гейт качества блоков и сценария. Без LLM-вызовов:
 // объективные пороги, которые перегенерируют тонкие блоки и помечают слабый сценарий.
 
-const MIN_BLOCK_CHARS = Number(process.env.MIN_BLOCK_CHARS ?? 300)
+const MIN_BLOCK_CHARS = Number(process.env.MIN_BLOCK_CHARS ?? 600)
 const MIN_SCENARIO_CHARS = Number(process.env.MIN_SCENARIO_CHARS ?? 9000)
 
 export type BlockForCheck = {

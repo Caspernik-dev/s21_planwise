@@ -36,7 +36,8 @@ describe('checkBlock', () => {
   })
 
   it('рефлексия не требует 2 реплик Учителя', () => {
-    const r = checkBlock({ type: 'task', text: longText(1) }, 'reflection')
+    const oneTurnLong = `Учитель: ${'размышляем о дружбе и её ценности в нашей жизни. '.repeat(20)}`
+    const r = checkBlock({ type: 'task', text: oneTurnLong }, 'reflection')
     expect(r.ok).toBe(true)
   })
 })
