@@ -47,4 +47,21 @@ describe('normalizeChronometry', () => {
     expect(out.stages.reduce((a, s) => a + s.duration_min, 0)).toBe(10)
     expect(out.stages.every((s) => s.duration_min >= 1)).toBe(true)
   })
+
+  it('поднимает тонкую рефлексию до пола даже когда сумма уже равна target', () => {
+    const { content: out, changed } = normalizeChronometry(content([14, 5, 1]), 20)
+    const dur = out.stages.map((s) => s.duration_min)
+    expect(changed).toBe(true)
+    expect(dur.every((d) => d >= 3)).toBe(true)
+    expect(dur.reduce((a, d) => a + d, 0)).toBe(20)
+    expect(dur[dur.length - 1]).toBeGreaterThanOrEqual(3)
+  })
+
+  it('держит пол 3 мин на каждом этапе при перекошенном входе (20 мин / 3 этапа)', () => {
+    const { content: out } = normalizeChronometry(content([1, 18, 1]), 20)
+    const dur = out.stages.map((s) => s.duration_min)
+    expect(dur.every((d) => d >= 3)).toBe(true)
+    expect(dur.reduce((a, d) => a + d, 0)).toBe(20)
+    expect(Math.max(...dur)).toBe(dur[1])
+  })
 })
