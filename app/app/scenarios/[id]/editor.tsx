@@ -126,6 +126,9 @@ export function ScenarioEditor({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
+      <div className="rounded-md bg-warm-50 px-4 py-3 text-sm text-warm-700 ring-1 ring-warm-200">
+        ⚠ Сценарий создан ИИ. Перед уроком проверьте факты — даты, имена, цитаты, числа.
+      </div>
       {piiWarning && (
         <div className="rounded-md bg-warm-50 px-4 py-3 text-sm text-warm-700 ring-1 ring-warm-200">
           {piiWarning}
