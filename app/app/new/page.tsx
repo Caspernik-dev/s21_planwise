@@ -263,8 +263,8 @@ function NewScenarioForm() {
                 {materialAnalysis.ok.replacements.length > 0 && (
                   <>
                     <ul className="list-disc pl-5 text-neutral-600">
-                      {materialAnalysis.ok.replacements.slice(0, 10).map((r) => (
-                        <li key={`${r.original}-${r.placeholder}`}>
+                      {materialAnalysis.ok.replacements.slice(0, 10).map((r, i) => (
+                        <li key={`${i}-${r.placeholder}`}>
                           <span className="line-through">{r.original}</span> → {r.placeholder}
                         </li>
                       ))}
