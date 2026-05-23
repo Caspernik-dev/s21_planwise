@@ -4,6 +4,7 @@ import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { coerceActivityType } from './coerce'
+import { type GeneratedBlock, buildRunningContext } from './context'
 import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
@@ -11,24 +12,27 @@ import {
   PROMPT_VERSION,
   type RagChunkForPrompt,
   type SharedExampleForPrompt,
+  buildBlockMessages,
   buildSkeletonMessages,
-  buildStageDetailsMessages,
 } from './prompt'
+import { checkBlock, checkScenario } from './quality'
 import {
   type GenerationInput,
   type GenerationMeta,
   type ScenarioContent,
   type ScenarioSkeleton,
+  activitySchema,
   scenarioContentSchema,
   skeletonSchema,
-  stageActivitiesSchema,
 } from './schema'
 import { chunksForStage } from './stage-chunks'
+
+const MAX_BLOCK_RETRIES = Number(process.env.MAX_BLOCK_RETRIES ?? 2)
 
 export type StreamEvent =
   | { type: 'phase'; phase: 'skeleton' | 'details' | 'validating' | 'saving' }
   | { type: 'skeleton'; data: unknown }
-  | { type: 'stage'; index: number }
+  | { type: 'block'; index: number; total: number }
   | { type: 'done'; scenarioId: string }
   | { type: 'error'; message: string }
 
@@ -68,19 +72,12 @@ function parseSkeleton(raw: string): ScenarioSkeleton | null {
   return parsed.success ? parsed.data : null
 }
 
-function parseStageActivities(raw: string): Activity[] | null {
+function parseBlock(raw: string): Activity | null {
   const obj = parsePartialJson(raw)
   if (!obj || typeof obj !== 'object') return null
-  const acts = (obj as { activities?: unknown }).activities
-  if (Array.isArray(acts)) {
-    for (const a of acts) {
-      if (a && typeof a === 'object') {
-        ;(a as { type?: unknown }).type = coerceActivityType((a as { type?: unknown }).type)
-      }
-    }
-  }
-  const parsed = stageActivitiesSchema.safeParse(obj)
-  return parsed.success ? parsed.data.activities : null
+  ;(obj as { type?: unknown }).type = coerceActivityType((obj as { type?: unknown }).type)
+  const parsed = activitySchema.safeParse(obj)
+  return parsed.success ? parsed.data : null
 }
 
 export async function* streamScenario(
@@ -157,33 +154,76 @@ export async function* streamScenario(
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
 
-    // STAGE 2: детали ПО-ЭТАПНО — отдельный фокусный вызов на каждый этап (РоВ-глубина).
+    // STAGE 2: детали ПО БЛОКАМ — отдельный фокусный вызов на каждый блок (РоВ-глубина).
+    // Объём масштабируется числом блоков; катящийся контекст держит связность;
+    // локальный гейт перегенерирует тонкие блоки.
     yield { type: 'phase', phase: 'details' }
+
+    type Pending = { stageIndex: number; brief: { type: string; focus: string } }
+    const queue: Pending[] = []
+    skeleton.stages.forEach((st, stageIndex) => {
+      const briefs =
+        st.blocks && st.blocks.length > 0 ? st.blocks : [{ type: 'discussion', focus: st.title }]
+      for (const b of briefs) queue.push({ stageIndex, brief: b })
+    })
+    const total = queue.length
+
     let repaired = false
-    const builtStages: ScenarioContent['stages'] = []
-    for (let i = 0; i < skeleton.stages.length; i++) {
-      const st = skeleton.stages[i]
-      const msgs = buildStageDetailsMessages(
+    let thinBlocks = 0
+    const doneBlocks: GeneratedBlock[] = []
+    const stageActivities: Activity[][] = skeleton.stages.map(() => [])
+
+    for (let i = 0; i < queue.length; i++) {
+      const { stageIndex, brief } = queue[i]
+      const st = skeleton.stages[stageIndex]
+      let msgs: GigaMessage[] = buildBlockMessages(
         input,
         skeleton,
         st,
+        brief,
         chunksForStage(ragChunks, st.kind),
+        buildRunningContext(doneBlocks),
       )
-      const res = await generateValidated(chat, msgs, parseStageActivities, {
-        attempts: 3,
-        temperature: 0.5,
-        corrective:
-          'Ответ невалиден. Верни ТОЛЬКО валидный JSON { "activities": [...] } этого этапа, без markdown.',
-      })
-      if (!res) throw new Error(`Не удалось сгенерировать этап «${st.title}»`)
-      if (res.attempts > 1) repaired = true
-      builtStages.push({
-        kind: st.kind,
-        title: st.title,
-        duration_min: st.duration_min,
-        activities: res.value,
-      })
-      yield { type: 'stage', index: i }
+
+      let best: Activity | null = null
+      let accepted = false
+      for (let r = 0; r <= MAX_BLOCK_RETRIES; r++) {
+        const res = await generateValidated(chat, msgs, parseBlock, {
+          attempts: 3,
+          temperature: 0.5,
+          corrective:
+            'Ответ невалиден. Верни ТОЛЬКО валидный JSON одного блока { "type", "text", "questions"? }, без markdown.',
+        })
+        if (!res) break
+        if (res.attempts > 1) repaired = true
+        best = res.value
+        const gate = checkBlock(res.value, st.kind)
+        if (gate.ok) {
+          accepted = true
+          break
+        }
+        msgs = [
+          ...msgs,
+          {
+            role: 'assistant',
+            content: JSON.stringify({
+              type: res.value.type,
+              text: res.value.text,
+              questions: res.value.questions,
+            }),
+          },
+          {
+            role: 'user',
+            content: `Блок получился тонким (${gate.reasons.join(', ')}). Сделай его существенно плотнее: добавь ещё несколько реплик «Учитель: …» с конкретикой (факты, примеры, истории) и больше развёрнутых вопросов. Верни ТОЛЬКО валидный JSON одного блока.`,
+          },
+        ]
+      }
+
+      if (!best) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
+      if (!accepted) thinBlocks++
+      stageActivities[stageIndex].push(best)
+      doneBlocks.push({ stageTitle: st.title, type: best.type, text: best.text })
+      yield { type: 'block', index: i, total }
     }
 
     yield { type: 'phase', phase: 'validating' }
@@ -197,13 +237,19 @@ export async function* streamScenario(
         simpler: 'Для младших классов упростить формулировки и сократить объём.',
         harder: 'Для старших классов углубить обсуждение и добавить задания.',
       },
-      stages: builtStages,
+      stages: skeleton.stages.map((st, idx) => ({
+        kind: st.kind,
+        title: st.title,
+        duration_min: st.duration_min,
+        activities: stageActivities[idx],
+      })),
     }
     const parsedFull = scenarioContentSchema.safeParse(assembled)
     if (!parsedFull.success) throw new Error('Собранный сценарий не прошёл валидацию')
     const content = parsedFull.data
 
     const { content: normalized, changed } = normalizeChronometry(content, input.durationMin)
+    const { warnings } = checkScenario(normalized)
 
     const meta: GenerationMeta = {
       model,
@@ -213,6 +259,8 @@ export async function* streamScenario(
       usage: null,
       latencyMs: Date.now() - started,
       usedChunkIds,
+      thinBlocks,
+      qualityWarnings: warnings,
     }
 
     yield { type: 'phase', phase: 'saving' }

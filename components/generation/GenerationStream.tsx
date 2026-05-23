@@ -11,7 +11,7 @@ type Phase = 'skeleton' | 'details' | 'validating' | 'saving'
 type StreamEvent =
   | { type: 'phase'; phase: Phase }
   | { type: 'skeleton'; data: { title?: string; stages?: Array<{ title?: string }> } }
-  | { type: 'stage'; index: number }
+  | { type: 'block'; index: number; total: number }
   | { type: 'done'; scenarioId: string }
   | { type: 'error'; message: string }
 
@@ -31,6 +31,7 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
   const [filled, setFilled] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const started = useRef(false)
+  const stageCount = useRef(3)
 
   useEffect(() => {
     if (started.current) return
@@ -74,10 +75,17 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
             else if (ev.type === 'skeleton') {
               if (ev.data.title) setTitle(ev.data.title)
               if (Array.isArray(ev.data.stages)) {
-                setStageTitles(ev.data.stages.map((s) => s.title ?? 'Этап'))
+                const titles = ev.data.stages.map((s) => s.title ?? 'Этап')
+                setStageTitles(titles)
+                if (titles.length > 0) stageCount.current = titles.length
               }
-            } else if (ev.type === 'stage') setFilled((n) => Math.max(n, ev.index + 1))
-            else if (ev.type === 'done') router.push(`/app/scenarios/${ev.scenarioId}`)
+            } else if (ev.type === 'block') {
+              // блоки маппятся на этапы пропорционально (несколько блоков на этап)
+              const blocks = ev.total > 0 ? ev.total : 1
+              setFilled((n) =>
+                Math.max(n, Math.round(((ev.index + 1) / blocks) * stageCount.current)),
+              )
+            } else if (ev.type === 'done') router.push(`/app/scenarios/${ev.scenarioId}`)
             else if (ev.type === 'error') setError(ev.message)
           }
         }
