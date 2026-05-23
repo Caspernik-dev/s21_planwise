@@ -1,4 +1,4 @@
-import { buildDetailsMessages, buildSkeletonMessages } from '@/lib/scenario/prompt'
+import { buildSkeletonMessages } from '@/lib/scenario/prompt'
 import { skeletonSchema } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
@@ -18,21 +18,6 @@ describe('buildSkeletonMessages', () => {
     expect(sys).toContain('duration_min')
     expect(sys).not.toContain('activities')
     expect(msgs[1].content).toContain('Дружба')
-  })
-})
-
-describe('buildDetailsMessages', () => {
-  it('включает skeleton и требует activities/adaptations', () => {
-    const skeleton = {
-      title: 'Дружба',
-      goals: ['цель'],
-      stages: [{ kind: 'engage' as const, title: 'Старт', duration_min: 10 }],
-    }
-    const msgs = buildDetailsMessages(input, skeleton, [])
-    const joined = msgs.map((m) => m.content).join('\n')
-    expect(joined).toContain('Старт')
-    expect(joined).toContain('activities')
-    expect(joined).toContain('adaptations')
   })
 })
 

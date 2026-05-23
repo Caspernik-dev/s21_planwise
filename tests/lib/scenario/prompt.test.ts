@@ -1,10 +1,9 @@
 import {
   PROMPT_VERSION,
+  buildBlockMessages,
   buildMessages,
   buildSkeletonMessages,
-  buildStageDetailsMessages,
 } from '@/lib/scenario/prompt'
-import type { ScenarioSkeleton } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
 const input = {
@@ -87,29 +86,54 @@ describe('buildSkeletonMessages', () => {
   })
 })
 
-describe('buildStageDetailsMessages', () => {
-  const skeleton: ScenarioSkeleton = {
-    title: 'День Победы',
-    goals: ['Уважение к памяти'],
-    coreMeanings: ['Память о подвиге объединяет поколения'],
-    materials: [],
-    stages: [{ kind: 'main', title: 'Разбор историй', duration_min: 20 }],
-  } as ScenarioSkeleton
+const skeletonInputT4 = {
+  direction: 'Патриотическое' as const,
+  grade: 5,
+  topic: 'Дружба',
+  durationMin: 30,
+  format: 'беседа' as const,
+}
 
-  it('просит активности одного этапа, передаёт смыслы и название этапа', () => {
-    const msgs = buildStageDetailsMessages(input, skeleton, skeleton.stages[0])
-    const sys = msgs[0].content
+const skeletonT4 = {
+  title: 'Дружба',
+  goals: ['ценность дружбы'],
+  coreMeanings: ['дружба строится на доверии'],
+  stages: [{ kind: 'main' as const, title: 'Основа', duration_min: 15 }],
+}
+
+describe('buildSkeletonMessages content-plan', () => {
+  it('требует контент-план blocks в схеме каркаса', () => {
+    const sys = buildSkeletonMessages(skeletonInputT4)[0].content
+    expect(sys).toContain('blocks')
+  })
+})
+
+describe('buildBlockMessages', () => {
+  it('содержит бриф, тему и просит ОДИН блок', () => {
+    const msgs = buildBlockMessages(
+      skeletonInputT4,
+      skeletonT4,
+      skeletonT4.stages[0],
+      { type: 'discussion', focus: 'что значит быть настоящим другом' },
+      [],
+      '',
+    )
     const user = msgs[1].content
-    expect(sys).toContain('activities')
-    expect(sys).toContain('ТОЛЬКО для этого этапа')
-    expect(user).toContain('Разбор историй')
-    expect(user).toContain('Память о подвиге объединяет поколения')
+    expect(user).toContain('что значит быть настоящим другом')
+    expect(user).toContain('Дружба')
+    const sys = msgs[0].content
+    expect(sys.toLowerCase()).toContain('один')
   })
 
-  it('включает методички, когда переданы чанки', () => {
-    const msgs = buildStageDetailsMessages(input, skeleton, skeleton.stages[0], [
-      { text: 'фрагмент', documentTitle: 'РоВ', sectionKind: 'stage' },
-    ])
-    expect(msgs[1].content).toContain('RELEVANT_METHODOLOGY')
+  it('встраивает катящийся контекст, когда он передан', () => {
+    const msgs = buildBlockMessages(
+      skeletonInputT4,
+      skeletonT4,
+      skeletonT4.stages[0],
+      { type: 'task', focus: 'игра' },
+      [],
+      'Уже раскрыто: вступление про дружбу',
+    )
+    expect(msgs[1].content).toContain('Уже раскрыто: вступление про дружбу')
   })
 })
