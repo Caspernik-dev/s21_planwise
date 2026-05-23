@@ -36,6 +36,7 @@ export const generationInputSchema = z.object({
   topic: z.string().trim().min(1, 'Укажите тему').max(200),
   durationMin: z.coerce.number().int().min(5).max(120),
   format: z.enum(FORMATS),
+  userMaterial: z.string().max(20_000).optional(),
 })
 
 export type GenerationInput = z.infer<typeof generationInputSchema>
