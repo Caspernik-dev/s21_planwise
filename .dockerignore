@@ -1,8 +1,7 @@
 node_modules
-# .next целиком исключаем, КРОМE standalone+static (их пакуем в runtime-образ).
-.next/*
-!.next/standalone
-!.next/static
+# .next исключаем целиком — сборка идёт ВНУТРИ контейнера, хостовый .next не нужен
+# (и его утечка через COPY портит сборку).
+.next
 .git
 .claude
 .worktrees
