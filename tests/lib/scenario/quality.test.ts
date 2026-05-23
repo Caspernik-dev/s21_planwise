@@ -48,6 +48,25 @@ describe('checkBlock', () => {
     const r = checkBlock({ type: 'task', text: oneTurnLong }, 'reflection')
     expect(r.ok).toBe(true)
   })
+
+  it('пустая реплика «Учитель:» не проходит', () => {
+    const r = checkBlock({ type: 'task', text: `${longText(2)}\nУчитель:  ` }, 'main')
+    expect(r.ok).toBe(false)
+    expect(r.reasons.join(' ')).toContain('короткая')
+  })
+
+  it('discussion с коротким вопросом не проходит', () => {
+    const r = checkBlock(
+      {
+        type: 'discussion',
+        text: longText(3),
+        questions: ['Что для тебя значит дружба?', 'А?', 'Почему важно дружить и помогать?'],
+      },
+      'main',
+    )
+    expect(r.ok).toBe(false)
+    expect(r.reasons.join(' ')).toContain('вопрос')
+  })
 })
 
 describe('checkScenario', () => {

@@ -5,6 +5,8 @@ import type { ScenarioContent } from './schema'
 
 const MIN_BLOCK_CHARS = Number(process.env.MIN_BLOCK_CHARS ?? 600)
 const MIN_SCENARIO_CHARS = Number(process.env.MIN_SCENARIO_CHARS ?? 9000)
+const MIN_TEACHER_TURN_CHARS = Number(process.env.MIN_TEACHER_TURN_CHARS ?? 40)
+const MIN_QUESTION_CHARS = Number(process.env.MIN_QUESTION_CHARS ?? 15)
 
 export type BlockForCheck = {
   type: string
@@ -20,13 +22,25 @@ export function checkBlock(
   const text = block.text.trim()
   if (text.length < MIN_BLOCK_CHARS) reasons.push('слишком короткий текст блока')
 
-  const teacherTurns = (text.match(/Учитель\s*:/g) ?? []).length
-  if ((stageKind === 'engage' || stageKind === 'main') && teacherTurns < 2) {
+  const isLed = stageKind === 'engage' || stageKind === 'main'
+  // Реплики «Учитель:» — содержимое после каждого маркера (преамбулу [0] отбрасываем).
+  const turns = text
+    .split(/Учитель\s*:/)
+    .slice(1)
+    .map((t) => t.trim())
+  if (isLed && turns.length < 2) {
     reasons.push('мало реплик «Учитель:» (нужно ≥2)')
   }
+  if (isLed && turns.some((t) => t.length < MIN_TEACHER_TURN_CHARS)) {
+    reasons.push('пустая или слишком короткая реплика «Учитель:»')
+  }
 
-  if (block.type === 'discussion' && (block.questions?.length ?? 0) < 3) {
-    reasons.push('мало вопросов для обсуждения (нужно ≥3)')
+  if (block.type === 'discussion') {
+    const qs = block.questions ?? []
+    if (qs.length < 3) reasons.push('мало вопросов для обсуждения (нужно ≥3)')
+    if (qs.some((q) => !q.includes('?') || q.trim().length < MIN_QUESTION_CHARS)) {
+      reasons.push('слишком короткий или неполный вопрос')
+    }
   }
 
   return { ok: reasons.length === 0, reasons }
