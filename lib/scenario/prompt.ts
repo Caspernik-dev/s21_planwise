@@ -1,7 +1,7 @@
 import { formatGradeForPrompt } from './options'
 import type { GenerationInput, ScenarioSkeleton } from './schema'
 
-export const PROMPT_VERSION = 'v7-facts-2026-05-23'
+export const PROMPT_VERSION = 'v8-material-2026-05-24'
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -132,6 +132,7 @@ export function buildSkeletonMessages(
   input: GenerationInput,
   ragChunks: RagChunkForPrompt[] = [],
   sharedExamples: SharedExampleForPrompt[] = [],
+  userMaterial = '',
 ): ChatMessage[] {
   const system = [
     'Ты — опытный методист внеурочной деятельности в школе РФ, эталон — «Разговоры о важном».',
@@ -142,11 +143,25 @@ export function buildSkeletonMessages(
     'Отвечаешь строго JSON, без markdown и пояснений. Без реальных имён детей.',
     'Для КАЖДОГО этапа составь контент-план blocks: список блоков {type, focus}, где focus —',
     'конкретное содержание блока. Основная часть — 2-4 блока, старт и рефлексия — 1-2.',
+    ...(userMaterial.trim().length > 0
+      ? [
+          'Если ниже дан [TEACHER_MATERIAL] — это ГЛАВНЫЙ источник содержания и структуры; строй каркас прежде всего на нём, методички используй как дополнение.',
+        ]
+      : []),
     '',
     SKELETON_SCHEMA_HINT,
     '',
     'Верни ТОЛЬКО валидный JSON-объект каркаса. Сумма duration_min ≈ длительности занятия.',
   ].join('\n')
+
+  const material =
+    userMaterial.trim().length > 0
+      ? [
+          '',
+          '[TEACHER_MATERIAL] (ГЛАВНЫЙ источник — опирайся прежде всего на него, методички ниже вторичны):',
+          userMaterial.trim(),
+        ]
+      : []
 
   const methodology =
     ragChunks.length > 0
@@ -172,6 +187,7 @@ export function buildSkeletonMessages(
     `- Тема: ${input.topic}`,
     `- Длительность: ${input.durationMin} минут`,
     `- Формат: ${input.format}`,
+    ...material,
     ...methodology,
     ...examples,
   ].join('\n')
@@ -205,6 +221,7 @@ export function buildBlockMessages(
   brief: { type: string; focus: string },
   ragChunks: RagChunkForPrompt[] = [],
   runningContext = '',
+  userMaterial = '',
 ): ChatMessage[] {
   const stageRole =
     stage.kind === 'engage'
@@ -224,8 +241,13 @@ export function buildBlockMessages(
     'Текста должно хватать, чтобы провести этот блок, читая дословно.',
     'ВОПРОСЫ — развёрнутые, разноуровневые, по 3-5 на обсуждение.',
     'Раскрывай ИМЕННО фокус этого блока, не дублируй то, что уже было в предыдущих блоках.',
+    ...(userMaterial.trim().length > 0
+      ? [
+          'Если дан [TEACHER_MATERIAL] — это основной источник содержания этого блока, опирайся прежде всего на него.',
+        ]
+      : []),
     'ФАКТЫ: НЕ выдумывай конкретные факты — даты, имена реальных людей, цитаты, статистику, точные названия —',
-    'которых нет в методичках выше ([RELEVANT_METHODOLOGY]). Нужен пример — подавай его как гипотетический',
+    'которых нет в [TEACHER_MATERIAL] или методичках ([RELEVANT_METHODOLOGY]). Нужен пример — подавай его как гипотетический',
     '(«представим…», «например, кто-то мог бы…»), а не как достоверный факт. Лучше общая формулировка, чем выдуманная точность.',
     'Отвечаешь строго JSON одного блока, без markdown. Без реальных имён детей.',
     '',
@@ -233,6 +255,15 @@ export function buildBlockMessages(
     '',
     'Верни ТОЛЬКО валидный JSON-объект одного блока { "type": …, "text": …, "questions"?: … }.',
   ].join('\n')
+
+  const material =
+    userMaterial.trim().length > 0
+      ? [
+          '',
+          '[TEACHER_MATERIAL] (ГЛАВНЫЙ источник — опирайся прежде всего на него):',
+          userMaterial.trim(),
+        ]
+      : []
 
   const methodology =
     ragChunks.length > 0
@@ -257,6 +288,7 @@ export function buildBlockMessages(
     `Этап: «${stage.title}» (${stage.kind}, ${stage.duration_min} мин).`,
     `Блок (${brief.type}): ${brief.focus}`,
     ...meanings,
+    ...material,
     ...methodology,
     ...(runningContext ? ['', runningContext] : []),
   ].join('\n')
