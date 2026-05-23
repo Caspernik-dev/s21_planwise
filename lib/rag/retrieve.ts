@@ -44,7 +44,9 @@ export type RetrieveDeps = {
 
 async function queryCandidatesLive(args: QueryArgs): Promise<CandidateRow[]> {
   const vec = `[${args.qvec.join(',')}]`
-  const dirFilter = args.direction ? sql`AND chunk_meta->>'direction' = ${args.direction}` : sql``
+  const dirFilter = args.direction
+    ? sql`AND (chunk_meta->>'direction' = ${args.direction} OR chunk_meta->>'direction' IS NULL)`
+    : sql``
   const rows = await db.execute(sql`
     SELECT
       id,
@@ -90,10 +92,7 @@ export async function retrieveChunks(
     limit: d.candidates,
   }
 
-  let rows = await d.queryCandidates({ ...base, direction: query.direction })
-  if (rows.length < d.topK && query.direction) {
-    rows = await d.queryCandidates({ ...base, direction: null })
-  }
+  const rows = await d.queryCandidates({ ...base, direction: query.direction })
 
   const ranked = rankAndDiversify(
     rows.map((r) => ({
