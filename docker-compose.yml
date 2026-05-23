@@ -34,9 +34,9 @@ services:
     build:
       context: .
       target: runner
-    # Секреты приложения (GigaChat/AUTH) берём из .env.production; шаблон — .env.example.
+    # Секреты приложения (LLM/AUTH) и POSTGRES_PASSWORD — в одном .env (шаблон — .env.example).
     env_file:
-      - .env.production
+      - .env
     environment:
       # Внутри compose-сети Postgres доступен как db:5432, а не localhost:5433.
       DATABASE_URL: postgres://kc:${POSTGRES_PASSWORD}@db:5432/kc
