@@ -136,4 +136,17 @@ describe('buildBlockMessages', () => {
     )
     expect(msgs[1].content).toContain('Уже раскрыто: вступление про дружбу')
   })
+
+  it('инструктирует не выдумывать факты', () => {
+    const msgs = buildBlockMessages(
+      skeletonInputT4,
+      skeletonT4,
+      skeletonT4.stages[0],
+      { type: 'discussion', focus: 'что значит быть настоящим другом' },
+      [],
+      '',
+    )
+    const sys = msgs[0].content
+    expect(sys).toContain('НЕ выдумывай')
+  })
 })

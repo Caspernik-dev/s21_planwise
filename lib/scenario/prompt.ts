@@ -1,7 +1,7 @@
 import { formatGradeForPrompt } from './options'
 import type { GenerationInput, ScenarioSkeleton } from './schema'
 
-export const PROMPT_VERSION = 'v6-rov-blocks-2026-05-23'
+export const PROMPT_VERSION = 'v7-facts-2026-05-23'
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -224,6 +224,9 @@ export function buildBlockMessages(
     'Текста должно хватать, чтобы провести этот блок, читая дословно.',
     'ВОПРОСЫ — развёрнутые, разноуровневые, по 3-5 на обсуждение.',
     'Раскрывай ИМЕННО фокус этого блока, не дублируй то, что уже было в предыдущих блоках.',
+    'ФАКТЫ: НЕ выдумывай конкретные факты — даты, имена реальных людей, цитаты, статистику, точные названия —',
+    'которых нет в методичках выше ([RELEVANT_METHODOLOGY]). Нужен пример — подавай его как гипотетический',
+    '(«представим…», «например, кто-то мог бы…»), а не как достоверный факт. Лучше общая формулировка, чем выдуманная точность.',
     'Отвечаешь строго JSON одного блока, без markdown. Без реальных имён детей.',
     '',
     BLOCK_SCHEMA_HINT,
