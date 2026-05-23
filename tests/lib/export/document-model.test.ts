@@ -112,6 +112,13 @@ describe('buildScenarioDocument', () => {
     expect(blocks).toContainEqual({ type: 'paragraph', text: 'Сложнее: Эссе' })
   })
 
+  it('добавляет дисклеймер об ИИ в конец документа', () => {
+    const blocks = buildScenarioDocument(content, meta)
+    const last = blocks[blocks.length - 1]
+    expect(last.type).toBe('paragraph')
+    expect('text' in last && last.text).toContain('сгенерирован ИИ')
+  })
+
   it('экспортирует словарь меток типов активностей', () => {
     expect(ACTIVITY_TYPE_LABEL.discussion).toBe('Обсуждение')
     expect(ACTIVITY_TYPE_LABEL.video).toBe('Видео')

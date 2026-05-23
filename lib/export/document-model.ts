@@ -80,5 +80,10 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   blocks.push({ type: 'paragraph', text: `Проще: ${content.adaptations.simpler}` })
   blocks.push({ type: 'paragraph', text: `Сложнее: ${content.adaptations.harder}` })
 
+  blocks.push({
+    type: 'paragraph',
+    text: 'Сценарий сгенерирован ИИ-сервисом и может содержать неточности. Проверьте факты перед проведением занятия.',
+  })
+
   return blocks
 }
