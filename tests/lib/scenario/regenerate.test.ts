@@ -27,7 +27,15 @@ function chatReturning(content: string) {
 describe('regenerateActivity', () => {
   it('использует роль этапа в промпте и возвращает блок', async () => {
     const chat = chatReturning(
-      JSON.stringify({ type: 'discussion', text: dense, questions: ['а?', 'б?', 'в?'] }),
+      JSON.stringify({
+        type: 'discussion',
+        text: dense,
+        questions: [
+          'Что для тебя значит это?',
+          'Почему это важно сегодня?',
+          'Как ты поступишь в такой ситуации?',
+        ],
+      }),
     )
     const activity = await regenerateActivity(
       {
@@ -46,7 +54,15 @@ describe('regenerateActivity', () => {
 
   it('форсит выбранный тип, даже если модель вернула другой', async () => {
     const chat = chatReturning(
-      JSON.stringify({ type: 'game', text: dense, questions: ['а?', 'б?', 'в?'] }),
+      JSON.stringify({
+        type: 'game',
+        text: dense,
+        questions: [
+          'Что для тебя значит это?',
+          'Почему это важно сегодня?',
+          'Как ты поступишь в такой ситуации?',
+        ],
+      }),
     )
     const activity = await regenerateActivity(
       {

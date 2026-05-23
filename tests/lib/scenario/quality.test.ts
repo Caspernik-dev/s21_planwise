@@ -11,7 +11,15 @@ const longText = (teacherTurns: number) =>
 describe('checkBlock', () => {
   it('плотный блок основной части проходит', () => {
     const r = checkBlock(
-      { type: 'discussion', text: longText(3), questions: ['а?', 'б?', 'в?'] },
+      {
+        type: 'discussion',
+        text: longText(3),
+        questions: [
+          'Что для тебя значит это?',
+          'Почему это важно сегодня?',
+          'Как ты поступишь в такой ситуации?',
+        ],
+      },
       'main',
     )
     expect(r.ok).toBe(true)

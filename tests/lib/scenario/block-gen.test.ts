@@ -6,7 +6,11 @@ const dense = `${'Учитель: содержательная реплика п
 const DENSE_BLOCK = JSON.stringify({
   type: 'discussion',
   text: dense,
-  questions: ['а?', 'б?', 'в?'],
+  questions: [
+    'Что для тебя значит это?',
+    'Почему это важно сегодня?',
+    'Как ты поступишь в такой ситуации?',
+  ],
 })
 const THIN_BLOCK = JSON.stringify({ type: 'task', text: 'коротко' })
 

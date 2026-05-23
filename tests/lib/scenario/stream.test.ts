@@ -36,7 +36,15 @@ const SKELETON = {
 
 // Плотный блок, проходящий гейт (≥600 симв., ≥2 реплики «Учитель:»).
 const denseText = `${'Учитель: содержательная реплика по теме дружбы с примерами и фактами. '.repeat(12)}`
-const BLOCK = JSON.stringify({ type: 'discussion', text: denseText, questions: ['а?', 'б?', 'в?'] })
+const BLOCK = JSON.stringify({
+  type: 'discussion',
+  text: denseText,
+  questions: [
+    'Что для тебя значит это?',
+    'Почему это важно сегодня?',
+    'Как ты поступишь в такой ситуации?',
+  ],
+})
 
 function chunked(s: string, n = 20): string[] {
   const out: string[] = []
