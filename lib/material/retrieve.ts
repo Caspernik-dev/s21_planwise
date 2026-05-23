@@ -30,21 +30,6 @@ function cosine(a: number[], b: number[]): number {
   return dot / (Math.sqrt(na) * Math.sqrt(nb))
 }
 
-/** Простой тф-подобный скор по стему запроса: сколько токенов чанка начинаются на слово запроса (≥4 симв). */
-function keywordScore(chunk: string, query: string): number {
-  const qTokens = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length >= 4)
-  if (qTokens.length === 0) return 0
-  const cLower = chunk.toLowerCase()
-  let hits = 0
-  for (const qt of qTokens) {
-    if (cLower.includes(qt.slice(0, 4))) hits++
-  }
-  return hits / qTokens.length
-}
-
 function capByChars(text: string, maxChars: number): { text: string; truncated: boolean } {
   if (text.length <= maxChars) return { text, truncated: false }
   return { text: text.slice(0, maxChars), truncated: true }
@@ -81,12 +66,7 @@ export async function selectRelevantMaterial(
   }
 
   const ranked = chunks
-    .map((c, i) => {
-      const cos = cosine(qvec, cvecs[i])
-      // Keyword-score как вторичный критерий: помогает при равных cosine
-      const kw = keywordScore(c, query)
-      return { c, score: cos + 0.01 * kw }
-    })
+    .map((c, i) => ({ c, score: cosine(qvec, cvecs[i]) }))
     .sort((x, y) => y.score - x.score)
     .slice(0, d.topK)
 

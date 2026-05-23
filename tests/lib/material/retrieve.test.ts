@@ -1,9 +1,9 @@
 import { selectRelevantMaterial } from '@/lib/material/retrieve'
 import { describe, expect, it, vi } from 'vitest'
 
-// мок-embed: query «дружба» → [1,0]; чанк с «дружба» → [1,0] (cosine=1); без — [0,1] (cosine=0)
+// мок-embed: query «дружба» и чанки со стемом «друж» → [1,0] (cosine=1); без — [0,1] (cosine=0)
 function fakeEmbed(texts: string[]): Promise<number[][]> {
-  return Promise.resolve(texts.map((t) => (t.toLowerCase().includes('дружба') ? [1, 0] : [0, 1])))
+  return Promise.resolve(texts.map((t) => (t.toLowerCase().includes('друж') ? [1, 0] : [0, 1])))
 }
 
 describe('selectRelevantMaterial', () => {
