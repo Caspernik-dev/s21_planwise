@@ -26,6 +26,14 @@ const KIND_LABEL: Record<string, string> = {
   reflection: 'Рефлексия',
 }
 
+const ACTIVITY_TYPE_LABELS: Array<{ value: string; label: string }> = [
+  { value: 'discussion', label: 'Беседа / обсуждение' },
+  { value: 'quiz', label: 'Квиз' },
+  { value: 'game', label: 'Игра' },
+  { value: 'task', label: 'Задание' },
+  { value: 'video', label: 'Видео / презентация' },
+]
+
 type Meta = { id: string; direction: string; grade: number; durationMin: number; format: string }
 
 export function ScenarioEditor({
@@ -45,6 +53,7 @@ export function ScenarioEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [piiWarning, setPiiWarning] = useState<string | null>(null)
   const [regenKey, setRegenKey] = useState<string | null>(null)
+  const [regenType, setRegenType] = useState<Record<string, string>>({})
   const [eventDate, setEventDate] = useState('')
   const [calNote, setCalNote] = useState<string | null>(null)
 
@@ -100,12 +109,12 @@ export function ScenarioEditor({
     })
   }
 
-  function regen(si: number, ai: number) {
+  function regen(si: number, ai: number, type: string) {
     const key = `${si}-${ai}`
     setRegenKey(key)
     setMessage(null)
     startTransition(async () => {
-      const res = await regenerateActivityAction(meta.id, si, ai)
+      const res = await regenerateActivityAction(meta.id, si, ai, type)
       if (res.ok) {
         setActivity(si, ai, res.activity)
       } else {
@@ -374,12 +383,27 @@ export function ScenarioEditor({
                         >
                           ↓
                         </Button>
+                        <select
+                          className="rounded-md border border-neutral-200 bg-neutral-0 px-2 py-1 text-xs text-neutral-700"
+                          value={regenType[`${si}-${ai}`] ?? a.type}
+                          disabled={pending}
+                          onChange={(e) =>
+                            setRegenType((m) => ({ ...m, [`${si}-${ai}`]: e.target.value }))
+                          }
+                          aria-label="Тип для регенерации"
+                        >
+                          {ACTIVITY_TYPE_LABELS.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           disabled={pending}
-                          onClick={() => regen(si, ai)}
+                          onClick={() => regen(si, ai, regenType[`${si}-${ai}`] ?? a.type)}
                           aria-label="Заменить активность"
                         >
                           {busy ? '…' : '🎲'}
