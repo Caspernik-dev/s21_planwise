@@ -9,9 +9,16 @@ import { resolveShareTarget } from '@/lib/community/share-target'
 import { scanScenarioPii } from '@/lib/pii/scenario-scan'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { coerceActivityType } from '@/lib/scenario/coerce'
+import { type GeneratedBlock, buildRunningContext } from '@/lib/scenario/context'
 import type { RagChunkForPrompt } from '@/lib/scenario/prompt'
 import { regenerateActivity } from '@/lib/scenario/regenerate'
-import { type ScenarioContent, scenarioContentSchema } from '@/lib/scenario/schema'
+import {
+  type GenerationInput,
+  type ScenarioContent,
+  type ScenarioSkeleton,
+  scenarioContentSchema,
+} from '@/lib/scenario/schema'
 import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -69,6 +76,7 @@ export async function regenerateActivityAction(
   scenarioId: string,
   stageIndex: number,
   activityIndex: number,
+  type: string,
 ): Promise<RegenResult> {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
@@ -111,17 +119,40 @@ export async function regenerateActivityAction(
 
   const started = Date.now()
   try {
+    const targetType = coerceActivityType(type)
+    const skeleton: ScenarioSkeleton = {
+      title: content.title,
+      goals: content.goals,
+      values: content.values,
+      coreMeanings: content.coreMeanings,
+      materials: content.materials,
+      adaptations: content.adaptations,
+      stages: content.stages.map((s) => ({
+        kind: s.kind,
+        title: s.title,
+        duration_min: s.duration_min,
+      })),
+    }
+    const siblings: GeneratedBlock[] = []
+    content.stages.forEach((s, si) => {
+      s.activities.forEach((a, ai) => {
+        if (si === stageIndex && ai === activityIndex) return
+        siblings.push({ stageTitle: s.title, type: a.type, text: a.text })
+      })
+    })
     const activity = await regenerateActivity(
       {
-        scenario: {
-          direction: owned.direction,
+        input: {
+          direction: owned.direction as GenerationInput['direction'],
           grade: owned.grade,
           topic: owned.topic,
-          format: owned.format,
-          title: content.title,
+          durationMin: owned.durationMin,
+          format: owned.format as GenerationInput['format'],
         },
-        stage: { kind: stage.kind, title: stage.title },
-        current,
+        skeleton,
+        stage: { kind: stage.kind, title: stage.title, duration_min: stage.duration_min },
+        targetType,
+        runningContext: buildRunningContext(siblings),
       },
       { ragChunks },
     )
