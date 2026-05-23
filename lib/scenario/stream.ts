@@ -144,7 +144,12 @@ export async function* streamScenario(
 
     // STAGE 1: skeleton
     yield { type: 'phase', phase: 'skeleton' }
-    const skMessages = buildSkeletonMessages(input, ragChunks, sharedExamples)
+    const skMessages = buildSkeletonMessages(
+      input,
+      ragChunks,
+      sharedExamples,
+      input.userMaterial ?? '',
+    )
     const skRaw = await collectStream(chatStream(skMessages, { temperature: 0.4 }))
     const skObj = parsePartialJson(skRaw)
     if (skObj) yield { type: 'skeleton', data: skObj }
@@ -188,6 +193,7 @@ export async function* streamScenario(
         brief,
         chunksForStage(ragChunks, st.kind),
         buildRunningContext(doneBlocks),
+        input.userMaterial ?? '',
       )
 
       const r = await generateBlockWithGate(chat, msgs, st.kind)
