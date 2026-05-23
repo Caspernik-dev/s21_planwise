@@ -27,7 +27,10 @@ import {
 } from './schema'
 import { chunksForStage } from './stage-chunks'
 
-const MAX_BLOCK_RETRIES = Number(process.env.MAX_BLOCK_RETRIES ?? 2)
+const MAX_BLOCK_RETRIES = (() => {
+  const n = Number(process.env.MAX_BLOCK_RETRIES)
+  return Number.isFinite(n) && n >= 0 ? n : 2
+})()
 
 export type StreamEvent =
   | { type: 'phase'; phase: 'skeleton' | 'details' | 'validating' | 'saving' }
@@ -137,6 +140,8 @@ export async function* streamScenario(
       console.error('shared examples fetch failed (non-fatal):', e)
     }
 
+    let repaired = false
+
     // STAGE 1: skeleton
     yield { type: 'phase', phase: 'skeleton' }
     const skMessages = buildSkeletonMessages(input, ragChunks, sharedExamples)
@@ -150,6 +155,7 @@ export async function* streamScenario(
         temperature: 0.3,
         corrective: 'Каркас невалиден. Верни ТОЛЬКО валидный JSON каркаса строго по схеме.',
       })
+      if (rep) repaired = true
       skeleton = rep?.value
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
@@ -168,7 +174,6 @@ export async function* streamScenario(
     })
     const total = queue.length
 
-    let repaired = false
     let thinBlocks = 0
     const doneBlocks: GeneratedBlock[] = []
     const stageActivities: Activity[][] = skeleton.stages.map(() => [])
