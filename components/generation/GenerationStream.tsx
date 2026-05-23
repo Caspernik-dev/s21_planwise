@@ -28,10 +28,10 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
   const [phase, setPhase] = useState<Phase>('skeleton')
   const [title, setTitle] = useState<string | null>(null)
   const [stageTitles, setStageTitles] = useState<string[]>([])
-  const [filled, setFilled] = useState(0)
+  const [blocksDone, setBlocksDone] = useState(0)
+  const [blocksTotal, setBlocksTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const started = useRef(false)
-  const stageCount = useRef(3)
 
   useEffect(() => {
     if (started.current) return
@@ -77,14 +77,10 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
               if (Array.isArray(ev.data.stages)) {
                 const titles = ev.data.stages.map((s) => s.title ?? 'Этап')
                 setStageTitles(titles)
-                if (titles.length > 0) stageCount.current = titles.length
               }
             } else if (ev.type === 'block') {
-              // блоки маппятся на этапы пропорционально (несколько блоков на этап)
-              const blocks = ev.total > 0 ? ev.total : 1
-              setFilled((n) =>
-                Math.max(n, Math.round(((ev.index + 1) / blocks) * stageCount.current)),
-              )
+              setBlocksTotal(ev.total)
+              setBlocksDone((n) => Math.max(n, ev.index + 1))
             } else if (ev.type === 'done') router.push(`/app/scenarios/${ev.scenarioId}`)
             else if (ev.type === 'error') setError(ev.message)
           }
@@ -131,18 +127,29 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
             </span>
           ))}
         </div>
+        {blocksTotal > 0 && (
+          <div className="space-y-1">
+            <p className="text-sm text-neutral-600">
+              Прорабатываем блоки: {blocksDone} из {blocksTotal}
+            </p>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="h-full rounded-full bg-brand-500 transition-all"
+                style={{ width: `${Math.round((blocksDone / blocksTotal) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
         <div className="space-y-2">
-          {(stageTitles.length > 0 ? stageTitles : ['', '', '']).map((st, i) => {
-            const cls = `rounded-md p-3 ring-1 ring-neutral-200 ${
-              i < filled ? 'bg-neutral-0' : 'animate-pulse bg-neutral-50'
-            }`
-            return (
+          {(stageTitles.length > 0 ? stageTitles : ['', '', '']).map((st, i) => (
+            <div
               // biome-ignore lint/suspicious/noArrayIndexKey: stages ordered by index; no stable id during stream
-              <div key={`stage-${i}`} className={cls}>
-                <p className="text-sm font-medium text-neutral-800">{st || ' '}</p>
-              </div>
-            )
-          })}
+              key={`stage-${i}`}
+              className="rounded-md bg-neutral-50 p-3 ring-1 ring-neutral-200"
+            >
+              <p className="text-sm font-medium text-neutral-800">{st || ' '}</p>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
