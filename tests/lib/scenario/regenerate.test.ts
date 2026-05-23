@@ -1,64 +1,79 @@
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
-import { buildActivityMessages, regenerateActivity } from '@/lib/scenario/regenerate'
+import { regenerateActivity } from '@/lib/scenario/regenerate'
+import type { ScenarioSkeleton } from '@/lib/scenario/schema'
 import { describe, expect, it, vi } from 'vitest'
 
-const args = {
-  scenario: {
-    direction: 'Гражданское',
-    grade: 5,
-    topic: 'Дружба',
-    format: 'классный час',
-    title: 'О дружбе',
-  },
-  stage: { kind: 'main' as const, title: 'Основная часть' },
-  current: { type: 'discussion' as const, text: 'старый вопрос' },
+const input = {
+  direction: 'Гражданское' as const,
+  grade: 5,
+  topic: 'Дружба',
+  durationMin: 30,
+  format: 'беседа' as const,
 }
+
+const skeleton: ScenarioSkeleton = {
+  title: 'О дружбе',
+  goals: ['ценность дружбы'],
+  coreMeanings: ['дружба строится на доверии'],
+  stages: [{ kind: 'engage', title: 'Вступление', duration_min: 5 }],
+}
+
+const dense = `${'Учитель: содержательная вводная реплика про дружбу с примером. '.repeat(12)}`
 
 function chatReturning(content: string) {
   return vi.fn(async (_m: GigaMessage[]): Promise<ChatResult> => ({ content, usage: null }))
 }
 
-describe('buildActivityMessages', () => {
-  it('включает тему, этап и текущую активность', () => {
-    const msgs = buildActivityMessages(args, [])
-    const joined = msgs.map((m) => m.content).join('\n')
-    expect(joined).toContain('Дружба')
-    expect(joined).toContain('Основная часть')
-    expect(joined).toContain('старый вопрос')
-  })
-  it('включает RAG-фрагменты, если переданы', () => {
-    const msgs = buildActivityMessages(args, [
-      { text: 'методичка про дружбу', documentTitle: 'Док', sectionKind: 'main' },
-    ])
-    expect(msgs.map((m) => m.content).join('\n')).toContain('методичка про дружбу')
-  })
-})
-
 describe('regenerateActivity', () => {
-  it('парсит валидную активность из JSON', async () => {
+  it('использует роль этапа в промпте и возвращает блок', async () => {
     const chat = chatReturning(
-      JSON.stringify({ type: 'game', text: 'новая игра', questions: ['Q1?'] }),
+      JSON.stringify({ type: 'discussion', text: dense, questions: ['а?', 'б?', 'в?'] }),
     )
-    const result = await regenerateActivity(args, { chat })
-    expect(result).toEqual({ type: 'game', text: 'новая игра', questions: ['Q1?'] })
-    expect(chat).toHaveBeenCalledTimes(1)
+    const activity = await regenerateActivity(
+      {
+        input,
+        skeleton,
+        stage: { kind: 'engage', title: 'Вступление', duration_min: 5 },
+        targetType: 'discussion',
+        runningContext: '',
+      },
+      { chat },
+    )
+    expect(activity.text).toContain('Учитель:')
+    const sentSystem = (chat.mock.calls[0][0] as GigaMessage[])[0].content
+    expect(sentSystem).toContain('мотивационно-целевой')
   })
-  it('извлекает JSON из markdown-fence', async () => {
-    const chat = chatReturning('```json\n{"type":"task","text":"задача"}\n```')
-    const result = await regenerateActivity(args, { chat })
-    expect(result.type).toBe('task')
+
+  it('форсит выбранный тип, даже если модель вернула другой', async () => {
+    const chat = chatReturning(
+      JSON.stringify({ type: 'game', text: dense, questions: ['а?', 'б?', 'в?'] }),
+    )
+    const activity = await regenerateActivity(
+      {
+        input,
+        skeleton,
+        stage: { kind: 'engage', title: 'Вступление', duration_min: 5 },
+        targetType: 'discussion',
+        runningContext: '',
+      },
+      { chat },
+    )
+    expect(activity.type).toBe('discussion')
   })
-  it('делает repair-pass при невалидном первом ответе', async () => {
-    const chat = vi
-      .fn<(m: GigaMessage[]) => Promise<ChatResult>>()
-      .mockResolvedValueOnce({ content: 'не json', usage: null })
-      .mockResolvedValueOnce({ content: '{"type":"quiz","text":"квиз"}', usage: null })
-    const result = await regenerateActivity(args, { chat })
-    expect(result.text).toBe('квиз')
-    expect(chat).toHaveBeenCalledTimes(2)
-  })
-  it('бросает ошибку, если и repair невалиден', async () => {
-    const chat = chatReturning('мусор')
-    await expect(regenerateActivity(args, { chat })).rejects.toThrow()
+
+  it('бросает ошибку, если блок невалиден', async () => {
+    const chat = chatReturning('не json вовсе')
+    await expect(
+      regenerateActivity(
+        {
+          input,
+          skeleton,
+          stage: { kind: 'main', title: 'Основа', duration_min: 10 },
+          targetType: 'task',
+          runningContext: '',
+        },
+        { chat },
+      ),
+    ).rejects.toThrow()
   })
 })
