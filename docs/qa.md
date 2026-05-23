@@ -50,6 +50,19 @@
 - [ ] Logout с правильного origin (через UI «Выйти») → редирект на `/`
 - [ ] Финальный `security-review` по ветке пройден, HIGH-находки закрыты
 
+## 7. Docker-деплой (self-host / прод) — добавлено 2026-05-23
+Прод запускается через `docker compose` (app+db+migrate), сборка из исходников в контейнере. Проверять при деплое/раздаче:
+- [ ] **Бэкап БД до операций:** `docker exec kc-postgres pg_dump -U kc kc | gzip > ~/kc-backup-$(date +%F-%H%M).sql.gz` (файл не пустой, мегабайты)
+- [ ] **Volume переиспользуется (НЕ создаётся пустой):** `docker inspect kc-postgres --format '{{range .Mounts}}{{.Name}}{{end}}'` = `planwise_kc-pgdata`, и `docker compose config --volumes` = `kc-pgdata` (проект `planwise`)
+- [ ] **`.env` собран** (на проде — один файл): `POSTGRES_PASSWORD`, `AUTH_SECRET`, `AUTH_URL=http://176.108.252.98`, `GIGACHAT_AUTH_KEY`, `SIMILARITY_THRESHOLD`, `PG_TSV_LANG`. **НЕ** должно быть `NODE_TLS_REJECT_UNAUTHORIZED`/`GIGACHAT_INSECURE_TLS=true` (серты вшиты в образ)
+- [ ] **Сборка+запуск:** `docker compose up -d --build` → `migrate` завершился (`Done.`, идемпотентно), `db` healthy, `app` Ready без `UntrustedHost`/DB-ошибок
+- [ ] **Роутинг (анти-регресс бага WORKDIR):** `curl localhost:3000/` → **200 лендинг** (НЕ дашборд/редирект на /login); `/login` → 200; `/app` → 307 `/login?next`
+- [ ] **Данные целы:** `docker exec kc-postgres psql -U kc -d kc -c "select count(*) from rag_documents, ..."` совпадает с ожидаемым (на проде ≈ docs 88 / chunks 529)
+- [ ] **TLS к GigaChat без обхода:** `docker compose exec app node -e "fetch('https://gigachat.devices.sberbank.ru/api/v1/models').then(r=>console.log(r.status)).catch(e=>console.log('ERR',e.message))"` → статус (401 ок = handshake прошёл), НЕ `ERR ... certificate`
+- [ ] **Через nginx:** `curl -sI http://176.108.252.98/ | head -1` → 200; живая генерация в браузере под аккаунтом
+- [ ] **Откат при провале:** `docker compose down && sudo systemctl enable --now planwise` (unit `deploy/planwise.service` остаётся установлен, `disable`-нут)
+- [ ] **Self-host у получателя:** `git clone` → `cp .env.example .env` (заполнить) → `docker compose up -d` собирает из исходников; для локальной LLM — `LLM_PROVIDER=openai` + `LLM_API_BASE`/`LLM_MODEL`/`LLM_API_KEY` (caveat: смена embed-модели ломает RAG без пере-ingest)
+
 ## Известные backlog-пункты (не блокируют демо)
 - Явная вкладка «Из плана» в `/app/new` (сейчас поток покрыт переходом со страницы планов через `?planTopicId=`)
 - Drag-handle перемещение блоков в редакторе (есть кнопки ↑/↓)
