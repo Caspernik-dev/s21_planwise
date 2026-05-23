@@ -238,9 +238,14 @@ export async function* streamScenario(
       values: skeleton.values,
       coreMeanings: skeleton.coreMeanings,
       materials: skeleton.materials ?? [],
-      adaptations: skeleton.adaptations ?? {
-        simpler: 'Для младших классов упростить формулировки и сократить объём.',
-        harder: 'Для старших классов углубить обсуждение и добавить задания.',
+      // мягкие адаптации каркаса доводим дефолтами по-полю (модель шлёт {} или частичный объект)
+      adaptations: {
+        simpler:
+          skeleton.adaptations?.simpler ??
+          'Для младших классов упростить формулировки и сократить объём.',
+        harder:
+          skeleton.adaptations?.harder ??
+          'Для старших классов углубить обсуждение и добавить задания.',
       },
       stages: skeleton.stages.map((st, idx) => ({
         kind: st.kind,

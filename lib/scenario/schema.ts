@@ -60,7 +60,10 @@ export const skeletonSchema = z.object({
   values: z.array(z.string()).optional(),
   coreMeanings: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
-  adaptations: z.object({ simpler: z.string().min(1), harder: z.string().min(1) }).optional(),
+  // адаптации в каркасе мягкие: модель часто шлёт {} или частичный объект; недостающие
+  // поля доводятся дефолтами при сборке (см. stream.ts). Строгая проверка — на финальном
+  // scenarioContentSchema.
+  adaptations: z.object({ simpler: z.string(), harder: z.string() }).partial().optional(),
   stages: z.array(skeletonStageSchema).min(1),
 })
 
