@@ -39,6 +39,22 @@ export async function POST(req: Request) {
     )
   }
 
+  const rawMaterial = (body as { material?: { text?: unknown; consent?: unknown } })?.material
+  if (rawMaterial && typeof rawMaterial.text === 'string' && rawMaterial.text.trim().length > 0) {
+    try {
+      const { prepareMaterial } = await import('@/lib/material/prepare')
+      const { selectRelevantMaterial } = await import('@/lib/material/retrieve')
+      const prepared = prepareMaterial(rawMaterial.text, rawMaterial.consent === true)
+      const { text } = await selectRelevantMaterial(
+        prepared.text,
+        `${input.direction} ${input.topic}`,
+      )
+      if (text.trim().length > 0) input.userMaterial = text
+    } catch (e) {
+      console.error('material prep failed (non-fatal):', e)
+    }
+  }
+
   let sourcePlanTopicId: string | null = null
   const rawTopicId = (body as { planTopicId?: unknown })?.planTopicId
   if (typeof rawTopicId === 'string' && rawTopicId.length > 0) {
