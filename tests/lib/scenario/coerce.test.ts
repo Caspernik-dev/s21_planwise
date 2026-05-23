@@ -13,6 +13,8 @@ describe('coerceActivityType', () => {
     expect(coerceActivityType('group_work')).toBe('task')
     expect(coerceActivityType('практическое')).toBe('task')
     expect(coerceActivityType('беседа')).toBe('discussion')
+    expect(coerceActivityType('debate')).toBe('discussion')
+    expect(coerceActivityType('дебаты')).toBe('discussion')
   })
 
   it('неизвестное / не строку → discussion', () => {

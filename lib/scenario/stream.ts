@@ -70,7 +70,22 @@ type Activity = ScenarioContent['stages'][number]['activities'][number]
 
 function parseSkeleton(raw: string): ScenarioSkeleton | null {
   const obj = parsePartialJson(raw)
-  if (obj === null) return null
+  if (!obj || typeof obj !== 'object') return null
+  // Коэрсим blocks[].type каркаса к нашему enum — модель для форматов вроде «дебаты»
+  // ставит type:"debate"/presentation/group_work, что иначе валит весь каркас по zod.
+  const stages = (obj as { stages?: unknown }).stages
+  if (Array.isArray(stages)) {
+    for (const st of stages) {
+      const blocks = st && typeof st === 'object' ? (st as { blocks?: unknown }).blocks : undefined
+      if (Array.isArray(blocks)) {
+        for (const b of blocks) {
+          if (b && typeof b === 'object') {
+            ;(b as { type?: unknown }).type = coerceActivityType((b as { type?: unknown }).type)
+          }
+        }
+      }
+    }
+  }
   const parsed = skeletonSchema.safeParse(obj)
   return parsed.success ? parsed.data : null
 }
