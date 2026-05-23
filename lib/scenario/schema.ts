@@ -40,11 +40,19 @@ export const generationInputSchema = z.object({
 
 export type GenerationInput = z.infer<typeof generationInputSchema>
 
+export const skeletonBlockSchema = z.object({
+  type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
+  focus: z.string().min(1),
+})
+
 export const skeletonStageSchema = z.object({
   kind: z.enum(['engage', 'main', 'reflection']),
   title: z.string().min(1),
   duration_min: z.coerce.number().int().min(0),
+  blocks: z.array(skeletonBlockSchema).min(1).optional(),
 })
+
+export type SkeletonBlock = z.infer<typeof skeletonBlockSchema>
 
 export const skeletonSchema = z.object({
   title: z.string().min(1),
@@ -54,11 +62,6 @@ export const skeletonSchema = z.object({
   materials: z.array(z.string()).optional(),
   adaptations: z.object({ simpler: z.string().min(1), harder: z.string().min(1) }).optional(),
   stages: z.array(skeletonStageSchema).min(1),
-})
-
-// Схема ответа per-stage генерации: только активности одного этапа.
-export const stageActivitiesSchema = z.object({
-  activities: z.array(activitySchema).min(1),
 })
 
 export type ScenarioSkeleton = z.infer<typeof skeletonSchema>
@@ -71,4 +74,6 @@ export type GenerationMeta = {
   usage: { promptTokens: number; completionTokens: number } | null
   latencyMs: number
   usedChunkIds: string[]
+  thinBlocks?: number
+  qualityWarnings?: string[]
 }
