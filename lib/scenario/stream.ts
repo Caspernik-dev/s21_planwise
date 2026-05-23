@@ -3,6 +3,7 @@ import { chatCompletion, chatCompletionStream } from '@/lib/gigachat/client'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
+import { type Activity, generateBlockWithGate } from './block-gen'
 import { coerceActivityType } from './coerce'
 import { type GeneratedBlock, buildRunningContext } from './context'
 import { generateValidated } from './llm-retry'
@@ -15,22 +16,16 @@ import {
   buildBlockMessages,
   buildSkeletonMessages,
 } from './prompt'
-import { checkBlock, checkScenario } from './quality'
+import { checkScenario } from './quality'
 import {
   type GenerationInput,
   type GenerationMeta,
   type ScenarioContent,
   type ScenarioSkeleton,
-  activitySchema,
   scenarioContentSchema,
   skeletonSchema,
 } from './schema'
 import { chunksForStage } from './stage-chunks'
-
-const MAX_BLOCK_RETRIES = (() => {
-  const n = Number(process.env.MAX_BLOCK_RETRIES)
-  return Number.isFinite(n) && n >= 0 ? n : 2
-})()
 
 export type StreamEvent =
   | { type: 'phase'; phase: 'skeleton' | 'details' | 'validating' | 'saving' }
@@ -66,8 +61,6 @@ async function collectStream(gen: AsyncGenerator<string, void, unknown>): Promis
   return buf
 }
 
-type Activity = ScenarioContent['stages'][number]['activities'][number]
-
 function parseSkeleton(raw: string): ScenarioSkeleton | null {
   const obj = parsePartialJson(raw)
   if (!obj || typeof obj !== 'object') return null
@@ -87,14 +80,6 @@ function parseSkeleton(raw: string): ScenarioSkeleton | null {
     }
   }
   const parsed = skeletonSchema.safeParse(obj)
-  return parsed.success ? parsed.data : null
-}
-
-function parseBlock(raw: string): Activity | null {
-  const obj = parsePartialJson(raw)
-  if (!obj || typeof obj !== 'object') return null
-  ;(obj as { type?: unknown }).type = coerceActivityType((obj as { type?: unknown }).type)
-  const parsed = activitySchema.safeParse(obj)
   return parsed.success ? parsed.data : null
 }
 
@@ -196,7 +181,7 @@ export async function* streamScenario(
     for (let i = 0; i < queue.length; i++) {
       const { stageIndex, brief } = queue[i]
       const st = skeleton.stages[stageIndex]
-      let msgs: GigaMessage[] = buildBlockMessages(
+      const msgs: GigaMessage[] = buildBlockMessages(
         input,
         skeleton,
         st,
@@ -205,42 +190,12 @@ export async function* streamScenario(
         buildRunningContext(doneBlocks),
       )
 
-      let best: Activity | null = null
-      let accepted = false
-      for (let r = 0; r <= MAX_BLOCK_RETRIES; r++) {
-        const res = await generateValidated(chat, msgs, parseBlock, {
-          attempts: 3,
-          temperature: 0.5,
-          corrective:
-            'Ответ невалиден. Верни ТОЛЬКО валидный JSON одного блока { "type", "text", "questions"? }, без markdown.',
-        })
-        if (!res) break
-        if (res.attempts > 1) repaired = true
-        best = res.value
-        const gate = checkBlock(res.value, st.kind)
-        if (gate.ok) {
-          accepted = true
-          break
-        }
-        msgs = [
-          ...msgs,
-          {
-            role: 'assistant',
-            content: JSON.stringify({
-              type: res.value.type,
-              text: res.value.text,
-              questions: res.value.questions,
-            }),
-          },
-          {
-            role: 'user',
-            content: `Блок получился тонким (${gate.reasons.join(', ')}). Сделай его существенно плотнее: добавь ещё несколько реплик «Учитель: …» с конкретикой (факты, примеры, истории) и больше развёрнутых вопросов. Верни ТОЛЬКО валидный JSON одного блока.`,
-          },
-        ]
-      }
+      const r = await generateBlockWithGate(chat, msgs, st.kind)
+      if (!r) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
+      if (r.repaired) repaired = true
+      if (!r.accepted) thinBlocks++
+      const best = r.value
 
-      if (!best) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
-      if (!accepted) thinBlocks++
       stageActivities[stageIndex].push(best)
       doneBlocks.push({ stageTitle: st.title, type: best.type, text: best.text })
       yield { type: 'block', index: i, total }
