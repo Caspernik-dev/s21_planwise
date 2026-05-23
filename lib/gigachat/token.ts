@@ -12,11 +12,16 @@ export function __resetTokenCacheForTests() {
 }
 
 export async function getAccessToken(): Promise<string> {
+  const cfg = getGigaConfig()
+
+  // OpenAI-совместимый провайдер (локальная LLM / OpenAI): статический Bearer-ключ,
+  // без OAuth-обмена. Может быть пустым для keyless-эндпоинтов (Ollama).
+  if (cfg.provider === 'openai') return cfg.apiKey
+
   if (cache && cache.expiresAt - Date.now() > REFRESH_MARGIN_MS) {
     return cache.token
   }
 
-  const cfg = getGigaConfig()
   ensureInsecureTls(cfg.insecureTls)
   const body = new URLSearchParams({ scope: cfg.scope })
 

@@ -10,6 +10,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   vi.useRealTimers()
 })
 
@@ -57,5 +58,29 @@ describe('getAccessToken', () => {
       vi.fn().mockResolvedValue({ ok: false, status: 401, text: async () => 'unauthorized' }),
     )
     await expect(getAccessToken()).rejects.toThrow(/GigaChat OAuth/)
+  })
+})
+
+describe('getAccessToken (provider=openai)', () => {
+  it('returns the static LLM_API_KEY without any OAuth fetch', async () => {
+    vi.stubEnv('LLM_PROVIDER', 'openai')
+    vi.stubEnv('LLM_API_KEY', 'sk-local-123')
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const tok = await getAccessToken()
+    expect(tok).toBe('sk-local-123')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns an empty string for keyless local endpoints (Ollama)', async () => {
+    vi.stubEnv('LLM_PROVIDER', 'openai')
+    vi.stubEnv('LLM_API_KEY', undefined)
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const tok = await getAccessToken()
+    expect(tok).toBe('')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
