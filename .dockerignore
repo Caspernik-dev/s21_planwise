@@ -1,0 +1,16 @@
+node_modules
+# .next целиком исключаем, КРОМE standalone+static (их пакуем в runtime-образ).
+.next/*
+!.next/standalone
+!.next/static
+.git
+.claude
+.worktrees
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+npm-debug.log*
+.DS_Store
+design_example
+coverage

@@ -17,5 +17,39 @@ services:
       timeout: 5s
       retries: 10
 
+  # Один прогон drizzle-миграций перед стартом приложения.
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgres://kc:${POSTGRES_PASSWORD}@db:5432/kc
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  # Приложение: standalone-бандл Next (наружу не публикуем, только за nginx).
+  app:
+    build:
+      context: .
+      target: runner
+    # Секреты приложения (GigaChat/AUTH) берём из .env.production; шаблон — .env.example.
+    env_file:
+      - .env.production
+    environment:
+      # Внутри compose-сети Postgres доступен как db:5432, а не localhost:5433.
+      DATABASE_URL: postgres://kc:${POSTGRES_PASSWORD}@db:5432/kc
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   kc-pgdata:
