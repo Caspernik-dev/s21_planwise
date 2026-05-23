@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label'
 import { CALENDAR_EVENTS } from '@/lib/calendar-events'
 import { DIRECTIONS, DURATIONS, FORMATS, GRADES, formatGrade } from '@/lib/scenario/options'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useRef, useState, useTransition } from 'react'
+import { Suspense, useActionState, useRef, useState, useTransition } from 'react'
 import { type PrematchCard, prematchAction } from './actions'
+import { type AnalyzeMaterialResult, analyzeMaterialAction } from './material-actions'
 
 const selectClass =
   'flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
@@ -29,6 +30,11 @@ function NewScenarioForm() {
   const [matching, startMatch] = useTransition()
   const [generating, setGenerating] = useState<Record<string, unknown> | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [materialAnalysis, materialAction, materialPending] = useActionState<
+    AnalyzeMaterialResult,
+    FormData
+  >(analyzeMaterialAction, {})
+  const [materialConsent, setMaterialConsent] = useState(false)
 
   function onGenerate(e?: React.FormEvent) {
     e?.preventDefault()
@@ -41,6 +47,9 @@ function NewScenarioForm() {
       durationMin: fd.get('durationMin'),
       format: fd.get('format'),
       planTopicId: fd.get('planTopicId') || undefined,
+      material: materialAnalysis.ok
+        ? { text: materialAnalysis.ok.original, consent: materialConsent }
+        : undefined,
     }
     if (!payload.topic || String(payload.topic).trim().length === 0) {
       setFormError('Укажите тему')
@@ -219,6 +228,63 @@ function NewScenarioForm() {
             >
               {matching ? 'Ищем похожие…' : 'Подобрать похожие'}
             </Button>
+          </form>
+
+          <form
+            action={materialAction}
+            className="mt-4 space-y-3 rounded-lg p-4 ring-1 ring-neutral-200"
+          >
+            <Label htmlFor="material">Свой материал (необязательно)</Label>
+            <p className="text-sm text-neutral-500">
+              Прикрепите статью, конспект или заметки (PDF, DOCX, TXT, до 5 МБ) — сценарий будет
+              построен прежде всего на нём.
+            </p>
+            <input
+              id="material"
+              name="material"
+              type="file"
+              accept=".pdf,.docx,.txt"
+              className="block cursor-pointer text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700 hover:file:bg-brand-100"
+            />
+            <Button type="submit" variant="outline" disabled={materialPending}>
+              {materialPending ? 'Анализ…' : 'Проанализировать материал'}
+            </Button>
+            {materialAnalysis.error && (
+              <p className="text-sm text-error">{materialAnalysis.error}</p>
+            )}
+            {materialAnalysis.ok && (
+              <div className="space-y-2 text-sm">
+                <p className="text-neutral-700">
+                  Файл: <strong>{materialAnalysis.ok.filename}</strong>.{' '}
+                  {materialAnalysis.ok.replacements.length > 0
+                    ? `Найдено персональных данных: ${materialAnalysis.ok.replacements.length}. По умолчанию они будут обезличены.`
+                    : 'Персональные данные не найдены.'}
+                </p>
+                {materialAnalysis.ok.replacements.length > 0 && (
+                  <>
+                    <ul className="list-disc pl-5 text-neutral-600">
+                      {materialAnalysis.ok.replacements.slice(0, 10).map((r) => (
+                        <li key={`${r.original}-${r.placeholder}`}>
+                          <span className="line-through">{r.original}</span> → {r.placeholder}
+                        </li>
+                      ))}
+                    </ul>
+                    <label className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={materialConsent}
+                        onChange={(e) => setMaterialConsent(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <span className="text-neutral-700">
+                        Я понимаю, что эти данные будут отправлены во внешний сервис GigaChat без
+                        обезличивания. Продолжить.
+                      </span>
+                    </label>
+                  </>
+                )}
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
