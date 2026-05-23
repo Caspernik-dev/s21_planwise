@@ -63,9 +63,12 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
                   {t.plannedDate && <p className="text-xs text-neutral-500">{t.plannedDate}</p>}
                 </div>
                 {scenarioId ? (
-                  <span className="shrink-0 rounded-full bg-accent-50 px-2.5 py-1 text-xs text-accent-700">
+                  <Link
+                    href={href}
+                    className="shrink-0 rounded-full bg-accent-50 px-2.5 py-1 text-xs text-accent-700 hover:bg-accent-100"
+                  >
                     ✓ готов
-                  </span>
+                  </Link>
                 ) : (
                   <Button asChild size="sm" variant="outline">
                     <Link href={href}>Сгенерировать</Link>

@@ -21,7 +21,9 @@ function NewScenarioForm() {
   const planTopicId = sp.get('planTopicId') ?? ''
   const calendarDate = sp.get('calendarDate') ?? ''
   const formRef = useRef<HTMLFormElement>(null)
-  const [source, setSource] = useState<'manual' | 'calendar'>(calendarDate ? 'calendar' : 'manual')
+  const [source, setSource] = useState<'manual' | 'calendar' | 'plan'>(
+    planTopicId ? 'plan' : calendarDate ? 'calendar' : 'manual',
+  )
   const [topicValue, setTopicValue] = useState(topic)
   const [matches, setMatches] = useState<PrematchCard[] | null>(null)
   const [matching, startMatch] = useTransition()
@@ -147,6 +149,7 @@ function NewScenarioForm() {
                 [
                   ['manual', 'Вручную'],
                   ['calendar', 'Календарь поводов'],
+                  ...(planTopicId ? ([['plan', 'Из плана']] as const) : []),
                 ] as const
               ).map(([v, label]) => (
                 <button
@@ -163,6 +166,13 @@ function NewScenarioForm() {
                 </button>
               ))}
             </div>
+
+            {source === 'plan' && (
+              <p className="rounded-md bg-accent-50 px-3 py-2 text-sm text-accent-700 ring-1 ring-accent-100">
+                📋 Тема взята из плана воспитательной работы. Сгенерированный сценарий автоматически
+                закроет эту тему в плане.
+              </p>
+            )}
 
             {source === 'calendar' && (
               <div className="space-y-1.5">
