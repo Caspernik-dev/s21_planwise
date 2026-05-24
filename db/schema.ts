@@ -79,6 +79,7 @@ export const scenarios = pgTable('scenarios', {
   // Forward-compat: источники (таблицы plan_topics/shared_scenarios появятся в своих планах).
   sourcePlanTopicId: text('source_plan_topic_id'),
   sourceSharedId: text('source_shared_id'),
+  shareToken: text('share_token').unique(),
   content: jsonb('content').$type<ScenarioContent>().notNull(),
   inputContext: jsonb('input_context').$type<GenerationInput>().notNull(),
   generationMeta: jsonb('generation_meta').$type<GenerationMeta>(),

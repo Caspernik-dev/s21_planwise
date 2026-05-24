@@ -6,7 +6,7 @@ import { generations, likes, scenarioVersions, scenarios, sharedScenarios } from
 import { type SharedRow, sharedToScenarioInsert } from '@/lib/community/copy'
 import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
 import { resolveShareTarget } from '@/lib/community/share-target'
-import { scanScenarioPii } from '@/lib/pii/scenario-scan'
+import { type ScenarioPiiWarning, scanScenarioPii } from '@/lib/pii/scenario-scan'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { coerceActivityType } from '@/lib/scenario/coerce'
@@ -19,6 +19,7 @@ import {
   type ScenarioSkeleton,
   scenarioContentSchema,
 } from '@/lib/scenario/schema'
+import { generateShareToken } from '@/lib/share/token'
 import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -309,4 +310,73 @@ export async function useSharedAsIsAction(sharedId: string): Promise<void> {
     .values({ scenarioId: row.id, content: shared.anonymizedContent })
 
   redirect(`/app/scenarios/${row.id}`)
+}
+
+export type EnableShareResult =
+  | { ok: true; token: string; piiWarning: ScenarioPiiWarning | null }
+  | { ok: false; error: string }
+
+export async function enableShareLinkAction(scenarioId: string): Promise<EnableShareResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано' }
+  const userId = session.user.id
+
+  const [row] = await db
+    .select({ shareToken: scenarios.shareToken, content: scenarios.content })
+    .from(scenarios)
+    .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, userId)))
+    .limit(1)
+  if (!row) return { ok: false, error: 'Сценарий не найден' }
+
+  let token = row.shareToken
+  if (!token) {
+    token = generateShareToken()
+    await db
+      .update(scenarios)
+      .set({ shareToken: token })
+      .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, userId)))
+  }
+
+  const piiWarning = scanScenarioPii(row.content)
+  return { ok: true, token, piiWarning }
+}
+
+export async function disableShareLinkAction(
+  scenarioId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано' }
+  await db
+    .update(scenarios)
+    .set({ shareToken: null })
+    .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, session.user.id)))
+  return { ok: true }
+}
+
+export async function copyScenarioByTokenAction(token: string): Promise<void> {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+
+  const [src] = await db.select().from(scenarios).where(eq(scenarios.shareToken, token)).limit(1)
+  if (!src) redirect('/app')
+
+  const [copy] = await db
+    .insert(scenarios)
+    .values({
+      userId,
+      title: src.title,
+      direction: src.direction,
+      grade: src.grade,
+      durationMin: src.durationMin,
+      format: src.format,
+      topic: src.topic,
+      content: src.content,
+      inputContext: src.inputContext,
+      generationMeta: src.generationMeta,
+    })
+    .returning({ id: scenarios.id })
+
+  await db.insert(scenarioVersions).values({ scenarioId: copy.id, content: src.content })
+  redirect(`/app/scenarios/${copy.id}`)
 }

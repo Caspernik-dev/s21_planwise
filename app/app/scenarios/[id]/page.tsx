@@ -36,6 +36,7 @@ export default async function ScenarioPage({ params }: { params: Promise<{ id: s
       initialContent={scenario.content}
       initialLiked={!!like}
       initialShared={like?.optInShare ?? false}
+      initialShareToken={scenario.shareToken}
     />
   )
 }
