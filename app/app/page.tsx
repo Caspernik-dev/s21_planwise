@@ -1,18 +1,40 @@
 import { auth } from '@/auth'
+import { ScenarioSearch } from '@/components/dashboard/ScenarioSearch'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/db'
 import { planTopics, scenarios, sharedScenarios, workPlans } from '@/db/schema'
-import { formatGrade } from '@/lib/scenario/options'
-import { and, count, desc, eq, isNotNull } from 'drizzle-orm'
+import { DIRECTIONS, FORMATS, GRADES, formatGrade } from '@/lib/scenario/options'
+import { and, count, desc, eq, ilike, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-export default async function DashboardPage() {
+type SearchParams = { q?: string; direction?: string; grade?: string; format?: string }
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
 
-  const recent = await db
+  const sp = await searchParams
+  const q = typeof sp.q === 'string' ? sp.q.trim() : ''
+  const direction = DIRECTIONS.includes(sp.direction as never) ? sp.direction : undefined
+  const gradeNum = Number(sp.grade)
+  const grade = GRADES.includes(gradeNum as never) ? gradeNum : undefined
+  const format = FORMATS.includes(sp.format as never) ? sp.format : undefined
+  const hasQuery = Boolean(q || direction || grade !== undefined || format)
+
+  const conds = [eq(scenarios.userId, userId)]
+  if (q) conds.push(ilike(scenarios.title, `%${q}%`))
+  if (direction) conds.push(eq(scenarios.direction, direction))
+  if (grade !== undefined) conds.push(eq(scenarios.grade, grade))
+  if (format) conds.push(eq(scenarios.format, format))
+
+  const list = await db
     .select({
       id: scenarios.id,
       title: scenarios.title,
@@ -22,34 +44,38 @@ export default async function DashboardPage() {
       createdAt: scenarios.createdAt,
     })
     .from(scenarios)
-    .where(eq(scenarios.userId, session.user.id))
+    .where(and(...conds))
     .orderBy(desc(scenarios.createdAt))
-    .limit(10)
+    .limit(100)
 
   const plans = await db
     .select({ id: workPlans.id, title: workPlans.title })
     .from(workPlans)
-    .where(eq(workPlans.userId, session.user.id))
+    .where(eq(workPlans.userId, userId))
     .orderBy(desc(workPlans.createdAt))
     .limit(3)
 
   const topicRows = await db
     .select({ id: planTopics.id, workPlanId: planTopics.workPlanId })
     .from(planTopics)
-    .where(eq(planTopics.userId, session.user.id))
-  const coveredIds = new Set(
-    (
-      await db
-        .select({ t: scenarios.sourcePlanTopicId })
-        .from(scenarios)
-        .where(and(eq(scenarios.userId, session.user.id), isNotNull(scenarios.sourcePlanTopicId)))
-    )
-      .map((r) => r.t)
-      .filter((x): x is string => !!x),
-  )
+    .where(eq(planTopics.userId, userId))
+
+  const scenarioTopicRows = await db
+    .select({ id: scenarios.id, topicId: scenarios.sourcePlanTopicId })
+    .from(scenarios)
+    .where(and(eq(scenarios.userId, userId), isNotNull(scenarios.sourcePlanTopicId)))
+  const scenarioByTopic = new Map<string, string>()
+  for (const r of scenarioTopicRows) {
+    if (r.topicId && !scenarioByTopic.has(r.topicId)) scenarioByTopic.set(r.topicId, r.id)
+  }
+
   const planStats = plans.map((p) => {
     const ts = topicRows.filter((t) => t.workPlanId === p.id)
-    return { ...p, total: ts.length, done: ts.filter((t) => coveredIds.has(t.id)).length }
+    return {
+      ...p,
+      total: ts.length,
+      done: ts.filter((t) => scenarioByTopic.has(t.id)).length,
+    }
   })
 
   const [sharedCountRow] = await db.select({ value: count() }).from(sharedScenarios)
@@ -63,15 +89,6 @@ export default async function DashboardPage() {
           <Link href="/app/new">Создать сценарий</Link>
         </Button>
       </div>
-
-      <Link href="/app/library" className="block">
-        <Card className="transition hover:shadow-hover">
-          <CardHeader>
-            <CardTitle className="text-base">Библиотека сообщества</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-neutral-600">{sharedCount} сценариев</CardContent>
-        </Card>
-      </Link>
 
       {planStats.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -90,18 +107,31 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {recent.length === 0 ? (
+      <Link href="/app/library" className="block">
+        <Card className="transition hover:shadow-hover">
+          <CardHeader>
+            <CardTitle className="text-base">Библиотека сообщества</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-neutral-600">{sharedCount} сценариев</CardContent>
+        </Card>
+      </Link>
+
+      <ScenarioSearch />
+
+      {list.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Пока пусто</CardTitle>
+            <CardTitle>{hasQuery ? 'Ничего не найдено' : 'Пока пусто'}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-neutral-600">
-            Создайте первый сценарий — укажите направление, класс, тему, длительность и формат.
+            {hasQuery
+              ? 'Попробуйте изменить запрос или сбросить фильтры.'
+              : 'Создайте первый сценарий — укажите направление, класс, тему, длительность и формат.'}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {recent.map((s) => (
+          {list.map((s) => (
             <Link key={s.id} href={`/app/scenarios/${s.id}`}>
               <Card className="h-full transition hover:shadow-hover">
                 <CardHeader>
