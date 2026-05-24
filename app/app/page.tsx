@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/db'
 import { planTopics, scenarios, sharedScenarios, workPlans } from '@/db/schema'
+import { CALENDAR_EVENTS } from '@/lib/calendar-events'
+import { type UpcomingItem, pickUpcoming } from '@/lib/dashboard/upcoming'
 import { DIRECTIONS, FORMATS, GRADES, formatGrade } from '@/lib/scenario/options'
 import { and, count, desc, eq, ilike, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
@@ -56,7 +58,12 @@ export default async function DashboardPage({
     .limit(3)
 
   const topicRows = await db
-    .select({ id: planTopics.id, workPlanId: planTopics.workPlanId })
+    .select({
+      id: planTopics.id,
+      workPlanId: planTopics.workPlanId,
+      title: planTopics.title,
+      plannedDate: planTopics.plannedDate,
+    })
     .from(planTopics)
     .where(eq(planTopics.userId, userId))
 
@@ -81,6 +88,28 @@ export default async function DashboardPage({
   const [sharedCountRow] = await db.select({ value: count() }).from(sharedScenarios)
   const sharedCount = sharedCountRow?.value ?? 0
 
+  const upcoming = pickUpcoming({
+    today: new Date(),
+    planTopics: topicRows.map((t) => ({
+      id: t.id,
+      title: t.title,
+      plannedDate: t.plannedDate,
+      scenarioId: scenarioByTopic.get(t.id) ?? null,
+    })),
+    calendar: CALENDAR_EVENTS,
+  })
+
+  function upcomingHref(item: UpcomingItem): string {
+    if (item.source === 'plan') {
+      if (item.scenarioId) return `/app/scenarios/${item.scenarioId}`
+      return `/app/new?topic=${encodeURIComponent(item.title)}&planTopicId=${item.planTopicId}`
+    }
+    return `/app/new?topic=${encodeURIComponent(item.title)}&calendarDate=${item.calendarDate}`
+  }
+
+  const fmtDate = (d: Date) =>
+    `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -89,6 +118,37 @@ export default async function DashboardPage({
           <Link href="/app/new">Создать сценарий</Link>
         </Button>
       </div>
+
+      {upcoming.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold text-neutral-900">Ближайшие мероприятия</h2>
+            <span className="text-xs text-neutral-500">
+              {upcoming[0].source === 'plan' ? 'из вашего плана' : 'памятные даты учебного года'}
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {upcoming.map((item) => (
+              <Link
+                key={`${item.source}-${item.planTopicId ?? item.calendarDate}`}
+                href={upcomingHref(item)}
+              >
+                <Card className="h-full transition hover:shadow-hover">
+                  <CardHeader>
+                    <CardTitle className="text-base">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between text-sm text-neutral-600">
+                    <span>{fmtDate(item.date)}</span>
+                    <span className="text-xs text-brand-600">
+                      {item.source === 'plan' && item.scenarioId ? 'Открыть сценарий' : 'Создать →'}
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {planStats.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
