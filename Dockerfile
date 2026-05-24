@@ -58,6 +58,7 @@ RUN groupadd --system --gid 1001 nodejs \
 
 COPY --from=builder --chown=nextjs:nodejs /build/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /build/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /build/public ./public
 COPY --from=builder --chown=nextjs:nodejs /build/assets ./assets
 
 USER nextjs
