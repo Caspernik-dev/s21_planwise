@@ -2,6 +2,7 @@
 
 import { bindScenarioAction } from '@/app/app/calendar/actions'
 import { LikeShareControls } from '@/components/community/LikeShareControls'
+import { ShareLinkControls } from '@/components/share/ShareLinkControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -41,11 +42,13 @@ export function ScenarioEditor({
   initialContent,
   initialLiked,
   initialShared,
+  initialShareToken,
 }: {
   meta: Meta
   initialContent: ScenarioContent
   initialLiked: boolean
   initialShared: boolean
+  initialShareToken: string | null
 }) {
   const [content, setContent] = useState<ScenarioContent>(initialContent)
   const [savedJson, setSavedJson] = useState(() => JSON.stringify(initialContent))
@@ -191,6 +194,7 @@ export function ScenarioEditor({
             initialLiked={initialLiked}
             initialShared={initialShared}
           />
+          <ShareLinkControls scenarioId={meta.id} initialToken={initialShareToken} />
           {dirty && (
             <p className="text-xs text-neutral-500">
               Сохраните, чтобы экспорт включал последние изменения
