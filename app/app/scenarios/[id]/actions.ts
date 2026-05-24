@@ -352,3 +352,31 @@ export async function disableShareLinkAction(
     .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, session.user.id)))
   return { ok: true }
 }
+
+export async function copyScenarioByTokenAction(token: string): Promise<void> {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+
+  const [src] = await db.select().from(scenarios).where(eq(scenarios.shareToken, token)).limit(1)
+  if (!src) redirect('/app')
+
+  const [copy] = await db
+    .insert(scenarios)
+    .values({
+      userId,
+      title: src.title,
+      direction: src.direction,
+      grade: src.grade,
+      durationMin: src.durationMin,
+      format: src.format,
+      topic: src.topic,
+      content: src.content,
+      inputContext: src.inputContext,
+      generationMeta: src.generationMeta,
+    })
+    .returning({ id: scenarios.id })
+
+  await db.insert(scenarioVersions).values({ scenarioId: copy.id, content: src.content })
+  redirect(`/app/scenarios/${copy.id}`)
+}
