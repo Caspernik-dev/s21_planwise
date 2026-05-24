@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 const LINKS = [
@@ -14,14 +15,14 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
-            <Link
-              href="/"
-              className="flex items-center gap-2 font-display text-xl font-bold text-neutral-900"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-sm font-black text-white">
-                К
-              </span>
-              Классный<span className="text-brand-500">час</span>
+            <Link href="/" className="flex items-center" aria-label="Planwise — на главную">
+              <Image
+                src="/logo.svg"
+                alt="Planwise — Классный час"
+                width={148}
+                height={44}
+                className="h-11 w-auto"
+              />
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-neutral-400">
               ИИ-генератор сценариев внеурочных занятий с опорой на методички и эталоны сообщества.
