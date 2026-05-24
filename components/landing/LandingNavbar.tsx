@@ -1,6 +1,7 @@
 'use client'
 
 import { Menu, X } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -16,14 +17,15 @@ export function LandingNavbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200/80 bg-neutral-0/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-sm font-black text-white">
-            К
-          </span>
-          Классный<span className="text-brand-500">час</span>
+        <Link href="/" className="flex items-center" aria-label="Planwise — на главную">
+          <Image
+            src="/logo.svg"
+            alt="Planwise — Классный час"
+            width={148}
+            height={44}
+            priority
+            className="h-11 w-auto"
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

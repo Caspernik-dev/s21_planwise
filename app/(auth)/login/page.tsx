@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useActionState } from 'react'
@@ -42,7 +43,17 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center px-6">
+    <main className="min-h-screen flex flex-col items-center justify-center gap-6 px-6">
+      <Link href="/" aria-label="Planwise — на главную">
+        <Image
+          src="/logo.svg"
+          alt="Planwise — Классный час"
+          width={168}
+          height={50}
+          priority
+          className="h-12 w-auto"
+        />
+      </Link>
       <Card className="w-full max-w-md animate-fade-up">
         <CardHeader>
           <CardTitle>Вход</CardTitle>

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export function AppNavbar({
@@ -9,8 +10,15 @@ export function AppNavbar({
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-neutral-50/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <Link href="/app" className="text-base font-display font-semibold text-neutral-900">
-          Классный час
+        <Link href="/app" className="flex items-center" aria-label="Planwise — на главную">
+          <Image
+            src="/logo.svg"
+            alt="Planwise — Классный час"
+            width={121}
+            height={36}
+            priority
+            className="h-9 w-auto"
+          />
         </Link>
         <nav className="flex items-center gap-4 text-sm text-neutral-600">
           <Link href="/app/new" className="hover:text-neutral-900">
