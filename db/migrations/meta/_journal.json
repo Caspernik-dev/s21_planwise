@@ -85,6 +85,13 @@
       "when": 1779388966239,
       "tag": "0011_material_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779610569639,
+      "tag": "0012_solid_celestials",
+      "breakpoints": true
     }
   ]
 }
