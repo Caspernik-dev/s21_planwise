@@ -52,6 +52,10 @@ describe('resolveUpcomingDate', () => {
     expect(resolveUpcomingDate('01.09.2020', TODAY)).toBeNull()
   })
 
+  it('rolls a no-year 29.02 forward to the next leap year', () => {
+    expect(resolveUpcomingDate('29.02', TODAY)?.toISOString().slice(0, 10)).toBe('2028-02-29')
+  })
+
   it('drops an invalid calendar date', () => {
     expect(resolveUpcomingDate('31.02', TODAY)).toBeNull()
   })

@@ -27,6 +27,7 @@ function startOfUtcDay(today: Date): number {
 function forwardOccurrence(month: number, day: number, today: Date): Date | null {
   const floor = startOfUtcDay(today)
   const base = today.getUTCFullYear()
+  // >1 года вперёд: бездатное 29.02 должно проскочить невисокосные годы до ближайшего високосного.
   for (let y = base; y <= base + 8; y++) {
     const d = makeUtcDate(y, month, day)
     if (d && d.getTime() >= floor) return d
