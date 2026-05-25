@@ -200,11 +200,6 @@ export function ScenarioEditor({
             initialShared={initialShared}
           />
           <ShareLinkControls scenarioId={meta.id} initialToken={initialShareToken} />
-          <RatingControls
-            scenarioId={meta.id}
-            initialRating={initialRating}
-            initialFeedback={initialFeedback}
-          />
           {dirty && (
             <p className="text-xs text-neutral-500">
               Сохраните, чтобы экспорт включал последние изменения
@@ -510,6 +505,12 @@ export function ScenarioEditor({
           </div>
         </CardContent>
       </Card>
+
+      <RatingControls
+        scenarioId={meta.id}
+        initialRating={initialRating}
+        initialFeedback={initialFeedback}
+      />
 
       <div className="fixed inset-x-0 bottom-0 border-t border-neutral-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">

@@ -9,6 +9,7 @@ export type GenerationStats = {
   total: number
   ok: number
   error: number
+  regenTotal: number
   avgLatencyFullMs: number | null
   avgLatencyRegenMs: number | null
   byDay: Array<{ day: string; count: number }>
@@ -19,6 +20,7 @@ export async function generationStats(db: Db = realDb): Promise<GenerationStats>
       SELECT count(*) AS total,
         count(*) FILTER (WHERE status='ok') AS ok,
         count(*) FILTER (WHERE status='error') AS error,
+        count(*) FILTER (WHERE kind='regen') AS regen_total,
         round(avg(latency_ms) FILTER (WHERE kind='full')) AS avg_latency_full,
         round(avg(latency_ms) FILTER (WHERE kind='regen')) AS avg_latency_regen
       FROM generations`),
@@ -34,6 +36,7 @@ export async function generationStats(db: Db = realDb): Promise<GenerationStats>
     total: Number(agg?.total ?? 0),
     ok: Number(agg?.ok ?? 0),
     error: Number(agg?.error ?? 0),
+    regenTotal: Number(agg?.regen_total ?? 0),
     avgLatencyFullMs: agg?.avg_latency_full == null ? null : Number(agg.avg_latency_full),
     avgLatencyRegenMs: agg?.avg_latency_regen == null ? null : Number(agg.avg_latency_regen),
     byDay: day.map((r) => ({ day: String(r.day), count: Number(r.count) })),
@@ -78,6 +81,7 @@ export type UserStats = {
   activeUsers: number
   newByDay: Array<{ day: string; count: number }>
   topUsers: Array<{ email: string; count: number }>
+  topRegenUsers: Array<{ email: string; count: number }>
 }
 export async function userStats(db: Db = realDb): Promise<UserStats> {
   const [tot] = rows(await db.execute(sql`SELECT count(*) AS c FROM users`))
@@ -98,11 +102,19 @@ export async function userStats(db: Db = realDb): Promise<UserStats> {
       FROM generations g JOIN users u ON u.id = g.user_id
       GROUP BY u.email ORDER BY count DESC LIMIT 10`),
   ).map((r) => ({ email: String(r.email), count: Number(r.count) }))
+  const topRegenUsers = rows(
+    await db.execute(sql`
+      SELECT u.email AS email, count(*) AS count
+      FROM generations g JOIN users u ON u.id = g.user_id
+      WHERE g.kind = 'regen'
+      GROUP BY u.email ORDER BY count DESC LIMIT 10`),
+  ).map((r) => ({ email: String(r.email), count: Number(r.count) }))
   return {
     totalUsers: Number(tot?.c ?? 0),
     activeUsers: Number(act?.c ?? 0),
     newByDay,
     topUsers,
+    topRegenUsers,
   }
 }
 

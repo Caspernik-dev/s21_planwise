@@ -32,7 +32,7 @@ export default async function AdminPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-semibold text-neutral-900">Статистика</h1>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Генераций всего" value={gen.total} />
         <KpiCard
           label="Успешных"
@@ -52,6 +52,11 @@ export default async function AdminPage() {
             gen.avgLatencyRegenMs == null ? '—' : `${(gen.avgLatencyRegenMs / 1000).toFixed(1)} с`
           }
           hint="замена одной активности"
+        />
+        <KpiCard
+          label="🎲-регенераций блоков"
+          value={gen.regenTotal}
+          hint="всего замен активностей"
         />
         <KpiCard
           label="Пользователей"
@@ -100,6 +105,12 @@ export default async function AdminPage() {
           <StatTable
             columns={['Email', 'Генераций']}
             rows={users.topUsers.map((u) => ({ label: u.email, value: u.count }))}
+          />
+        </SectionCard>
+        <SectionCard title="Топ пользователей по 🎲-регенерациям">
+          <StatTable
+            columns={['Email', 'Регенераций']}
+            rows={users.topRegenUsers.map((u) => ({ label: u.email, value: u.count }))}
           />
         </SectionCard>
       </div>
