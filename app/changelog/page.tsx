@@ -42,13 +42,13 @@ export default function ChangelogPage() {
               </div>
               <ul className="space-y-3">
                 {entry.changes.map((change) => (
-                  <li key={change.text} className="flex gap-3">
+                  <li key={change.text} className="flex items-start gap-3">
                     <span
-                      className={`mt-0.5 w-24 shrink-0 rounded-full px-2.5 py-0.5 text-center text-xs font-medium ${KIND_BADGE[change.kind]}`}
+                      className={`flex h-6 w-24 shrink-0 items-center justify-center rounded-full text-xs font-medium ${KIND_BADGE[change.kind]}`}
                     >
                       {CHANGE_KIND_LABEL[change.kind]}
                     </span>
-                    <span className="text-sm leading-relaxed text-neutral-700">{change.text}</span>
+                    <span className="text-sm leading-6 text-neutral-700">{change.text}</span>
                   </li>
                 ))}
               </ul>
