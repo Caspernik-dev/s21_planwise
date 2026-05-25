@@ -45,8 +45,13 @@ const c = {
 } as const
 
 const DISCLAIMER_PREFIX = 'Сценарий сгенерирован ИИ'
-const QR_PATH = path.join(process.cwd(), 'assets', 'qr-planwise.png')
-const SITE_URL = 'plan-wise.ru'
+// Промо-блок — заранее запечённый PNG (текст + QR), а не живой react-pdf-текст:
+// субсеттинг шрифта в v4 нестабильно роняет глифы в составных документах
+// («Planwise»→«anwise»). Картинка от этого иммунна. Генерится pnpm gen:promo.
+const PROMO_PATH = path.join(process.cwd(), 'assets', 'promo-card.png')
+// Исходный PNG 1000×232 (ratio 0.232). Ширина = контентная ширина A4 (595.28−2·48).
+const PROMO_W = 499
+const PROMO_H = Math.round(PROMO_W * (232 / 1000))
 
 const styles = StyleSheet.create({
   // ВАЖНО: lineHeight НЕ задаём на Page — page-level lineHeight в
@@ -104,24 +109,10 @@ const styles = StyleSheet.create({
   },
   footerText: { flex: 1, fontSize: 8, color: c.neutral500, lineHeight: 1.4 },
   footerPage: { fontSize: 8, color: c.neutral500, marginLeft: 12 },
-  promo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: c.brand50,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: c.brand100,
-    padding: 14,
-  },
-  // Поток: используется только для замера, влезает ли промо на последнюю страницу.
-  promoFlowWrap: { marginTop: 22 },
-  // Финальное размещение: пришпилено к низу последней страницы над футером.
-  promoPinned: { position: 'absolute', bottom: 50, left: 48, right: 48 },
-  promoText: { flex: 1, paddingRight: 14 },
-  promoTitle: { fontSize: 12, fontWeight: 'bold', color: c.brand700, marginBottom: 3 },
-  promoBody: { fontSize: 9.5, color: c.neutral700, lineHeight: 1.4 },
-  promoUrl: { fontSize: 10, fontWeight: 'bold', color: c.brand600, marginTop: 5 },
-  promoQr: { width: 64, height: 64 },
+  // Поток: только для замера, влезает ли промо на последнюю страницу.
+  promoFlow: { width: PROMO_W, height: PROMO_H, marginTop: 22 },
+  // Финал: пришпилено к низу последней страницы над футером (Image → без бага глифов).
+  promoPinned: { position: 'absolute', bottom: 44, left: 48, width: PROMO_W, height: PROMO_H },
 })
 
 function LogoMark() {
@@ -138,22 +129,6 @@ function LogoMark() {
         />
       </G>
     </Svg>
-  )
-}
-
-function PromoBlock() {
-  return (
-    <View style={styles.promo} wrap={false}>
-      <View style={styles.promoText}>
-        <Text style={styles.promoTitle}>Создано в Planwise за пару минут</Text>
-        <Text style={styles.promoBody}>
-          Planwise — ИИ-генератор сценариев внеурочных занятий с опорой на методички «Разговоров о
-          важном». Подберёт под класс, тему и формат, оформит и даст скачать.
-        </Text>
-        <Text style={styles.promoUrl}>{SITE_URL}</Text>
-      </View>
-      <Image src={QR_PATH} style={styles.promoQr} />
-    </View>
   )
 }
 
@@ -206,8 +181,10 @@ function renderBlock(b: DocBlock, i: number) {
   }
 }
 
-// none — без промо; flow — промо в потоке (для замера, влезает ли); pinned — промо
-// пришпилено к низу последней страницы (out of flow, число страниц не растёт).
+// Промо рендерим ТОЛЬКО в потоке (last-page, после контента). Абсолютное
+// позиционирование в @react-pdf/renderer v4 роняет первые латинские глифы текста
+// none — без промо; flow — промо-картинка в потоке (замер, влезает ли); pinned —
+// картинка пришпилена к низу последней страницы (out of flow, страниц не добавляет).
 type PromoMode = 'none' | 'flow' | 'pinned'
 
 export function ScenarioPdf({
@@ -237,11 +214,7 @@ export function ScenarioPdf({
           </View>
         </View>
         {blocks.map(renderBlock)}
-        {promo === 'flow' && (
-          <View style={styles.promoFlowWrap} wrap={false}>
-            <PromoBlock />
-          </View>
-        )}
+        {promo === 'flow' && <Image src={PROMO_PATH} style={styles.promoFlow} />}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>{disclaimerText}</Text>
           <Text
@@ -249,14 +222,7 @@ export function ScenarioPdf({
             render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
           />
         </View>
-        {promo === 'pinned' && (
-          // Не fixed: абсолютный последний элемент рендерится один раз и попадает на
-          // последнюю страницу, пришпиленный к низу. Замер гарантирует, что влезает.
-          // (render-проп не используем — он ломает кириллицу в текстовом слое.)
-          <View style={styles.promoPinned}>
-            <PromoBlock />
-          </View>
-        )}
+        {promo === 'pinned' && <Image src={PROMO_PATH} style={styles.promoPinned} />}
       </Page>
     </Document>
   )
@@ -282,5 +248,6 @@ export async function renderScenarioPdf(
   if (countPages(withFlowPromo) !== countPages(withoutPromo)) {
     return withoutPromo
   }
+  // Влезает → финальный рендер с картинкой, пришпиленной к низу последней страницы.
   return renderToBuffer(<ScenarioPdf content={content} meta={meta} promo="pinned" />)
 }

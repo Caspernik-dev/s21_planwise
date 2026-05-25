@@ -23,7 +23,8 @@
     "seed:demo": "tsx scripts/seed-demo.ts",
     "seed:shared": "NODE_OPTIONS=--use-system-ca tsx scripts/seed-shared.ts",
     "set:admin": "tsx scripts/set-admin.ts",
-    "gen:qr": "tsx scripts/gen-qr.ts"
+    "gen:qr": "tsx scripts/gen-qr.ts",
+    "gen:promo": "tsx scripts/gen-promo.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/pdf-parse": "^1.1.5",
