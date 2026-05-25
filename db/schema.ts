@@ -6,6 +6,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   unique,
@@ -143,6 +144,8 @@ export const generations = pgTable('generations', {
   latencyMs: integer('latency_ms'),
   status: text('status').notNull(), // 'ok' | 'error'
   kind: text('kind').notNull().default('full'), // 'full' | 'regen'
+  rating: smallint('rating'), // 1 = 👍, -1 = 👎, null = не оценено
+  feedback: text('feedback'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 

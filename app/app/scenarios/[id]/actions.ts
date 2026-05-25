@@ -20,7 +20,7 @@ import {
   scenarioContentSchema,
 } from '@/lib/scenario/schema'
 import { generateShareToken } from '@/lib/share/token'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -379,4 +379,40 @@ export async function copyScenarioByTokenAction(token: string): Promise<void> {
 
   await db.insert(scenarioVersions).values({ scenarioId: copy.id, content: src.content })
   redirect(`/app/scenarios/${copy.id}`)
+}
+
+export type RateResult = { ok: true } | { ok: false; error: string }
+
+export async function rateGenerationAction(
+  scenarioId: string,
+  rating: number,
+  feedback?: string,
+): Promise<RateResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано.' }
+  if (rating !== 1 && rating !== -1) return { ok: false, error: 'Некорректная оценка.' }
+
+  const [gen] = await db
+    .select({ id: generations.id })
+    .from(generations)
+    .where(
+      and(
+        eq(generations.scenarioId, scenarioId),
+        eq(generations.userId, session.user.id),
+        eq(generations.kind, 'full'),
+      ),
+    )
+    .orderBy(desc(generations.createdAt))
+    .limit(1)
+
+  if (!gen) return { ok: false, error: 'Нет генерации для оценки.' }
+
+  const trimmed = feedback?.trim()
+  await db
+    .update(generations)
+    .set({ rating, feedback: trimmed ? trimmed.slice(0, 1000) : null })
+    .where(and(eq(generations.id, gen.id), eq(generations.userId, session.user.id)))
+
+  revalidatePath(`/app/scenarios/${scenarioId}`)
+  return { ok: true }
 }

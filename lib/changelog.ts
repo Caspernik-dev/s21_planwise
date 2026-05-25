@@ -15,6 +15,16 @@ export const CHANGE_KIND_LABEL: Record<ChangeKind, string> = {
 // Новые записи — сверху. Семантические версии: фича → +минор, багфикс → +патч.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.7.0',
+    date: '25 мая 2026',
+    changes: [
+      {
+        kind: 'feature',
+        text: 'Оценка сгенерированного сценария: поставьте 👍 или 👎, а при необходимости оставьте короткий отзыв — это помогает нам улучшать качество генерации.',
+      },
+    ],
+  },
+  {
     version: 'v1.6.0',
     date: '25 мая 2026',
     changes: [
