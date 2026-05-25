@@ -44,7 +44,7 @@ export default function ChangelogPage() {
                 {entry.changes.map((change) => (
                   <li key={change.text} className="flex gap-3">
                     <span
-                      className={`mt-0.5 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${KIND_BADGE[change.kind]}`}
+                      className={`mt-0.5 w-24 shrink-0 rounded-full px-2.5 py-0.5 text-center text-xs font-medium ${KIND_BADGE[change.kind]}`}
                     >
                       {CHANGE_KIND_LABEL[change.kind]}
                     </span>
