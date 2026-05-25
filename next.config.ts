@@ -8,7 +8,11 @@ const config: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   reactStrictMode: true,
   outputFileTracingIncludes: {
-    '/api/scenarios/[id]/export': ['./assets/fonts/**'],
+    // PDF-рендер тянет шрифты PT Sans и QR-PNG из ./assets через path.join(cwd) —
+    // путь не трассируется статически, поэтому включаем ассеты вручную для всех
+    // роутов, рендерящих экспорт (обычный и публичный по share-токену).
+    '/api/scenarios/[id]/export': ['./assets/**'],
+    '/api/share/[token]/export': ['./assets/**'],
   },
   experimental: {
     serverActions: { bodySizeLimit: '6mb' },

@@ -22,7 +22,8 @@
     "calibrate": "NODE_OPTIONS=--use-system-ca tsx scripts/calibrate-threshold.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "seed:shared": "NODE_OPTIONS=--use-system-ca tsx scripts/seed-shared.ts",
-    "set:admin": "tsx scripts/set-admin.ts"
+    "set:admin": "tsx scripts/set-admin.ts",
+    "gen:qr": "tsx scripts/gen-qr.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -51,12 +52,14 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/pdf-parse": "^1.1.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.28.1",
     "postcss": "^8.4.49",
+    "qrcode": "^1.5.4",
     "tailwindcss": "^3.4.15",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
