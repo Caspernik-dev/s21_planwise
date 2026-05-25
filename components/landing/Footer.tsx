@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 const LINKS = [
   { label: 'Возможности', href: '#features' },
+  { label: 'Что нового', href: '/changelog' },
   { label: 'Войти', href: '/login' },
   { label: 'Регистрация', href: '/register' },
 ]
