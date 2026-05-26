@@ -27,4 +27,17 @@ describe('detectNames', () => {
     const m = detectNames(text).find((x) => x.value === 'Анна')!
     expect(text.slice(m.start, m.end)).toBe('Анна')
   })
+  it('детектит имя и фамилию в косвенном падеже', () => {
+    expect(vals('для Анны Ивановой подготовили карточку')).toContain('Анны Ивановой')
+  })
+  
+  it('детектит полное ФИО в косвенном падеже', () => {
+    const m = detectNames('для Ивановой Марии Петровны подготовили материалы')
+    expect(m.some((x) => x.value.includes('Марии Петровны'))).toBe(true)
+  })
+  it('check на ложные срабатывания', () => {
+    expect(vals('для Анны карточка')).toEqual(['Анны'])
+    expect(vals('товар Ивановой марки')).toEqual([])
+    expect(vals('Компания Ивановой вышла на рынок')).toEqual([])
+  })
 })

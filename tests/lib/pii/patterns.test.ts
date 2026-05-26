@@ -11,8 +11,15 @@ describe('detectPatterns', () => {
   })
 
   it('детектит email', () => {
-    const m = detectPatterns('пишите на ivan.petrov@school42.ru пожалуйста')
-    expect(m.find((x) => x.type === 'email')?.value).toBe('ivan.petrov@school42.ru')
+    const matches = detectPatterns('пишите на ivan.petrov@school42.ru пожалуйста')
+    expect(matches.find((x) => x.type === 'email')?.value).toBe('ivan.petrov@school42.ru')
+  })
+
+  it('детектит email внутри markdown-ссылки', () => {
+    const matches = detectPatterns(
+      'пишите на [ivan.petrov@school42.ru](mailto:ivan.petrov@school42.ru)',
+    )
+    expect(matches.some((x) => x.type === 'email')).toBe(true)
   })
 
   it('детектит СНИЛС без проверки контрольной суммы', () => {
@@ -30,19 +37,26 @@ describe('detectPatterns', () => {
     expect(types('ИНН 500100732259')).toContain('inn')
   })
 
+  it('не детектит ИНН без контекста', () => {
+    expect(types('номер кабинета 7707083893')).not.toContain('inn')
+    expect(types('идентификатор 500100732259')).not.toContain('inn')
+  })
+
   it('детектит дату рождения только в контексте', () => {
     expect(types('д.р. 12.05.2011')).toContain('dob')
-    expect(types('родился 1 сентября, дата 12.05.2011')).toContain('dob')
+    expect(types('дата рождения: 12.05.2011')).toContain('dob')
+    expect(types('родился 12.05.2011')).toContain('dob')
     expect(types('занятие 12.05.2011 в актовом зале')).not.toContain('dob')
   })
 
   it('детектит адрес по ключевым словам', () => {
     expect(types('проживает по адресу ул. Ленина, д. 5, кв. 12')).toContain('address')
     expect(types('проспект Мира, д. 12')).toContain('address')
+    expect(types('адрес: пер. Садовый, д. 7')).toContain('address')
+    expect(types('улица Гагарина, д. 3')).toContain('address')
   })
 
   it('не даёт ложных адресов внутри обычных слов', () => {
-    // «ул»/«пер» как часть слова не должны считаться адресом
     expect(types('регулярное общение и аккумулятор знаний')).not.toContain('address')
     expect(types('оперативный разбор и первый шаг')).not.toContain('address')
     expect(types('формирование взаимопонимания, переход к практике')).not.toContain('address')
