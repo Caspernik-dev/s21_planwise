@@ -3,6 +3,7 @@
 import { bindScenarioAction } from '@/app/app/calendar/actions'
 import { LikeShareControls } from '@/components/community/LikeShareControls'
 import { RatingControls } from '@/components/generation/RatingControls'
+import { VersionHistory } from '@/components/scenario/VersionHistory'
 import { ShareLinkControls } from '@/components/share/ShareLinkControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,7 +37,14 @@ const ACTIVITY_TYPE_LABELS: Array<{ value: string; label: string }> = [
   { value: 'video', label: 'Видео / презентация' },
 ]
 
-type Meta = { id: string; direction: string; grade: number; durationMin: number; format: string }
+type Meta = {
+  id: string
+  topic: string
+  direction: string
+  grade: number
+  durationMin: number
+  format: string
+}
 
 export function ScenarioEditor({
   meta,
@@ -132,6 +140,12 @@ export function ScenarioEditor({
     })
   }
 
+  function applyRestored(restored: ScenarioContent) {
+    setMessage('Версия восстановлена')
+    setContent(restored)
+    setSavedJson(JSON.stringify(restored))
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
       <div className="rounded-md bg-warm-50 px-4 py-3 text-sm text-warm-700 ring-1 ring-warm-200">
@@ -171,6 +185,17 @@ export function ScenarioEditor({
             <Button asChild variant="outline" size="sm">
               <a href={`/api/scenarios/${meta.id}/export?format=docx`}>DOCX</a>
             </Button>
+            <VersionHistory
+              scenarioId={meta.id}
+              meta={{
+                topic: meta.topic,
+                direction: meta.direction,
+                grade: meta.grade,
+                durationMin: meta.durationMin,
+                format: meta.format,
+              }}
+              onRestore={applyRestored}
+            />
             <Button asChild variant="outline" size="sm">
               <Link href="/app">К дашборду</Link>
             </Button>

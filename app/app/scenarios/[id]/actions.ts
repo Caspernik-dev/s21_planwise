@@ -416,3 +416,81 @@ export async function rateGenerationAction(
   revalidatePath(`/app/scenarios/${scenarioId}`)
   return { ok: true }
 }
+
+export type VersionListItem = { id: string; createdAt: string }
+export type ListVersionsResult =
+  | { ok: true; versions: VersionListItem[] }
+  | { ok: false; error: string }
+
+export async function listVersionsAction(scenarioId: string): Promise<ListVersionsResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано.' }
+
+  const owned = await loadOwned(scenarioId, session.user.id)
+  if (!owned) return { ok: false, error: 'Сценарий не найден.' }
+
+  const rows = await db
+    .select({ id: scenarioVersions.id, createdAt: scenarioVersions.createdAt })
+    .from(scenarioVersions)
+    .where(eq(scenarioVersions.scenarioId, scenarioId))
+    .orderBy(desc(scenarioVersions.createdAt))
+    .limit(30)
+
+  return {
+    ok: true,
+    versions: rows.map((r) => ({ id: r.id, createdAt: r.createdAt.toISOString() })),
+  }
+}
+
+export type GetVersionResult = { ok: true; content: ScenarioContent } | { ok: false; error: string }
+
+export async function getVersionAction(
+  scenarioId: string,
+  versionId: string,
+): Promise<GetVersionResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано.' }
+
+  const owned = await loadOwned(scenarioId, session.user.id)
+  if (!owned) return { ok: false, error: 'Сценарий не найден.' }
+
+  const [version] = await db
+    .select({ content: scenarioVersions.content })
+    .from(scenarioVersions)
+    .where(and(eq(scenarioVersions.id, versionId), eq(scenarioVersions.scenarioId, scenarioId)))
+    .limit(1)
+  if (!version) return { ok: false, error: 'Версия не найдена.' }
+
+  return { ok: true, content: version.content }
+}
+
+export async function restoreVersionAction(
+  scenarioId: string,
+  versionId: string,
+): Promise<GetVersionResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: 'Не авторизовано.' }
+  const userId = session.user.id
+
+  const owned = await loadOwned(scenarioId, userId)
+  if (!owned) return { ok: false, error: 'Сценарий не найден.' }
+
+  const [version] = await db
+    .select({ content: scenarioVersions.content })
+    .from(scenarioVersions)
+    .where(and(eq(scenarioVersions.id, versionId), eq(scenarioVersions.scenarioId, scenarioId)))
+    .limit(1)
+  if (!version) return { ok: false, error: 'Версия не найдена.' }
+
+  const content = version.content
+  await db.transaction(async (tx) => {
+    await tx
+      .update(scenarios)
+      .set({ title: content.title, content, updatedAt: new Date() })
+      .where(and(eq(scenarios.id, scenarioId), eq(scenarios.userId, userId)))
+    await tx.insert(scenarioVersions).values({ scenarioId, content })
+  })
+
+  revalidatePath(`/app/scenarios/${scenarioId}`)
+  return { ok: true, content }
+}

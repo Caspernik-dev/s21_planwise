@@ -41,6 +41,7 @@ export default async function ScenarioPage({ params }: { params: Promise<{ id: s
     <ScenarioEditor
       meta={{
         id: scenario.id,
+        topic: scenario.topic,
         direction: scenario.direction,
         grade: scenario.grade,
         durationMin: scenario.durationMin,
