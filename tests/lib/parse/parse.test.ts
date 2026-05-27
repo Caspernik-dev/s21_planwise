@@ -10,7 +10,7 @@ vi.mock('mammoth', () => ({
 // проверяем числовую сортировку slide1/slide2/slide10 и извлечение <a:t>.
 const pptxFiles: Record<string, string> = {
   'ppt/slides/slide10.xml': '<a:t>Слайд десять</a:t>',
-  'ppt/slides/slide2.xml': '<a:t>Второй</a:t><a:t>слайд</a:t>',
+  'ppt/slides/slide2.xml': '<a:t>Второй</a:t><a:t xml:space="preserve">слайд</a:t>',
   'ppt/slides/slide1.xml': '<a:t>Дружба &amp; класс</a:t>',
   'ppt/presentation.xml': '<a:t>не слайд</a:t>',
 }

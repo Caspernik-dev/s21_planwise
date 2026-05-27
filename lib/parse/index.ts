@@ -44,9 +44,9 @@ async function parsePptx(buffer: Buffer): Promise<string> {
   const slides: string[] = []
   for (const path of slidePaths) {
     const xml = await zip.files[path].async('string')
-    const runs = xml.match(/<a:t>([\s\S]*?)<\/a:t>/g) ?? []
+    const runs = xml.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) ?? []
     const text = runs
-      .map((r) => r.replace(/<a:t>([\s\S]*?)<\/a:t>/, '$1'))
+      .map((r) => r.replace(/<a:t[^>]*>([\s\S]*?)<\/a:t>/, '$1'))
       .join(' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
