@@ -1,5 +1,14 @@
 import { cn } from '@/lib/utils'
-import { BookOpen, FileDown, Radio, ShieldCheck } from 'lucide-react'
+import {
+  BookOpen,
+  CalendarDays,
+  FileDown,
+  FileStack,
+  History,
+  Library,
+  Radio,
+  ShieldCheck,
+} from 'lucide-react'
 
 const FEATURES = [
   {
@@ -11,23 +20,51 @@ const FEATURES = [
   },
   {
     icon: Radio,
-    title: 'Двухэтапный стрим',
+    title: 'Генерация в реальном времени',
     description:
-      'Сначала появляется структура занятия, затем детали — в реальном времени, прямо на ваших глазах.',
+      'Сначала появляется структура занятия, затем детали по блокам — прямо на ваших глазах.',
+    accent: 'accent',
+  },
+  {
+    icon: FileStack,
+    title: 'План воспитательной работы',
+    description:
+      'Загрузите план в PDF, DOCX, PPTX или TXT — система разберёт темы и подскажет следующую незакрытую.',
+    accent: 'warm',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Календарь поводов',
+    description:
+      'Значимые даты учебного года и привязка готового сценария к нужному дню в месячной сетке.',
+    accent: 'neutral',
+  },
+  {
+    icon: Library,
+    title: 'Библиотека сообщества',
+    description:
+      'Семантический поиск по лучшим сценариям коллег — найдите подходящий и используйте как основу.',
+    accent: 'brand',
+  },
+  {
+    icon: History,
+    title: 'Редактор и история версий',
+    description:
+      'Правьте блоки, меняйте их местами и регенерируйте активности, откатывайтесь к прежним версиям.',
     accent: 'accent',
   },
   {
     icon: ShieldCheck,
     title: 'Локальная защита ПДн',
     description:
-      'Персональные данные детектятся и обезличиваются локально. GigaChat получает только обезличенный текст.',
+      'Персональные данные обезличиваются локально. GigaChat получает только безопасный текст.',
     accent: 'warm',
   },
   {
     icon: FileDown,
-    title: 'Экспорт в PDF и DOCX',
+    title: 'Экспорт и показ',
     description:
-      'Готовый сценарий выгружается в один клик — печатайте или редактируйте в привычном формате.',
+      'Выгрузка в PDF и DOCX, персональная ссылка для коллег и полноэкранный режим показа на проекторе.',
     accent: 'neutral',
   },
 ] as const
@@ -51,7 +88,7 @@ export function Features() {
             Всё для подготовки занятия
           </h2>
           <p className="mt-3 text-base text-neutral-500">
-            От поиска по методичкам до готового файла для печати
+            От плана и методичек до готового занятия — редактирования, показа и экспорта
           </p>
         </div>
 

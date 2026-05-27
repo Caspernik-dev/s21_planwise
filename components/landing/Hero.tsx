@@ -2,9 +2,9 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 const STATS = [
-  { value: '30 сек', label: 'до готового черновика' },
+  { value: '8 форматов', label: 'от беседы до дебатов' },
   { value: 'RAG', label: 'опора на методички' },
-  { value: 'PDF / DOCX', label: 'экспорт в один клик' },
+  { value: 'PDF · DOCX', label: 'и ссылка для коллег' },
 ]
 
 export function Hero() {
@@ -27,11 +27,12 @@ export function Hero() {
           </div>
 
           <h1 className="mb-5 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl">
-            Сценарий классного часа за <span className="text-brand-500">30 секунд</span>
+            Сценарий классного часа за <span className="text-brand-500">минуту</span>
           </h1>
 
           <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-neutral-500">
-            Генерация с опорой на методички «Разговоров о важном» и эталоны сообщества. Персональные
+            Генерация с опорой на методички «Разговоров о важном» и эталоны сообщества. Задайте тему
+            вручную, возьмите из плана воспитательной работы или календаря поводов. Персональные
             данные обезличиваются локально — во внешний сервис уходит только безопасный текст.
           </p>
 
