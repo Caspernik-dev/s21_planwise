@@ -3,6 +3,7 @@
 import { bindScenarioAction } from '@/app/app/calendar/actions'
 import { LikeShareControls } from '@/components/community/LikeShareControls'
 import { RatingControls } from '@/components/generation/RatingControls'
+import { PresentationMode } from '@/components/scenario/PresentationMode'
 import { VersionHistory } from '@/components/scenario/VersionHistory'
 import { ShareLinkControls } from '@/components/share/ShareLinkControls'
 import { Button } from '@/components/ui/button'
@@ -185,6 +186,15 @@ export function ScenarioEditor({
             <Button asChild variant="outline" size="sm">
               <a href={`/api/scenarios/${meta.id}/export?format=docx`}>DOCX</a>
             </Button>
+            <PresentationMode
+              content={content}
+              meta={{
+                direction: meta.direction,
+                grade: meta.grade,
+                durationMin: meta.durationMin,
+                format: meta.format,
+              }}
+            />
             <VersionHistory
               scenarioId={meta.id}
               meta={{
