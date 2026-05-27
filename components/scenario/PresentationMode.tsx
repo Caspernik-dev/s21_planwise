@@ -34,10 +34,11 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
     if (!open) return
     containerRef.current?.requestFullscreen?.().catch(() => {})
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowRight' || e.key === ' ') {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault()
         next()
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault()
         prev()
       } else if (e.key === 'Escape') {
         close()

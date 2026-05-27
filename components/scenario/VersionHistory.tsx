@@ -34,6 +34,7 @@ export function VersionHistory({
   const [versions, setVersions] = useState<VersionListItem[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [preview, setPreview] = useState<ScenarioContent | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -42,6 +43,7 @@ export function VersionHistory({
     setError(null)
     setSelectedId(null)
     setPreview(null)
+    setConfirming(false)
     startTransition(async () => {
       const res = await listVersionsAction(scenarioId)
       if (res.ok) setVersions(res.versions)
@@ -52,6 +54,7 @@ export function VersionHistory({
   function selectVersion(id: string) {
     setSelectedId(id)
     setPreview(null)
+    setConfirming(false)
     setError(null)
     startTransition(async () => {
       const res = await getVersionAction(scenarioId, id)
@@ -61,7 +64,6 @@ export function VersionHistory({
   }
 
   function restore(id: string) {
-    if (!confirm('Восстановить эту версию? Текущее состояние сохранится в истории.')) return
     startTransition(async () => {
       const res = await restoreVersionAction(scenarioId, id)
       if (res.ok) {
@@ -131,14 +133,41 @@ export function VersionHistory({
                 )}
                 {selectedId && preview && (
                   <div className="space-y-4">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={pending}
-                      onClick={() => restore(selectedId)}
-                    >
-                      Восстановить эту версию
-                    </Button>
+                    {confirming ? (
+                      <div className="flex flex-wrap items-center gap-3 rounded-md bg-brand-50 px-4 py-3 ring-1 ring-brand-200">
+                        <span className="text-brand-800 text-sm">
+                          Точно восстановить? Текущее состояние сохранится в истории.
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={pending}
+                            onClick={() => restore(selectedId)}
+                          >
+                            Да, восстановить
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={pending}
+                            onClick={() => setConfirming(false)}
+                          >
+                            Отмена
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => setConfirming(true)}
+                      >
+                        Восстановить эту версию
+                      </Button>
+                    )}
                     <ScenarioReadOnly
                       blocks={buildScenarioDocument(preview, {
                         ...meta,
