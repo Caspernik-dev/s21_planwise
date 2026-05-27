@@ -552,6 +552,40 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
     x: 0.7, y: 6.35, w: 11.9, h: 0.7, fontFace: BODY, fontSize: 13, italic: true, color: C.greenL, valign: "top",
   });
 
+  // ============================================================
+  // SLIDE 10 — ADDITIONAL INFO (bonus)
+  // ============================================================
+  s = p.addSlide(); pageBg(s);
+  kicker(s, "+ ДОПОЛНИТЕЛЬНО");
+  title(s, "Чем ещё хочется поделиться");
+
+  // LEFT — data sovereignty / deployment
+  s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 2.1, w: 5.85, h: 4.75, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
+  s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 2.1, w: 5.85, h: 0.12, fill: { color: C.green } });
+  badge(s, 0.95, 2.4, 0.6, I.server, C.forest);
+  s.addText("Суверенность данных и развёртывание", { x: 1.7, y: 2.4, w: 4.7, h: 0.6, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, valign: "middle" });
+  s.addText([
+    { text: "docker compose up — БД, миграции и приложение одной командой", options: { bullet: { code: "2022" }, breakLine: true } },
+    { text: "Переключаемая через env LLM (LLM_PROVIDER): GigaChat или локальная / OpenAI-совместимая (Ollama, LM Studio, vLLM)", options: { bullet: { code: "2022" }, breakLine: true } },
+    { text: "Данные детей могут не покидать контур школы — модель поднимается на своём железе", options: { bullet: { code: "2022" }, color: C.green, bold: true, breakLine: true } },
+    { text: "TLS к GigaChat через вшитые сертификаты Минцифры РФ — без обхода проверки", options: { bullet: { code: "2022" }, breakLine: true } },
+  ], { x: 1.0, y: 3.2, w: 5.35, h: 2.9, fontFace: BODY, fontSize: 13, color: C.ink, paraSpaceAfter: 8, valign: "top" });
+  s.addText([
+    { text: "Публичный репозиторий: ", options: { color: C.muted } },
+    { text: "github.com/Caspernik-dev/planwise", options: { color: C.green, bold: true, hyperlink: { url: "https://github.com/Caspernik-dev/planwise" } } },
+  ], { x: 1.0, y: 6.35, w: 5.35, h: 0.35, fontFace: BODY, fontSize: 12, italic: true, valign: "middle" });
+
+  // RIGHT — lessons & insights
+  s.addShape(p.shapes.RECTANGLE, { x: 6.75, y: 2.1, w: 5.85, h: 4.75, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
+  s.addShape(p.shapes.RECTANGLE, { x: 6.75, y: 2.1, w: 5.85, h: 0.12, fill: { color: C.gold } });
+  badge(s, 7.0, 2.4, 0.6, I.bolt, C.forest);
+  s.addText("Уроки и инсайты", { x: 7.75, y: 2.4, w: 4.6, h: 0.6, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, valign: "middle" });
+  s.addText([
+    { text: "Генерация по блокам дала объём ×3 (≈15 КБ, РоВ-уровень) — масштаб числом блоков, а не «уговорами» модели", options: { bullet: { code: "2022" }, breakLine: true } },
+    { text: "Гейт качества без LLM-судьи: детерминированные проверки длины, многоходовости «Учитель: …» и числа вопросов — LLM-судья оказался ненадёжным", options: { bullet: { code: "2022" }, breakLine: true } },
+    { text: "Главный урок: статика и моки не ловят баги живой модели (пустой adaptations, формат «дебаты») — обязателен живой прогон", options: { bullet: { code: "2022" }, color: C.goldD, bold: true } },
+  ], { x: 7.05, y: 3.2, w: 5.35, h: 3.5, fontFace: BODY, fontSize: 13, color: C.ink, paraSpaceAfter: 10, valign: "top" });
+
   await p.writeFile({ fileName: "Planwise-Klassniy-Chas.pptx" });
   console.log("OK written");
 })();
