@@ -87,6 +87,17 @@ for (const name of FIRST_NAMES) {
   }
 }
 
+// Имена-омонимы частотных слов (вера/надежда/любовь/роман/лев): одиночно
+// (без фамилии/отчества) НЕ детектим — иначе калечим сценарии о ценностях.
+// В сильном контексте (правила 1 и 2) они по-прежнему ловятся.
+const AMBIGUOUS_NAMES = ['Вера', 'Надежда', 'Любовь', 'Роман', 'Лев']
+const AMBIGUOUS_NAME_FORMS = new Set<string>()
+for (const name of AMBIGUOUS_NAMES) {
+  for (const form of buildNameForms(name)) {
+    AMBIGUOUS_NAME_FORMS.add(form)
+  }
+}
+
 const CAP_WORD = '[А-ЯЁ][а-яё]+'
 
 // JS `\\b` — только ASCII и не работает на кириллице, поэтому используем
@@ -150,7 +161,7 @@ export function detectNames(text: string): PiiMatch[] {
   const covered = (i: number) => out.some((x) => i >= x.start && i < x.end)
   for (const m of text.matchAll(new RegExp(`${WB_START}(${CAP_WORD})${WB_END}`, 'g'))) {
     if (m.index === undefined) continue
-    if (FIRST_NAME_FORMS.has(m[1]) && !covered(m.index)) {
+    if (FIRST_NAME_FORMS.has(m[1]) && !AMBIGUOUS_NAME_FORMS.has(m[1]) && !covered(m.index)) {
       out.push({ type: 'name', value: m[1], start: m.index, end: m.index + m[1].length })
     }
   }
