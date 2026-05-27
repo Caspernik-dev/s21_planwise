@@ -102,9 +102,12 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   s.addText("На базе GigaChat • опора на методички «Разговоры о важном» • защита персональных данных детей", {
     x: 0.9, y: 5.7, w: 11.4, h: 0.5, fontFace: BODY, fontSize: 14, color: C.greenL,
   });
-  s.addText("Кейс 5 • Хакатон 2026 • демо: app.planwise (ссылка кликабельна)", {
-    x: 0.9, y: 6.55, w: 11.4, h: 0.4, fontFace: BODY, fontSize: 13, italic: true, color: "7FB79A",
-  });
+  s.addText([
+    { text: "Кейс 5 • Хакатон 2026 • живое демо: ", options: { color: "7FB79A" } },
+    { text: "plan-wise.ru", options: { color: C.gold, bold: true, hyperlink: { url: "https://plan-wise.ru" } } },
+    { text: "   •   код: ", options: { color: "7FB79A" } },
+    { text: "github.com/Caspernik-dev/planwise", options: { color: C.gold, bold: true, hyperlink: { url: "https://github.com/Caspernik-dev/planwise" } } },
+  ], { x: 0.9, y: 6.55, w: 11.9, h: 0.4, fontFace: BODY, fontSize: 13, italic: true });
 
   // ============================================================
   // SLIDE 2 — TEAM
@@ -114,11 +117,11 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   title(s, "Команда и зоны ответственности");
 
   const roles = [
-    ["Product / Research", "Продуктовое исследование, интервью с классными руководителями, приоритизация сценариев"],
-    ["Backend / LLM", "Интеграция с GigaChat, промпт-инжиниринг, стриминг генерации, серверная логика"],
-    ["ML / RAG", "Парсинг «Разговоров о важном», эмбеддинги, гибридный поиск, библиотека сообщества"],
-    ["Frontend / UX", "Кабинет педагога, блочный редактор, календарь, экспорт PDF/DOCX"],
-    ["DevOps / Security", "Развёртывание, изоляция данных, rate-limit, анонимизация ПДн"],
+    ["Product / Research", "Продуктовое исследование, интервью с классными руководителями, приоритизация сценариев", "delpdelv, reynalds"],
+    ["Backend / LLM", "Интеграция с GigaChat, промпт-инжиниринг, стриминг генерации, серверная логика", "delpdelv, reynalds"],
+    ["ML / RAG", "Парсинг «Разговоров о важном», эмбеддинги, гибридный поиск, библиотека сообщества", "reynalds"],
+    ["Frontend / UX", "Кабинет педагога, блочный редактор, календарь, экспорт PDF/DOCX", "delpdelv"],
+    ["DevOps / Security", "Развёртывание, изоляция данных, rate-limit, анонимизация ПДн", "delpdelv"],
   ];
   const colW = 3.86, gap = 0.28, x0 = 0.7, y0 = 2.2;
   roles.forEach((r, i) => {
@@ -128,15 +131,27 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
     s.addShape(p.shapes.RECTANGLE, { x, y, w: colW, h: 2.05, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
     s.addShape(p.shapes.RECTANGLE, { x, y, w: 0.1, h: 2.05, fill: { color: C.green } });
     s.addText(r[0], { x: x + 0.3, y: y + 0.22, w: colW - 0.5, h: 0.5, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink });
-    s.addText(r[1], { x: x + 0.3, y: y + 0.78, w: colW - 0.5, h: 1.15, fontFace: BODY, fontSize: 13.5, color: C.muted, valign: "top" });
+    s.addText(r[1], { x: x + 0.3, y: y + 0.78, w: colW - 0.5, h: 0.95, fontFace: BODY, fontSize: 13.5, color: C.muted, valign: "top" });
+    s.addText(r[2], { x: x + 0.3, y: y + 1.62, w: colW - 0.6, h: 0.32, fontFace: BODY, fontSize: 13, bold: true, italic: true, color: C.green, align: "right" });
   });
-  s.addText("Название команды: ____________ • ФИО участников указать в финальной версии", {
-    x: x0 + colW + gap, y: y0 + 2.35 + 0.5, w: 2 * colW + gap, h: 1, fontFace: BODY, fontSize: 14, italic: true, color: C.muted, valign: "top",
-  });
+  const cx = x0 + 2 * (colW + gap); // free right column (col 2, bottom)
+  // research note (top of free column)
+  s.addShape(p.shapes.RECTANGLE, { x: cx, y: y0 + 2.35, w: colW, h: 0.95, fill: { color: C.bg }, line: { color: C.green, width: 1.2 } });
   s.addText([
-    { text: "Перед проектированием проведено продуктовое исследование процесса подготовки внеурочных занятий — ", options: {} },
-    { text: "выявлены трудозатраты, типовые форматы и приоритетные сценарии.", options: { bold: true, color: C.green } },
-  ], { x: x0 + colW + gap, y: y0 + 2.35, w: 2 * colW + gap, h: 0.9, fontFace: BODY, fontSize: 13.5, color: C.ink, valign: "top" });
+    { text: "Продуктовое исследование: ", options: { bold: true, color: C.green } },
+    { text: "выявлены трудозатраты, типовые форматы и приоритетные сценарии.", options: { color: C.ink } },
+  ], { x: cx + 0.22, y: y0 + 2.45, w: colW - 0.44, h: 0.78, fontFace: BODY, fontSize: 12, valign: "middle" });
+  // team box (bottom of free column)
+  s.addShape(p.shapes.RECTANGLE, { x: cx, y: y0 + 3.45, w: colW, h: 1.6, fill: { color: C.forest }, shadow: sh() });
+  s.addText("Команда Planwise", { x: cx + 0.25, y: y0 + 3.6, w: colW - 0.5, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: C.gold });
+  s.addText([
+    { text: "Никита Феоктистов ", options: { color: C.white, bold: true } },
+    { text: "(delpdelv)", options: { color: C.greenL } },
+  ], { x: cx + 0.25, y: y0 + 4.12, w: colW - 0.5, h: 0.4, fontFace: BODY, fontSize: 13.5, valign: "middle" });
+  s.addText([
+    { text: "Данияр Хабибуллин ", options: { color: C.white, bold: true } },
+    { text: "(reynalds)", options: { color: C.greenL } },
+  ], { x: cx + 0.25, y: y0 + 4.55, w: colW - 0.5, h: 0.4, fontFace: BODY, fontSize: 13.5, valign: "middle" });
 
   // ============================================================
   // SLIDE 3 — PROBLEM & USERS
@@ -215,9 +230,10 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
     [rowL("Воспитательные результаты"), no, yes, yes],
     [rowL("Опора на «Разговоры о важном»"), no, { text: "ищи сам", options: { align: "center", color: C.muted, fontSize: 11 } }, { text: "✓ RAG авто", options: { color: C.green, bold: true, align: "center", fontSize: 12 } }],
     [rowL("Загрузка плана + следующая тема"), no, no, yes],
+    [rowL("Свой материал как основа сценария"), no, { text: "вручную", options: { align: "center", color: C.muted, fontSize: 11 } }, yes],
     [rowL("Защита ПДн детей"), { text: "утекают", options: { align: "center", color: C.goldD, fontSize: 11 } }, no, yes],
-    [rowL("Редактор + экспорт PDF/DOCX"), no, no, yes],
-    [rowL("Библиотека сообщества (лайки)"), no, no, yes],
+    [rowL("Редактор + фирменный PDF / DOCX"), no, no, yes],
+    [rowL("Библиотека сообщества + шаринг по ссылке"), no, no, yes],
   ];
   s.addTable(data, {
     x: 0.7, y: 3.95, w: 11.9, colW: [4.7, 2.4, 2.4, 2.4],
@@ -262,7 +278,7 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   // 3 mandatory tech badges
   const tb = [
     [I.brain, "LLM + промпты", "По блокам: каркас+контент-план → блоки по очереди с катящимся контекстом → гейт качества → zod"],
-    [I.file, "Парсинг TXT/PDF/DOCX", "pdf-parse / mammoth в памяти, guard 5 МБ + проверка magic-bytes"],
+    [I.file, "Парсинг TXT/PDF/DOCX/PPTX", "pdf-parse · mammoth · jszip в памяти, guard 5 МБ + проверка magic-bytes"],
     [I.shield, "Хранение + безопасность", "rate-limit 10 генераций/день · изоляция WHERE user_id на каждом запросе"],
   ];
   tb.forEach((a, i) => {
@@ -401,14 +417,16 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   s.addShape(p.shapes.RECTANGLE, { x: 6.7, y: 2.05, w: 5.9, h: 2.85, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
   s.addText("Что уже работает", { x: 6.95, y: 2.2, w: 5.4, h: 0.45, fontFace: HEAD, fontSize: 16, bold: true, color: C.green });
   const works = [
-    "Генерация во всех 8 форматах (классный час, квиз, дебаты, киноклуб, мастерская, проектная сессия…)",
-    "Редактор: добавление/удаление и reorder этапов и активностей ↑/↓, точечная регенерация, версии",
-    "Календарь-сетка занятий + привязка сценария к дате",
-    "Библиотека сообщества (14 сценариев) + семантический поиск и pre-match",
+    "Генерация по блокам РоВ-уровня во всех 8 форматах (классный час, квиз, дебаты, киноклуб, проектная сессия…)",
+    "Загрузка плана и своего материала (PDF/DOCX/PPTX/TXT) как основы сценария",
+    "Редактор: добавление/удаление и reorder этапов ↑/↓, точечная регенерация с выбором типа, история версий с откатом",
+    "Полноэкранный режим показа на проекторе + календарь-сетка с привязкой к дате",
+    "Библиотека сообщества + семантический поиск, оценка сценария 👍/👎",
+    "Фирменный экспорт PDF (с QR) и DOCX · шаринг по ссылке · страница «Что нового»",
     "Админ-панель статистики",
   ];
   s.addText(works.map((t, i) => ({ text: t, options: { bullet: { code: "2713" }, breakLine: i < works.length - 1, color: C.ink } })),
-    { x: 7.0, y: 2.7, w: 5.5, h: 2.1, fontFace: BODY, fontSize: 12.5, paraSpaceAfter: 6, valign: "top" });
+    { x: 7.0, y: 2.7, w: 5.5, h: 2.1, fontFace: BODY, fontSize: 11.5, paraSpaceAfter: 4, valign: "top" });
 
   s.addShape(p.shapes.RECTANGLE, { x: 6.7, y: 5.05, w: 2.85, h: 1.95, fill: { color: C.forest }, shadow: sh() });
   s.addText("Ресурсы MVP", { x: 6.9, y: 5.2, w: 2.5, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.gold });
@@ -436,7 +454,7 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   title(s, "От MVP к масштабу");
 
   const phases = [
-    ["Развёрнуто на проде", C.green, ["MVP (10 фаз) + RAG-корпус методичек РоВ", "Библиотека наполнена · порог откалиброван · автозапуск (systemd)"]],
+    ["Развёрнуто на проде", C.green, ["MVP + RAG-корпус методичек РоВ · домен plan-wise.ru + HTTPS", "Docker Compose · библиотека наполнена · порог откалиброван"]],
     ["Перед демо", C.gold, ["Живой UAT golden-path", "Скринкаст 5–7 мин + презентация"]],
     ["Пилот в школе", C.blue, ["Обкатка с реальными классными руководителями", "Модерация контента методистами"]],
     ["Масштаб B2B", C.forest, ["Подписка для школ и управлений образования", "Интеграции с журналами · аналитика воспитания"]],
@@ -474,7 +492,7 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
     ["Нагрузка на 4 ГБ RAM", "Запрет локальных моделей, @react-pdf вместо headless Chrome, стриминг", "реализовано"],
     ["Качество подбора похожих", "Порог откалиброван (0.72) на наполненной библиотеке + RAG-корпус методичек", "реализовано"],
     ["Доверие педагогов к ИИ", "Человек в петле: полный редактор + версии + контроль", "реализовано"],
-    ["Безопасность прод-инфры", "nginx, ufw, bind 127.0.0.1, обновление зависимостей, ротация секретов", "реализовано"],
+    ["Безопасность прод-инфры", "Docker Compose, nginx + HTTPS (Let's Encrypt), ufw, bind 127.0.0.1, ротация секретов", "реализовано"],
   ];
   const rows = rdata.map((r, ri) => {
     if (ri === 0) return r;
