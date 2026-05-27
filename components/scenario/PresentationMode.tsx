@@ -62,22 +62,24 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
       ref={containerRef}
       className="fixed inset-0 z-50 flex flex-col bg-neutral-50 text-neutral-900"
     >
-      <div className="flex items-center justify-end px-6 py-4">
+      <div className="flex items-center justify-end px-4 py-3 sm:px-6 sm:py-4">
         <Button type="button" variant="outline" size="sm" onClick={close}>
           ✕ Выйти
         </Button>
       </div>
 
-      <div className="flex flex-1 items-center justify-center overflow-y-auto px-8 py-4">
+      <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-4 sm:px-8">
         <div className="w-full max-w-4xl">
           {slide?.kind === 'title' && (
             <div className="text-center">
-              <h1 className="font-semibold text-5xl text-brand-800 leading-tight">{slide.title}</h1>
-              <div className="mt-8 flex flex-wrap justify-center gap-3 text-lg">
+              <h1 className="font-semibold text-3xl text-brand-800 leading-tight sm:text-5xl">
+                {slide.title}
+              </h1>
+              <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm sm:mt-8 sm:gap-3 sm:text-lg">
                 {slide.badges.map((b) => (
                   <span
                     key={b}
-                    className="rounded-full bg-brand-50 px-5 py-2 text-brand-700 ring-1 ring-brand-200"
+                    className="rounded-full bg-brand-50 px-3 py-1 text-brand-700 ring-1 ring-brand-200 sm:px-5 sm:py-2"
                   >
                     {b}
                   </span>
@@ -88,19 +90,23 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
 
           {slide?.kind === 'stage' && (
             <div>
-              <div className="flex items-baseline justify-between gap-4 border-brand-200 border-b pb-4">
-                <h2 className="font-semibold text-4xl text-brand-800">{slide.title}</h2>
-                <span className="shrink-0 text-2xl text-neutral-500">{slide.durationMin} мин</span>
+              <div className="flex items-baseline justify-between gap-3 border-brand-200 border-b pb-3 sm:gap-4 sm:pb-4">
+                <h2 className="font-semibold text-2xl text-brand-800 sm:text-4xl">{slide.title}</h2>
+                <span className="shrink-0 text-lg text-neutral-500 sm:text-2xl">
+                  {slide.durationMin} мин
+                </span>
               </div>
-              <div className="mt-8 space-y-8">
+              <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
                 {slide.blocks.map((block, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: static non-reordered render
                   <div key={i}>
-                    <h3 className="font-medium text-2xl text-accent-700">{block.typeLabel}</h3>
+                    <h3 className="font-medium text-lg text-accent-700 sm:text-2xl">
+                      {block.typeLabel}
+                    </h3>
                     {block.questions && (
-                      <ul className="mt-4 space-y-3 text-3xl leading-relaxed">
+                      <ul className="mt-3 space-y-2 text-xl leading-relaxed sm:mt-4 sm:space-y-3 sm:text-3xl">
                         {block.questions.map((q) => (
-                          <li key={q} className="flex gap-3">
+                          <li key={q} className="flex gap-2 sm:gap-3">
                             <span className="text-brand-500">•</span>
                             <span>{q}</span>
                           </li>
@@ -108,7 +114,7 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
                       </ul>
                     )}
                     {block.text && (
-                      <p className="mt-4 whitespace-pre-wrap text-2xl text-neutral-700 leading-relaxed">
+                      <p className="mt-3 whitespace-pre-wrap text-lg text-neutral-700 leading-relaxed sm:mt-4 sm:text-2xl">
                         {block.text}
                       </p>
                     )}
@@ -120,8 +126,8 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-8 py-5">
-        <Button type="button" variant="outline" onClick={prev} disabled={index === 0}>
+      <div className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-5">
+        <Button type="button" variant="outline" size="sm" onClick={prev} disabled={index === 0}>
           ← Назад
         </Button>
         <span className="text-neutral-500 text-sm">
@@ -130,6 +136,7 @@ export function PresentationMode({ content, meta }: { content: ScenarioContent; 
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={next}
           disabled={index === slides.length - 1}
         >
