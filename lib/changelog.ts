@@ -15,6 +15,16 @@ export const CHANGE_KIND_LABEL: Record<ChangeKind, string> = {
 // Новые записи — сверху. Семантические версии: фича → +минор, багфикс → +патч.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.8.0',
+    date: '27 мая 2026',
+    changes: [
+      {
+        kind: 'feature',
+        text: 'Загрузка плана и своего материала теперь принимает презентации PowerPoint (.pptx) — мы извлечём текст слайдов так же, как из PDF, DOCX и TXT.',
+      },
+    ],
+  },
+  {
     version: 'v1.7.0',
     date: '25 мая 2026',
     changes: [

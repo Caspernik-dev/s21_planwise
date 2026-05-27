@@ -50,8 +50,8 @@ export default async function PlansPage() {
       {plans.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-sm text-neutral-600">
-            Загрузите план (PDF, DOCX или TXT) — мы обезличим персональные данные и разложим его на
-            темы.
+            Загрузите план (PDF, DOCX, PPTX или TXT) — мы обезличим персональные данные и разложим
+            его на темы.
           </CardContent>
         </Card>
       ) : (
