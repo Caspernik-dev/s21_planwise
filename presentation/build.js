@@ -401,16 +401,25 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   kicker(s, "06 — MVP");
   title(s, "Рабочая версия: полный путь без заглушек");
 
-  // left: demo path (screenshot placeholders)
-  const demo = ["Форма контекста", "Стрим генерации", "Блочный редактор", "Экспорт PDF / DOCX"];
-  s.addText("Демо-путь (скриншоты вставить в финал)", { x: 0.7, y: 2.05, w: 6, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.ink });
-  demo.forEach((t, i) => {
-    const y = 2.5 + i * 1.12;
-    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y, w: 5.7, h: 0.95, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
-    s.addShape(p.shapes.OVAL, { x: 0.9, y: y + 0.27, w: 0.42, h: 0.42, fill: { color: C.green } });
-    s.addText(`${i + 1}`, { x: 0.9, y: y + 0.27, w: 0.42, h: 0.42, align: "center", valign: "middle", fontFace: HEAD, fontSize: 14, bold: true, color: C.white });
-    s.addText(t, { x: 1.5, y, w: 4.7, h: 0.95, fontFace: BODY, fontSize: 15, bold: true, color: C.ink, valign: "middle" });
-    if (i < demo.length - 1) s.addText("↓", { x: 1.0, y: y + 0.9, w: 0.4, h: 0.25, align: "center", fontSize: 13, color: C.green });
+  // left: demo path — 2×2 grid of real screenshots
+  s.addText("Демо-путь: контекст → стрим → редактор → экспорт", { x: 0.7, y: 2.05, w: 6, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.ink });
+  const SHOTS = "/home/nikit/planwise/artifacts";
+  const tiles = [
+    { img: `${SHOTS}/1-form.png`, label: "1. Форма контекста" },
+    { img: `${SHOTS}/2-stream.png`, label: "2. Стрим генерации по блокам" },
+    { img: `${SHOTS}/5-editor-regen.png`, label: "3. Редактор: 🎲 · ↑↓ · add/del" },
+    { img: `${SHOTS}/4-export.png`, label: "4. Экспорт PDF / DOCX" },
+  ];
+  const tileW = 2.75, tileH = 2.15, tileGap = 0.1;
+  const imgH = 1.74, capH = tileH - imgH; // 1.74 + 0.41
+  tiles.forEach((t, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = 0.7 + col * (tileW + tileGap);
+    const y = 2.55 + row * (tileH + tileGap);
+    s.addShape(p.shapes.RECTANGLE, { x, y, w: tileW, h: tileH, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
+    s.addImage({ path: t.img, x: x + 0.08, y: y + 0.08, w: tileW - 0.16, h: imgH - 0.08, sizing: { type: "contain", w: tileW - 0.16, h: imgH - 0.08 } });
+    s.addShape(p.shapes.RECTANGLE, { x, y: y + imgH, w: tileW, h: capH, fill: { color: C.forest2 } });
+    s.addText(t.label, { x: x + 0.12, y: y + imgH, w: tileW - 0.24, h: capH, fontFace: BODY, fontSize: 11.5, bold: true, color: C.white, valign: "middle" });
   });
 
   // right: what works + resources + growth
