@@ -586,6 +586,76 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
     { text: "Главный урок: статика и моки не ловят баги живой модели (пустой adaptations, формат «дебаты») — обязателен живой прогон", options: { bullet: { code: "2022" }, color: C.goldD, bold: true } },
   ], { x: 7.05, y: 3.2, w: 5.35, h: 3.5, fontFace: BODY, fontSize: 13, color: C.ink, paraSpaceAfter: 10, valign: "top" });
 
+  // ============================================================
+  // SLIDE 11 — WHAT'S NEXT (in progress + roadmap)
+  // ============================================================
+  s = p.addSlide(); pageBg(s);
+  kicker(s, "+ ЧТО ДАЛЬШЕ");
+  title(s, "В работе и в дорожной карте");
+
+  s.addText("Конкретные доработки из бэклога — что уже в работе и в ближайших спринтах после MVP", {
+    x: 0.7, y: 1.85, w: 11.9, h: 0.4, fontFace: BODY, fontSize: 13, italic: true, color: C.muted,
+  });
+
+  const nextCols = [
+    {
+      head: "Продукт для учителя",
+      icon: I.edit,
+      headBg: C.forest,
+      items: [
+        "Кастомные инструкции — «стиль учителя» (тон, игровость, ОВЗ)",
+        "Адаптация сценария под другой класс / длительность одной кнопкой",
+        "Предпросмотр документа перед экспортом",
+        "Режим проведения с телефона + потоковый текст блока в реальном времени",
+        "Загрузка плана картинкой (OCR) — фото с телефона",
+      ],
+    },
+    {
+      head: "Сообщество и обнаруживаемость",
+      icon: I.users,
+      headBg: C.forest2,
+      items: [
+        "Комментарии и отзывы коллег под сценариями",
+        "Теги и «топ недели» в библиотеке",
+        "Модерация: «сообщить о проблеме» → admin",
+        "Личная аналитика педагога: сценарии, направления, динамика",
+        "Опц. публичные профили учителей (opt-in, репутация)",
+      ],
+    },
+    {
+      head: "Масштаб и качество",
+      icon: I.chart,
+      headBg: C.forest,
+      items: [
+        "Очередь + семафор к GigaChat — под рост тарифной концурентности",
+        "Дашборд качества генерации (тонкие блоки, предупреждения)",
+        "Кеш эмбеддингов популярных тем — экономия токенов",
+        "Отчёт завучу: XLSX-выгрузка по проведённым занятиям",
+        "Атомарный rate-limit + worker-thread для PDF",
+      ],
+    },
+  ];
+
+  nextCols.forEach((col, i) => {
+    const x = 0.7 + i * 4.05;
+    const cardH = 4.55;
+    s.addShape(p.shapes.RECTANGLE, { x, y: 2.4, w: 3.85, h: cardH, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
+    // header strip
+    s.addShape(p.shapes.RECTANGLE, { x, y: 2.4, w: 3.85, h: 0.85, fill: { color: col.headBg } });
+    badge(s, x + 0.22, 2.52, 0.6, col.icon, C.gold);
+    s.addText(col.head, { x: x + 0.95, y: 2.42, w: 2.8, h: 0.82, fontFace: HEAD, fontSize: 14, bold: true, color: C.white, valign: "middle" });
+    // bullets
+    s.addText(col.items.map((t, j) => ({ text: t, options: { bullet: { code: "2022" }, breakLine: j < col.items.length - 1, color: C.ink } })),
+      { x: x + 0.25, y: 3.4, w: 3.4, h: cardH - 1.1, fontFace: BODY, fontSize: 11.5, paraSpaceAfter: 6, valign: "top" });
+  });
+
+  // footer line
+  s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 7.05, w: 11.9, h: 0.32, fill: { color: C.bg }, line: { color: C.green, width: 1 } });
+  s.addText([
+    { text: "Полный бэклог: ", options: { bold: true, color: C.green } },
+    { text: "docs/backlog.md в репозитории — приоритеты, оценки объёма и связи между задачами", options: { color: C.muted } },
+  ], { x: 0.95, y: 7.05, w: 11.5, h: 0.32, fontFace: BODY, fontSize: 11, italic: true, valign: "middle" });
+
   await p.writeFile({ fileName: "Planwise-Klassniy-Chas.pptx" });
   console.log("OK written");
 })();
