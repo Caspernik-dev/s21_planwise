@@ -395,65 +395,53 @@ const sh = () => ({ type: "outer", color: "000000", blur: 8, offset: 3, angle: 1
   });
 
   // ============================================================
-  // SLIDE 6 — MVP
+  // SLIDE 6a — MVP (демо-путь, часть 1: контекст → стрим)
+  // ============================================================
+  const SHOTS = "/home/nikit/planwise/artifacts";
+  function bigPair(slide, t1, t2, worksList) {
+    const tilesArr = [t1, t2];
+    const bigW = 6.05, bigH = 4.05, capBig = 0.45, padBig = 0.1;
+    tilesArr.forEach((t, i) => {
+      const x = 0.55 + i * (bigW + 0.15);
+      const y = 2.05;
+      slide.addShape(p.shapes.RECTANGLE, { x, y, w: bigW, h: bigH, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
+      slide.addImage({ path: t.img, x: x + padBig, y: y + padBig, w: bigW - 2 * padBig, h: bigH - capBig - 2 * padBig, sizing: { type: "contain", w: bigW - 2 * padBig, h: bigH - capBig - 2 * padBig } });
+      slide.addShape(p.shapes.RECTANGLE, { x, y: y + bigH - capBig, w: bigW, h: capBig, fill: { color: C.forest2 } });
+      slide.addText(t.label, { x: x + 0.18, y: y + bigH - capBig, w: bigW - 0.36, h: capBig, fontFace: BODY, fontSize: 13, bold: true, color: C.white, valign: "middle" });
+    });
+    // bottom: what works strip
+    slide.addShape(p.shapes.RECTANGLE, { x: 0.55, y: 6.3, w: 12.2, h: 0.95, fill: { color: C.bg }, line: { color: C.green, width: 1.2 } });
+    slide.addText("Что уже работает", { x: 0.75, y: 6.4, w: 3.5, h: 0.4, fontFace: HEAD, fontSize: 13, bold: true, color: C.green });
+    slide.addText(worksList.map((t, i) => ({ text: t, options: { bullet: { code: "2713" }, breakLine: i < worksList.length - 1, color: C.ink } })),
+      { x: 0.85, y: 6.8, w: 11.7, h: 0.45, fontFace: BODY, fontSize: 10.5, paraSpaceAfter: 0, valign: "top" });
+  }
+
+  s = p.addSlide(); pageBg(s);
+  kicker(s, "06 — MVP · ДЕМО-ПУТЬ 1/2");
+  title(s, "Контекст → стрим генерации");
+  bigPair(s,
+    { img: `${SHOTS}/1-form.png`, label: "1. Форма контекста — тема, класс, формат, длительность" },
+    { img: `${SHOTS}/2-stream.png`, label: "2. Стрим: фазы и каркас этапов в реальном времени" },
+    [
+      "Генерация по блокам РоВ-уровня в 8 форматах · опора на методички (RAG) · pre-match по библиотеке",
+      "Загрузка плана и своего материала (PDF/DOCX/PPTX/TXT) · локальная анонимизация ПДн",
+    ]
+  );
+
+  // ============================================================
+  // SLIDE 6b — MVP (демо-путь, часть 2: редактор → экспорт)
   // ============================================================
   s = p.addSlide(); pageBg(s);
-  kicker(s, "06 — MVP");
-  title(s, "Рабочая версия: полный путь без заглушек");
-
-  // left: demo path — 2×2 grid of real screenshots
-  s.addText("Демо-путь: контекст → стрим → редактор → экспорт", { x: 0.7, y: 2.05, w: 6, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.ink });
-  const SHOTS = "/home/nikit/planwise/artifacts";
-  const tiles = [
-    { img: `${SHOTS}/1-form.png`, label: "1. Форма контекста" },
-    { img: `${SHOTS}/2-stream.png`, label: "2. Стрим генерации по блокам" },
-    { img: `${SHOTS}/5-editor-regen.png`, label: "3. Редактор: 🎲 · ↑↓ · add/del" },
-    { img: `${SHOTS}/4-export.png`, label: "4. Экспорт PDF / DOCX" },
-  ];
-  const tileW = 2.75, tileH = 2.15, tileGap = 0.1;
-  const imgH = 1.74, capH = tileH - imgH; // 1.74 + 0.41
-  tiles.forEach((t, i) => {
-    const col = i % 2, row = Math.floor(i / 2);
-    const x = 0.7 + col * (tileW + tileGap);
-    const y = 2.55 + row * (tileH + tileGap);
-    s.addShape(p.shapes.RECTANGLE, { x, y, w: tileW, h: tileH, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
-    s.addImage({ path: t.img, x: x + 0.08, y: y + 0.08, w: tileW - 0.16, h: imgH - 0.08, sizing: { type: "contain", w: tileW - 0.16, h: imgH - 0.08 } });
-    s.addShape(p.shapes.RECTANGLE, { x, y: y + imgH, w: tileW, h: capH, fill: { color: C.forest2 } });
-    s.addText(t.label, { x: x + 0.12, y: y + imgH, w: tileW - 0.24, h: capH, fontFace: BODY, fontSize: 11.5, bold: true, color: C.white, valign: "middle" });
-  });
-
-  // right: what works + resources + growth
-  s.addShape(p.shapes.RECTANGLE, { x: 6.7, y: 2.05, w: 5.9, h: 2.85, fill: { color: C.card }, line: { color: C.line, width: 1 }, shadow: sh() });
-  s.addText("Что уже работает", { x: 6.95, y: 2.2, w: 5.4, h: 0.45, fontFace: HEAD, fontSize: 16, bold: true, color: C.green });
-  const works = [
-    "Генерация по блокам РоВ-уровня во всех 8 форматах (классный час, квиз, дебаты, киноклуб, проектная сессия…)",
-    "Загрузка плана и своего материала (PDF/DOCX/PPTX/TXT) как основы сценария",
-    "Редактор: добавление/удаление и reorder этапов ↑/↓, точечная регенерация с выбором типа, история версий с откатом",
-    "Полноэкранный режим показа на проекторе + календарь-сетка с привязкой к дате",
-    "Библиотека сообщества + семантический поиск, оценка сценария 👍/👎",
-    "Фирменный экспорт PDF (с QR) и DOCX · шаринг по ссылке · страница «Что нового»",
-    "Админ-панель статистики",
-  ];
-  s.addText(works.map((t, i) => ({ text: t, options: { bullet: { code: "2713" }, breakLine: i < works.length - 1, color: C.ink } })),
-    { x: 7.0, y: 2.7, w: 5.5, h: 2.1, fontFace: BODY, fontSize: 11.5, paraSpaceAfter: 4, valign: "top" });
-
-  s.addShape(p.shapes.RECTANGLE, { x: 6.7, y: 5.05, w: 2.85, h: 1.95, fill: { color: C.forest }, shadow: sh() });
-  s.addText("Ресурсы MVP", { x: 6.9, y: 5.2, w: 2.5, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.gold });
-  s.addText([
-    { text: "1 VPS · 2 vCPU / 4 ГБ", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "GigaChat API (PERS)", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "Docker Compose", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "Дёшево в эксплуатации", options: { bullet: { code: "2022" }, color: C.greenL } },
-  ], { x: 6.95, y: 5.65, w: 2.55, h: 1.3, fontFace: BODY, fontSize: 12, color: C.white, paraSpaceAfter: 4, valign: "top" });
-
-  s.addShape(p.shapes.RECTANGLE, { x: 9.75, y: 5.05, w: 2.85, h: 1.95, fill: { color: C.bg }, line: { color: C.green, width: 1.3 } });
-  s.addText("Развитие", { x: 9.95, y: 5.2, w: 2.5, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.green });
-  s.addText([
-    { text: "Интеграция с эл. журналами", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "Модерация контента методистами", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "Мульти-школьные тенанты", options: { bullet: { code: "2022" }, breakLine: true } },
-    { text: "Аналитика вовлечённости", options: { bullet: { code: "2022" } } },
-  ], { x: 10.0, y: 5.65, w: 2.55, h: 1.3, fontFace: BODY, fontSize: 11.5, color: C.ink, paraSpaceAfter: 3, valign: "top" });
+  kicker(s, "06 — MVP · ДЕМО-ПУТЬ 2/2");
+  title(s, "Редактор → экспорт");
+  bigPair(s,
+    { img: `${SHOTS}/5-editor-regen.png`, label: "3. Редактор: ↑↓ reorder · 🎲 регенерация · add/del · история" },
+    { img: `${SHOTS}/4-export.png`, label: "4. Экспорт: PDF · DOCX · режим показа · персональная ссылка" },
+    [
+      "Полноэкранный показ на проекторе · календарь-сетка · история версий с откатом",
+      "Библиотека сообщества + семантический поиск · оценка 👍/👎 · админ-статистика",
+    ]
+  );
 
   // ============================================================
   // SLIDE 7 — ROADMAP
