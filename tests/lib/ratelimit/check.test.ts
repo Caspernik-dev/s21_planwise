@@ -1,6 +1,6 @@
 import type { RateStore } from '@/lib/ratelimit'
 import { checkRateLimit } from '@/lib/ratelimit'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 function memStore(): RateStore & { rows: Map<string, number> } {
   const rows = new Map<string, number>()
@@ -49,5 +49,25 @@ describe('checkRateLimit', () => {
     )
     expect(r.allowed).toBe(true)
     expect(store.rows.size).toBe(0)
+  })
+})
+
+describe('checkRateLimit bypass', () => {
+  it('bypass=true → allowed, remaining=Infinity, store не вызывается', async () => {
+    const store: RateStore = {
+      cleanup: vi.fn(async () => {}),
+      current: vi.fn(async () => 999),
+      increment: vi.fn(async () => {}),
+    }
+    const res = await checkRateLimit(
+      { key: 'generate', subject: 'u1', limit: 10, windowMs: 86_400_000, bypass: true },
+      { store, now: new Date('2026-05-30T12:00:00Z') },
+    )
+    expect(res.allowed).toBe(true)
+    expect(res.remaining).toBe(Number.POSITIVE_INFINITY)
+    expect(res.retryAfterSec).toBe(0)
+    expect(store.cleanup).not.toHaveBeenCalled()
+    expect(store.current).not.toHaveBeenCalled()
+    expect(store.increment).not.toHaveBeenCalled()
   })
 })
