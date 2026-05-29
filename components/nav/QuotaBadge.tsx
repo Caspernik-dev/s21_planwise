@@ -12,7 +12,7 @@ export function QuotaBadge({ usage }: { usage: DailyUsage }) {
       </span>
     )
   }
-  const { used, limit, remaining, resetAt } = usage
+  const { limit, remaining, resetAt } = usage
   const tone =
     remaining === 0
       ? 'bg-red-100 text-red-700'
@@ -27,7 +27,7 @@ export function QuotaBadge({ usage }: { usage: DailyUsage }) {
       aria-label={title}
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}
     >
-      {used}/{limit}
+      {remaining}/{limit}
     </span>
   )
 }
