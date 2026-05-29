@@ -1,5 +1,5 @@
-import { getGigaConfig } from './config'
 import { withGigaChatSlot } from './concurrency'
+import { getGigaConfig } from './config'
 import { ensureInsecureTls } from './tls'
 import { getAccessToken } from './token'
 import type { EmbeddingsResponse } from './types'

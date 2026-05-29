@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
-import { getDailyGenerationUsage } from '@/lib/ratelimit/usage'
 import type { RateStore } from '@/lib/ratelimit'
+import { getDailyGenerationUsage } from '@/lib/ratelimit/usage'
+import { describe, expect, it, vi } from 'vitest'
 
 const emptyStore: RateStore = {
   cleanup: vi.fn(async () => {}),
@@ -13,14 +13,19 @@ const now = new Date('2026-05-30T15:30:00Z')
 describe('getDailyGenerationUsage', () => {
   it('admin → unlimited', async () => {
     const res = await getDailyGenerationUsage('u1', 'a@x.ru', 'admin', {
-      store: emptyStore, now, limit: 10,
+      store: emptyStore,
+      now,
+      limit: 10,
     })
     expect(res).toEqual({ unlimited: true })
   })
 
   it('whitelist email → unlimited', async () => {
     const res = await getDailyGenerationUsage('u1', 'demo@kc.local', 'user', {
-      store: emptyStore, now, limit: 10, demoEmails: 'demo@kc.local',
+      store: emptyStore,
+      now,
+      limit: 10,
+      demoEmails: 'demo@kc.local',
     })
     expect(res).toEqual({ unlimited: true })
   })
@@ -32,7 +37,9 @@ describe('getDailyGenerationUsage', () => {
       increment: vi.fn(async () => {}),
     }
     const res = await getDailyGenerationUsage('u1', 'x@x.ru', 'user', {
-      store, now, limit: 10,
+      store,
+      now,
+      limit: 10,
     })
     expect(res).toEqual({
       unlimited: false,
@@ -50,7 +57,9 @@ describe('getDailyGenerationUsage', () => {
       increment: vi.fn(async () => {}),
     }
     const res = await getDailyGenerationUsage('u1', 'x@x.ru', 'user', {
-      store, now, limit: 10,
+      store,
+      now,
+      limit: 10,
     })
     expect(res.unlimited).toBe(false)
     if (!res.unlimited) {
@@ -66,7 +75,9 @@ describe('getDailyGenerationUsage', () => {
       increment: vi.fn(async () => {}),
     }
     const res = await getDailyGenerationUsage('u1', 'x@x.ru', 'user', {
-      store, now, limit: 10,
+      store,
+      now,
+      limit: 10,
     })
     expect(res.unlimited).toBe(false)
     if (!res.unlimited) expect(res.remaining).toBe(0)

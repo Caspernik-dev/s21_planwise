@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  __resetForTests,
   QueueOverflowError,
   QueueTimeoutError,
+  __resetForTests,
   withGigaChatSlot,
 } from '@/lib/gigachat/concurrency'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() => {
   vi.useFakeTimers()
