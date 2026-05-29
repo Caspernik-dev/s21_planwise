@@ -14,6 +14,7 @@ export type ChatCompletionRequest = {
 export type ChatCompletionResponse = {
   choices: Array<{
     message: { role: string; content: string }
+    delta?: { content?: string }
     finish_reason?: string
   }>
   usage?: {
