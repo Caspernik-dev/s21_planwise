@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     key: 'generate',
     subject: userId,
     email: session.user.email,
+    bypass: session.user.role === 'admin',
     limit: Number(process.env.MAX_GENERATIONS_PER_DAY ?? '10'),
     windowMs: 86_400_000,
   })

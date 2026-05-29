@@ -12,6 +12,7 @@ export type RateCheck = {
   limit: number
   windowMs: number
   email?: string | null
+  bypass?: boolean
 }
 
 export type RateResult = { allowed: boolean; remaining: number; retryAfterSec: number }
@@ -20,6 +21,9 @@ export async function checkRateLimit(
   check: RateCheck,
   deps: { store?: RateStore; now?: Date; demoEmails?: string } = {},
 ): Promise<RateResult> {
+  if (check.bypass) {
+    return { allowed: true, remaining: Number.POSITIVE_INFINITY, retryAfterSec: 0 }
+  }
   const demoEmails = deps.demoEmails ?? process.env.DEMO_USER_EMAILS
   if (isWhitelisted(check.email, demoEmails)) {
     return { allowed: true, remaining: Number.POSITIVE_INFINITY, retryAfterSec: 0 }

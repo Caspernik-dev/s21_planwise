@@ -1,12 +1,20 @@
 import { Button } from '@/components/ui/button'
+import type { DailyUsage } from '@/lib/ratelimit/usage'
 import Image from 'next/image'
 import Link from 'next/link'
+import { QuotaBadge } from './QuotaBadge'
 
 export function AppNavbar({
   userName,
   userEmail,
   role,
-}: { userName?: string | null; userEmail: string; role?: string }) {
+  usage,
+}: {
+  userName?: string | null
+  userEmail: string
+  role?: string
+  usage: DailyUsage
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-neutral-50/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -33,6 +41,9 @@ export function AppNavbar({
           <Link href="/app/calendar" className="hover:text-neutral-900">
             Календарь
           </Link>
+          <Link href="/changelog" className="hover:text-neutral-900">
+            Что нового
+          </Link>
           {role === 'admin' && (
             <Link href="/app/admin" className="hover:text-neutral-900">
               Админ
@@ -40,6 +51,7 @@ export function AppNavbar({
           )}
         </nav>
         <div className="flex items-center gap-3">
+          <QuotaBadge usage={usage} />
           <span className="text-sm text-neutral-600">{userName ?? userEmail}</span>
           <form action="/app/logout" method="post">
             <Button type="submit" variant="outline" size="sm">
