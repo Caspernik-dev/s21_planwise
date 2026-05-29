@@ -1,4 +1,5 @@
 import { getGigaConfig } from './config'
+import { withGigaChatSlot } from './concurrency'
 import { ensureInsecureTls } from './tls'
 import { getAccessToken } from './token'
 import type { EmbeddingsResponse } from './types'
@@ -33,13 +34,17 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
   return sorted.map((d) => d.embedding)
 }
 
-export async function embed(texts: string[]): Promise<number[][]> {
+export async function embed(
+  texts: string[],
+  opts: { onQueued?: (position: number) => void; signal?: AbortSignal } = {},
+): Promise<number[][]> {
   if (texts.length === 0) return []
   const size = batchSize()
   const out: number[][] = []
   for (let i = 0; i < texts.length; i += size) {
     const batch = texts.slice(i, i + size)
-    out.push(...(await embedBatch(batch)))
+    const res = await withGigaChatSlot(() => embedBatch(batch), opts)
+    out.push(...res)
   }
   return out
 }
