@@ -1,6 +1,9 @@
+import { auth } from '@/auth'
 import { Footer } from '@/components/landing/Footer'
 import { LandingNavbar } from '@/components/landing/LandingNavbar'
+import { AppNavbar } from '@/components/nav/AppNavbar'
 import { CHANGELOG, CHANGE_KIND_LABEL, type ChangeKind } from '@/lib/changelog'
+import { getDailyGenerationUsage } from '@/lib/ratelimit/usage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -14,10 +17,28 @@ const KIND_BADGE: Record<ChangeKind, string> = {
   improvement: 'bg-accent-100 text-accent-800',
 }
 
-export default function ChangelogPage() {
+export default async function ChangelogPage() {
+  const session = await auth()
+  const usage = session?.user
+    ? await getDailyGenerationUsage(
+        session.user.id as string,
+        session.user.email,
+        session.user.role,
+      )
+    : null
+
   return (
     <div className="min-h-screen bg-neutral-50">
-      <LandingNavbar />
+      {session?.user && usage ? (
+        <AppNavbar
+          userName={session.user.name}
+          userEmail={session.user.email ?? ''}
+          role={session.user.role}
+          usage={usage}
+        />
+      ) : (
+        <LandingNavbar />
+      )}
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
         <header className="mb-12">
           <h1 className="font-display text-3xl font-semibold text-neutral-900 sm:text-4xl">
