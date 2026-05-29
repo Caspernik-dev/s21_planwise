@@ -1,5 +1,6 @@
 import { prematchShared } from '@/lib/community/prematch'
 import { chatCompletion, chatCompletionStream } from '@/lib/gigachat/client'
+import { QueueOverflowError, QueueTimeoutError } from '@/lib/gigachat/concurrency'
 import { getGigaConfig } from '@/lib/gigachat/config'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { retrieveChunks } from '@/lib/rag/retrieve'
@@ -28,18 +29,22 @@ import {
 import { chunksForStage } from './stage-chunks'
 
 export type StreamEvent =
+  | { type: 'queued'; position: number }
   | { type: 'phase'; phase: 'skeleton' | 'details' | 'validating' | 'saving' }
   | { type: 'skeleton'; data: unknown }
   | { type: 'block'; index: number; total: number }
   | { type: 'done'; scenarioId: string }
-  | { type: 'error'; message: string }
+  | { type: 'error'; message: string; code?: 'queue_overflow' | 'queue_timeout' }
 
 type ChatStreamFn = (
   messages: GigaMessage[],
-  opts?: { temperature?: number },
+  opts?: { temperature?: number; onQueued?: (position: number) => void },
 ) => AsyncGenerator<string, void, unknown>
 
-type ChatFn = (messages: GigaMessage[], opts?: { temperature?: number }) => Promise<ChatResult>
+type ChatFn = (
+  messages: GigaMessage[],
+  opts?: { temperature?: number; onQueued?: (position: number) => void },
+) => Promise<ChatResult>
 
 type RetrieveFn = (q: {
   direction: string | null
@@ -116,6 +121,7 @@ export async function* streamScenario(
       }))
       usedChunkIds = found.map((c) => c.id)
     } catch (e) {
+      if (e instanceof QueueOverflowError || e instanceof QueueTimeoutError) throw e
       console.error('RAG retrieval failed (non-fatal):', e)
     }
 
@@ -137,10 +143,16 @@ export async function* streamScenario(
           .join(' → '),
       }))
     } catch (e) {
+      if (e instanceof QueueOverflowError || e instanceof QueueTimeoutError) throw e
       console.error('shared examples fetch failed (non-fatal):', e)
     }
 
     let repaired = false
+
+    const pendingQueued: number[] = []
+    const onQueuedFirst = (position: number) => {
+      pendingQueued.push(position)
+    }
 
     // STAGE 1: skeleton
     yield { type: 'phase', phase: 'skeleton' }
@@ -150,7 +162,15 @@ export async function* streamScenario(
       sharedExamples,
       input.userMaterial ?? '',
     )
-    const skRaw = await collectStream(chatStream(skMessages, { temperature: 0.4 }))
+    const skStream = chatStream(skMessages, { temperature: 0.4, onQueued: onQueuedFirst })
+    let skRaw = ''
+    while (pendingQueued.length > 0)
+      yield { type: 'queued', position: pendingQueued.shift() as number }
+    for await (const piece of skStream) {
+      while (pendingQueued.length > 0)
+        yield { type: 'queued', position: pendingQueued.shift() as number }
+      skRaw += piece
+    }
     const skObj = parsePartialJson(skRaw)
     if (skObj) yield { type: 'skeleton', data: skObj }
     let skeleton = parseSkeleton(skRaw) ?? undefined
@@ -254,6 +274,22 @@ export async function* streamScenario(
     yield { type: 'done', scenarioId }
   } catch (e) {
     console.error('streamScenario failed:', e)
+    if (e instanceof QueueOverflowError) {
+      yield {
+        type: 'error',
+        code: 'queue_overflow',
+        message: 'Сервис временно перегружен, попробуйте через минуту.',
+      }
+      return
+    }
+    if (e instanceof QueueTimeoutError) {
+      yield {
+        type: 'error',
+        code: 'queue_timeout',
+        message: 'Очередь не освободилась за 5 минут. Попробуйте позже.',
+      }
+      return
+    }
     yield { type: 'error', message: 'Не удалось сгенерировать сценарий. Попробуйте ещё раз.' }
   }
 }
