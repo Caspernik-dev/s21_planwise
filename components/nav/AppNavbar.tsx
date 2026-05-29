@@ -41,6 +41,9 @@ export function AppNavbar({
           <Link href="/app/calendar" className="hover:text-neutral-900">
             Календарь
           </Link>
+          <Link href="/changelog" className="hover:text-neutral-900">
+            Что нового
+          </Link>
           {role === 'admin' && (
             <Link href="/app/admin" className="hover:text-neutral-900">
               Админ
