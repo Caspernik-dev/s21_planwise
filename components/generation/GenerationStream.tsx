@@ -9,11 +9,12 @@ import { useEffect, useRef, useState } from 'react'
 type Phase = 'skeleton' | 'details' | 'validating' | 'saving'
 
 type StreamEvent =
+  | { type: 'queued'; position: number }
   | { type: 'phase'; phase: Phase }
   | { type: 'skeleton'; data: { title?: string; stages?: Array<{ title?: string }> } }
   | { type: 'block'; index: number; total: number }
   | { type: 'done'; scenarioId: string }
-  | { type: 'error'; message: string }
+  | { type: 'error'; message: string; code?: 'queue_overflow' | 'queue_timeout' }
 
 const PHASE_LABEL: Record<Phase, string> = {
   skeleton: 'Структура',
@@ -31,6 +32,7 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
   const [blocksDone, setBlocksDone] = useState(0)
   const [blocksTotal, setBlocksTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [queuePosition, setQueuePosition] = useState<number | null>(null)
   const started = useRef(false)
 
   useEffect(() => {
@@ -71,8 +73,12 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
             } catch {
               continue
             }
-            if (ev.type === 'phase') setPhase(ev.phase)
-            else if (ev.type === 'skeleton') {
+            if (ev.type === 'queued') {
+              setQueuePosition(ev.position)
+            } else if (ev.type === 'phase') {
+              setQueuePosition(null)
+              setPhase(ev.phase)
+            } else if (ev.type === 'skeleton') {
               if (ev.data.title) setTitle(ev.data.title)
               if (Array.isArray(ev.data.stages)) {
                 const titles = ev.data.stages.map((s) => s.title ?? 'Этап')
@@ -101,6 +107,25 @@ export function GenerationStream({ payload }: { payload: Record<string, unknown>
           <Button type="button" onClick={() => window.location.reload()}>
             Попробовать снова
           </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (queuePosition !== null) {
+    return (
+      <Card className="animate-fade-up">
+        <CardHeader>
+          <CardTitle>Готовим сценарий…</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-2xl border border-warm-200 bg-warm-50 p-6 text-center">
+            <div className="mb-2 animate-pulse text-2xl font-semibold text-warm-800">⏳</div>
+            <p className="text-sm font-medium text-warm-900">Вы {queuePosition}-й в очереди</p>
+            <p className="mt-1 text-xs text-warm-700">
+              Сервис генерирует чужой сценарий — ваш стартует, как только освободится слот.
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
