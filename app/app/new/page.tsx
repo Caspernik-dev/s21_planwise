@@ -122,7 +122,10 @@ function NewScenarioForm() {
                     const g = Number(e.target.value)
                     setGrade(g)
                     const cap = g === 1 ? 35 : 45
-                    if (durationMin > cap) setDurationMin(cap)
+                    if (durationMin > cap) {
+                      const allowed = DURATIONS.filter((d) => d <= cap)
+                      setDurationMin(allowed[allowed.length - 1] ?? cap)
+                    }
                   }}
                 >
                   {GRADES.map((g) => (
