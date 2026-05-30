@@ -143,7 +143,7 @@ function renderBlock(b: DocBlock, i: number) {
         )
       }
       return (
-        <View key={i} style={styles.h2Row} wrap={false}>
+        <View key={i} style={styles.h2Row} wrap={false} minPresenceAhead={40}>
           <View style={styles.h2Bar} />
           <Text style={styles.h2}>{b.text}</Text>
         </View>
@@ -159,7 +159,7 @@ function renderBlock(b: DocBlock, i: number) {
         <View key={i}>
           {b.items.map((it, j) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: stable ordered list, index is safe
-            <View key={j} style={styles.bulletRow}>
+            <View key={j} style={styles.bulletRow} wrap={false}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={styles.bulletText}>{it}</Text>
             </View>
