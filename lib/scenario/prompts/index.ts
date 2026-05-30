@@ -1,6 +1,7 @@
 import type { LessonType } from '../options'
 import type { GenerationInput, ScenarioSkeleton } from '../schema'
 import * as Krujok from './krujok'
+import * as Literacy from './literacy'
 import * as Rov from './rov'
 import type { PromptDeps } from './shared'
 
@@ -22,9 +23,10 @@ export function buildSkeletonMessages(input: GenerationInput, deps: PromptDeps):
     case 'krujok':
       return Krujok.buildKrujokSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     case 'literacy':
+      return Literacy.buildLiteracySkeletonMessages(input, chunks, examples, userMaterial ?? '')
     case 'subject_extension':
     case 'event':
-      // Tasks 11-13 переключат каждый case на свой модуль.
+      // Tasks 12-13 переключат каждый case на свой модуль.
       // Временно используем РоВ-логику — поведение идентично прежнему (всё было на РоВ-промпте).
       return Rov.buildRovSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     default: {
@@ -65,7 +67,18 @@ export function buildBlockMessages(
       userMaterial,
     )
   }
-  // Tasks 11-13 разнесут остальные типы. Временно — РоВ-логика.
+  if (input.lessonType === 'literacy') {
+    return Literacy.buildLiteracyBlockMessages(
+      input,
+      skeleton,
+      stage,
+      brief,
+      ragChunks,
+      runningContext,
+      userMaterial,
+    )
+  }
+  // Tasks 12-13 разнесут остальные типы. Временно — РоВ-логика.
   return Rov.buildRovBlockMessages(
     input,
     skeleton,
@@ -84,7 +97,7 @@ export function getPromptVersion(lessonType: LessonType): string {
     case 'krujok':
       return Krujok.PROMPT_VERSION
     case 'literacy':
-      return 'v1-literacy-2026-05-30'
+      return Literacy.PROMPT_VERSION
     case 'subject_extension':
       return 'v1-subject-2026-05-30'
     case 'event':
