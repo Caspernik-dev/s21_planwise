@@ -42,3 +42,28 @@ export const CATALOG: Record<Level, Record<CanonicalDirection, string[]>> = {
 export function getCatalog(level: Level, direction: Direction): string[] {
   return CATALOG[level][canonicalDirection(direction)]
 }
+
+const norm = (s: string): string => s.replace(/\s+/g, ' ').trim()
+
+export function validateAgainstCatalog(items: string[], catalog: string[]): string[] {
+  const catalogNormed = new Set(catalog.map(norm))
+  return items.map(norm).filter((s) => catalogNormed.has(s))
+}
+
+const MIN = 3
+const MAX = 5
+
+export function selectPersonalResults(items: string[] | undefined, catalog: string[]): string[] {
+  const valid = validateAgainstCatalog(items ?? [], catalog)
+  const deduped: string[] = []
+  for (const s of valid) {
+    if (!deduped.includes(s)) deduped.push(s)
+  }
+  if (deduped.length >= MIN) return deduped.slice(0, MAX)
+  const need = MIN - deduped.length
+  const fallback = catalog
+    .map(norm)
+    .filter((s) => !deduped.includes(s))
+    .slice(0, need)
+  return [...deduped, ...fallback]
+}

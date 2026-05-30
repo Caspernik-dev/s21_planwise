@@ -1,5 +1,10 @@
 import type { CanonicalDirection, Level } from '@/lib/scenario/levels'
-import { CATALOG, getCatalog } from '@/lib/scenario/personal-results'
+import {
+  CATALOG,
+  getCatalog,
+  selectPersonalResults,
+  validateAgainstCatalog,
+} from '@/lib/scenario/personal-results'
 import { describe, expect, it } from 'vitest'
 
 const LEVELS: Level[] = ['NOO', 'OOO', 'SOO']
@@ -44,5 +49,49 @@ describe('getCatalog', () => {
   })
   it('маппит ЗОЖ → Физическое и здоровье', () => {
     expect(getCatalog('SOO', 'Здоровый образ жизни')).toBe(CATALOG.SOO['Физическое и здоровье'])
+  })
+})
+
+describe('validateAgainstCatalog', () => {
+  const catalog = ['Формулировка А', 'Формулировка Б', 'Формулировка В']
+  it('пропускает только строки из каталога', () => {
+    expect(validateAgainstCatalog(['Формулировка А', 'Левая фраза'], catalog)).toEqual([
+      'Формулировка А',
+    ])
+  })
+  it('нормализует множественные пробелы', () => {
+    expect(validateAgainstCatalog(['  Формулировка   А  '], catalog)).toEqual(['Формулировка А'])
+  })
+  it('пустой вход → пустой выход', () => {
+    expect(validateAgainstCatalog([], catalog)).toEqual([])
+  })
+})
+
+describe('selectPersonalResults', () => {
+  const catalog = ['А', 'Б', 'В', 'Г', 'Д', 'Е']
+  it('возвращает валидный вход, если >=3', () => {
+    expect(selectPersonalResults(['А', 'Б', 'В'], catalog)).toEqual(['А', 'Б', 'В'])
+  })
+  it('обрезает до 5', () => {
+    expect(selectPersonalResults(['А', 'Б', 'В', 'Г', 'Д', 'Е'], catalog)).toEqual([
+      'А',
+      'Б',
+      'В',
+      'Г',
+      'Д',
+    ])
+  })
+  it('добирает из каталога, если валидных <3', () => {
+    expect(selectPersonalResults(['А'], catalog)).toEqual(['А', 'Б', 'В'])
+  })
+  it('добирает из каталога при undefined/пустом входе', () => {
+    expect(selectPersonalResults(undefined, catalog)).toEqual(['А', 'Б', 'В'])
+    expect(selectPersonalResults([], catalog)).toEqual(['А', 'Б', 'В'])
+  })
+  it('дедуплицирует валидные', () => {
+    expect(selectPersonalResults(['А', 'А', 'Б'], catalog)).toEqual(['А', 'Б', 'В'])
+  })
+  it('игнорирует невалидные, добирает первыми из каталога', () => {
+    expect(selectPersonalResults(['А', 'мусор', 'ещё мусор'], catalog)).toEqual(['А', 'Б', 'В'])
   })
 })
