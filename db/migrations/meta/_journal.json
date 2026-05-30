@@ -106,6 +106,13 @@
       "when": 1780169171732,
       "tag": "0014_lesson_types",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1780183259158,
+      "tag": "0015_stormy_sheva_callister",
+      "breakpoints": true
     }
   ]
 }

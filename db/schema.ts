@@ -23,6 +23,7 @@ export const users = pgTable('users', {
   emailVerified: timestamp('email_verified', { mode: 'date' }),
   image: text('image'),
   role: text('role').notNull().default('user'),
+  passwordVersion: integer('password_version').notNull().default(1),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
@@ -62,6 +63,26 @@ export const verificationTokens = pgTable(
     expires: timestamp('expires', { mode: 'date' }).notNull(),
   },
   (t) => ({ pk: primaryKey({ columns: [t.identifier, t.token] }) }),
+)
+
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(), // 'verify' | 'reset'
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+    usedAt: timestamp('used_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userKindIdx: index('auth_tokens_user_kind_idx').on(t.userId, t.kind),
+  }),
 )
 
 export const scenarios = pgTable('scenarios', {
