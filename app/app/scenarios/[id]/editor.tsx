@@ -215,6 +215,7 @@ export function ScenarioEditor({
                 grade: meta.grade,
                 durationMin: meta.durationMin,
                 format: meta.format,
+                lessonType: meta.lessonType,
               }}
               onRestore={applyRestored}
             />

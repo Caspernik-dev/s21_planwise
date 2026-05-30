@@ -12,6 +12,7 @@ const meta: ExportMeta = {
   grade: 3,
   durationMin: 40,
   format: 'Беседа',
+  lessonType: 'rov',
 }
 
 const content: ScenarioContent = {
@@ -45,6 +46,7 @@ describe('buildScenarioDocument', () => {
     expect(metaBlock.type).toBe('metaTable')
     if (metaBlock.type !== 'metaTable') throw new Error('expected metaTable')
     expect(metaBlock.rows).toEqual([
+      { label: 'Тип занятия', value: 'Разговоры о важном' },
       { label: 'Тема', value: 'О дружбе' },
       { label: 'Направление воспитания', value: 'Патриотическое' },
       { label: 'Класс / уровень', value: '3 класс (НОО)' },
@@ -163,6 +165,7 @@ const baseMeta: ExportMeta = {
   grade: 6,
   durationMin: 30,
   format: 'беседа',
+  lessonType: 'rov',
 }
 
 describe('buildScenarioDocument — методическая шапка', () => {
@@ -199,6 +202,77 @@ describe('buildScenarioDocument — методическая шапка', () => 
     if (meta?.type !== 'metaTable') throw new Error('not metaTable')
     const eq = meta.rows.find((r) => r.label === 'Оборудование')
     expect(eq?.value).toBe('презентация, видео')
+  })
+})
+
+describe('document-model — адаптация по lessonType', () => {
+  const baseContent = {
+    title: 'Тестовый сценарий',
+    goals: ['Цель'],
+    materials: [],
+    stages: [{ kind: 'engage', title: 'Вход', duration_min: 5, activities: [{ type: 'discussion', text: 'X' }] }],
+    adaptations: { simpler: 's', harder: 'h' },
+  } as any
+  const baseMeta = {
+    direction: 'Патриотическое',
+    grade: 6,
+    durationMin: 30,
+    format: 'беседа',
+    lessonType: 'rov' as const,
+    topic: 'Дружба',
+  } as any
+
+  it('rov: первая строка metaTable — "Тип занятия: Разговоры о важном"', () => {
+    const doc = buildScenarioDocument(baseContent, baseMeta)
+    const metaBlock = doc.find((b: any) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows[0]).toEqual({ label: 'Тип занятия', value: 'Разговоры о важном' })
+  })
+
+  it('subject_extension: строка "Предмет: Физика"', () => {
+    const doc = buildScenarioDocument(
+      { ...baseContent, subject: 'Физика' },
+      { ...baseMeta, lessonType: 'subject_extension', direction: undefined },
+    )
+    const metaBlock = doc.find((b: any) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r: any) => r.label === 'Предмет' && r.value === 'Физика')).toBe(true)
+    expect(metaBlock.rows.some((r: any) => r.label === 'Направление воспитания')).toBe(false)
+  })
+
+  it('literacy: строка "Вид грамотности"', () => {
+    const doc = buildScenarioDocument(
+      { ...baseContent, literacyKind: 'math' },
+      { ...baseMeta, lessonType: 'literacy', direction: undefined },
+    )
+    const metaBlock = doc.find((b: any) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r: any) => r.label === 'Вид грамотности' && r.value === 'Математическая грамотность')).toBe(true)
+  })
+
+  it('krujok: главный классификатор скрыт', () => {
+    const doc = buildScenarioDocument(baseContent, { ...baseMeta, lessonType: 'krujok', direction: undefined })
+    const metaBlock = doc.find((b: any) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r: any) => r.label === 'Направление воспитания' || r.label === 'Предмет' || r.label === 'Вид грамотности')).toBe(false)
+  })
+
+  it('блок «Метапредметные результаты» — рендерится только при непустом', () => {
+    const doc = buildScenarioDocument(
+      { ...baseContent, metaResults: ['уметь работать с информацией'] },
+      baseMeta,
+    )
+    const headings = doc.filter((b: any) => b.type === 'heading').map((b: any) => b.text)
+    expect(headings).toContain('Планируемые метапредметные результаты')
+  })
+
+  it('блок «Предметные результаты» — рендерится только при непустом', () => {
+    const doc = buildScenarioDocument(
+      { ...baseContent, subjectResults: ['решать задачи на оптимизацию'] },
+      baseMeta,
+    )
+    const headings = doc.filter((b: any) => b.type === 'heading').map((b: any) => b.text)
+    expect(headings).toContain('Планируемые предметные результаты')
   })
 })
 

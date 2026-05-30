@@ -1,13 +1,20 @@
 import { gradeToLevel, levelLabel } from '@/lib/scenario/levels'
-import { formatGrade } from '@/lib/scenario/options'
+import {
+  type LessonType,
+  type LiteracyKind,
+  formatGrade,
+  lessonTypeLabel,
+  literacyKindLabel,
+} from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export type ExportMeta = {
   topic: string
-  direction: string
+  direction?: string
   grade: number
   durationMin: number
   format: string
+  lessonType: LessonType
 }
 
 export type DocBlock =
@@ -32,9 +39,23 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   const audience = `${formatGrade(meta.grade)} (${levelLabel(gradeToLevel(meta.grade))})`
   const goalValue =
     content.goals.length > 0 ? content.goals[0] + (content.goals.length > 1 ? ' (и др.)' : '') : '—'
+
+  const mainClassifier: { label: string; value: string } | null =
+    (meta.lessonType === 'rov' || meta.lessonType === 'event') && meta.direction
+      ? { label: 'Направление воспитания', value: meta.direction }
+      : meta.lessonType === 'subject_extension' && content.subject
+        ? { label: 'Предмет', value: content.subject }
+        : meta.lessonType === 'literacy' && content.literacyKind
+          ? {
+              label: 'Вид грамотности',
+              value: literacyKindLabel(content.literacyKind as LiteracyKind),
+            }
+          : null
+
   const metaRows: { label: string; value: string }[] = [
+    { label: 'Тип занятия', value: lessonTypeLabel(meta.lessonType) },
     { label: 'Тема', value: meta.topic || '—' },
-    { label: 'Направление воспитания', value: meta.direction },
+    ...(mainClassifier ? [mainClassifier] : []),
     { label: 'Класс / уровень', value: audience },
     { label: 'Длительность', value: `${meta.durationMin} мин` },
     { label: 'Формат', value: meta.format },
@@ -59,6 +80,16 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   if (content.personalResults && content.personalResults.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Планируемые личностные результаты' })
     blocks.push({ type: 'bullets', items: content.personalResults })
+  }
+
+  if (content.metaResults && content.metaResults.length > 0) {
+    blocks.push({ type: 'heading', level: 2, text: 'Планируемые метапредметные результаты' })
+    blocks.push({ type: 'bullets', items: content.metaResults })
+  }
+
+  if (content.subjectResults && content.subjectResults.length > 0) {
+    blocks.push({ type: 'heading', level: 2, text: 'Планируемые предметные результаты' })
+    blocks.push({ type: 'bullets', items: content.subjectResults })
   }
 
   let stageNum = 0
