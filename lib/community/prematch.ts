@@ -1,9 +1,11 @@
 import { db } from '@/db'
 import { embed as gigaEmbed } from '@/lib/gigachat/embeddings'
-import { SPO_GRADE } from '@/lib/scenario/options'
+import { buildEmbedQuery } from '@/lib/scenario/embed-query'
+import { type LessonType, SPO_GRADE } from '@/lib/scenario/options'
 import { sql } from 'drizzle-orm'
 
 export type PrematchQuery = {
+  lessonType: LessonType
   direction: string
   grade: number
   topic: string
@@ -57,7 +59,8 @@ async function queryRowsLive(
       anonymized_content->>'title' AS title,
       (1 - (embedding <=> ${vec}::vector)) AS similarity
     FROM shared_scenarios
-    WHERE direction = ${q.direction}
+    WHERE lesson_type = ${q.lessonType}
+      AND direction = ${q.direction}
       AND format = ${q.format}
       AND ${gradeClause}
       AND embedding IS NOT NULL
@@ -82,7 +85,14 @@ export async function prematchShared(
   deps: Partial<PrematchDeps> = {},
 ): Promise<SharedMatch[]> {
   const d = { ...defaults(), ...deps }
-  const [qvec] = await d.embed([`${q.direction} ${q.grade} ${q.topic} ${q.format}`.trim()])
+  const queryText = buildEmbedQuery({
+    lessonType: q.lessonType,
+    direction: q.direction,
+    grade: q.grade,
+    topic: q.topic,
+    format: q.format,
+  })
+  const [qvec] = await d.embed([queryText])
   if (!qvec) return []
   const rows = await d.queryRows(qvec, q, d.gradeSpan)
   return filterByThreshold(rows, d.threshold, d.topK)

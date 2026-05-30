@@ -38,6 +38,7 @@ export async function prematchAction(formData: FormData): Promise<PrematchCard[]
   const i = parsed.data
   try {
     const matches = await prematchShared({
+      lessonType: i.lessonType,
       direction: i.direction ?? '',
       grade: i.grade,
       topic: i.topic,

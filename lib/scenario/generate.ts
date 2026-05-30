@@ -91,6 +91,7 @@ export async function generateScenario(
   try {
     const matches = await prematch(
       {
+        lessonType: input.lessonType,
         direction: input.direction ?? '',
         grade: input.grade,
         topic: input.topic,

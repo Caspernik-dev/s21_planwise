@@ -1,3 +1,4 @@
+import type { LessonType } from '@/lib/scenario/options'
 import type { GenerationInput, ScenarioContent } from '@/lib/scenario/schema'
 
 export type SharedRow = {
@@ -8,12 +9,12 @@ export type SharedRow = {
   durationMin: number
   format: string
   topic: string
+  lessonType: LessonType
 }
 
 export function sharedToScenarioInsert(shared: SharedRow, userId: string) {
-  // TODO(Task 14-16): lessonType will be stored in shared_scenarios; defaulting to 'rov' for existing rows
   const inputContext: GenerationInput = {
-    lessonType: 'rov',
+    lessonType: shared.lessonType,
     direction: shared.direction as GenerationInput['direction'],
     grade: shared.grade,
     topic: shared.topic,
@@ -28,6 +29,7 @@ export function sharedToScenarioInsert(shared: SharedRow, userId: string) {
     durationMin: shared.durationMin,
     format: shared.format,
     topic: shared.topic,
+    lessonType: shared.lessonType,
     sourceSharedId: shared.id,
     content: shared.anonymizedContent,
     inputContext,

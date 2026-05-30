@@ -21,7 +21,7 @@ describe('filterByThreshold', () => {
 describe('prematchShared', () => {
   it('embeds query and applies threshold/topK over injected rows', async () => {
     const out = await prematchShared(
-      { direction: 'Гражданское', grade: 5, topic: 'дружба', format: 'беседа' },
+      { lessonType: 'rov', direction: 'Гражданское', grade: 5, topic: 'дружба', format: 'беседа' },
       {
         embed: async () => [[0.1, 0.2]],
         queryRows: async () => [
@@ -54,5 +54,30 @@ describe('prematchShared', () => {
       },
     )
     expect(out.map((r) => r.id)).toEqual(['x'])
+  })
+
+  it('passes lessonType to queryRows as part of the query', async () => {
+    const capturedQueries: Array<{ q: unknown }> = []
+    await prematchShared(
+      {
+        lessonType: 'krujok',
+        direction: 'Познавательное',
+        grade: 5,
+        topic: 'Робототехника Arduino',
+        format: 'мастер-класс',
+      },
+      {
+        embed: async () => [[0, 1]],
+        queryRows: async (_vec, q, _span) => {
+          capturedQueries.push({ q })
+          return []
+        },
+        threshold: 0.5,
+        topK: 3,
+        gradeSpan: 2,
+      },
+    )
+    expect(capturedQueries).toHaveLength(1)
+    expect((capturedQueries[0].q as { lessonType: string }).lessonType).toBe('krujok')
   })
 })

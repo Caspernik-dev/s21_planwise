@@ -6,6 +6,7 @@ import { generations, likes, scenarioVersions, scenarios, sharedScenarios } from
 import { type SharedRow, sharedToScenarioInsert } from '@/lib/community/copy'
 import { type StrictPiiResult, strictPiiCheck } from '@/lib/community/pii-gate'
 import { resolveShareTarget } from '@/lib/community/share-target'
+import type { LessonType } from '@/lib/scenario/options'
 import { type ScenarioPiiWarning, scanScenarioPii } from '@/lib/pii/scenario-scan'
 import { retrieveChunks } from '@/lib/rag/retrieve'
 import { checkRateLimit } from '@/lib/ratelimit'
@@ -228,7 +229,7 @@ export async function likeScenarioAction(
   let shared = false
   if (optInShare && cleanResult) {
     const target = resolveShareTarget(
-      { sourceSharedId: owned.sourceSharedId },
+      { sourceSharedId: owned.sourceSharedId, lessonType: (owned.lessonType ?? 'rov') as LessonType },
       { alreadyShared: existing?.optInShare ?? false },
     )
     if (target.action === 'increment') {
@@ -257,6 +258,7 @@ export async function likeScenarioAction(
           durationMin: owned.durationMin,
           format: owned.format,
           topic: owned.topic,
+          lessonType: target.lessonType,
           likeCount: 1,
         })
         .returning({ id: sharedScenarios.id })
@@ -296,6 +298,7 @@ export async function useSharedAsIsAction(sharedId: string): Promise<void> {
       durationMin: sharedScenarios.durationMin,
       format: sharedScenarios.format,
       topic: sharedScenarios.topic,
+      lessonType: sharedScenarios.lessonType,
     })
     .from(sharedScenarios)
     .where(eq(sharedScenarios.id, sharedId))
