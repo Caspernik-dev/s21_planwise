@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { filterByThreshold } from '@/lib/community/prematch'
 import { embed } from '@/lib/gigachat/embeddings'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { LESSON_TYPE_VALUES, type LessonType } from '@/lib/scenario/options'
 import { sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 
@@ -14,6 +15,7 @@ export type LibraryCard = {
   direction: string
   format: string
   likeCount: number
+  lessonType: string
   stages: Array<{ title: string }>
 }
 
@@ -25,11 +27,12 @@ function toCard(r: Record<string, unknown>): LibraryCard {
     direction: String(r.direction),
     format: String(r.format),
     likeCount: Number(r.likeCount),
+    lessonType: String(r.lessonType ?? 'rov'),
     stages: (content.stages ?? []).map((s) => ({ title: s.title })),
   }
 }
 
-export async function searchSharedAction(query: string): Promise<LibraryCard[]> {
+export async function searchSharedAction(query: string, type?: LessonType): Promise<LibraryCard[]> {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
@@ -43,6 +46,8 @@ export async function searchSharedAction(query: string): Promise<LibraryCard[]> 
   if (!rlS.allowed) return []
 
   const q = query.trim()
+  const validType =
+    type && (LESSON_TYPE_VALUES as readonly string[]).includes(type) ? type : undefined
 
   if (q.length > 0) {
     const { logEvent } = await import('@/lib/events/log')
@@ -51,9 +56,10 @@ export async function searchSharedAction(query: string): Promise<LibraryCard[]> 
 
   if (q.length === 0) {
     const rows = await db.execute(sql`
-      SELECT id, like_count AS "likeCount", direction, format,
+      SELECT id, like_count AS "likeCount", direction, format, lesson_type AS "lessonType",
         anonymized_content AS "content", anonymized_content->>'title' AS title
       FROM shared_scenarios
+      ${validType ? sql`WHERE lesson_type = ${validType}` : sql``}
       ORDER BY like_count DESC, created_at DESC
       LIMIT 24
     `)
@@ -70,11 +76,12 @@ export async function searchSharedAction(query: string): Promise<LibraryCard[]> 
   if (!qvec) return []
   const vec = `[${qvec.join(',')}]`
   const rows = await db.execute(sql`
-    SELECT id, like_count AS "likeCount", direction, format,
+    SELECT id, like_count AS "likeCount", direction, format, lesson_type AS "lessonType",
       anonymized_content AS "content", anonymized_content->>'title' AS title,
       (1 - (embedding <=> ${vec}::vector)) AS similarity
     FROM shared_scenarios
     WHERE embedding IS NOT NULL
+      ${validType ? sql`AND lesson_type = ${validType}` : sql``}
     ORDER BY embedding <=> ${vec}::vector ASC
     LIMIT 24
   `)

@@ -3,6 +3,7 @@
 import { useSharedAsIsAction } from '@/app/app/scenarios/[id]/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { lessonTypeLabel } from '@/lib/scenario/options'
 import { useTransition } from 'react'
 
 type StagePreview = { title: string }
@@ -13,6 +14,7 @@ export function SharedCard({
   direction,
   format,
   likeCount,
+  lessonType,
   stages,
 }: {
   id: string
@@ -20,13 +22,19 @@ export function SharedCard({
   direction: string
   format: string
   likeCount: number
+  lessonType?: string
   stages: StagePreview[]
 }) {
   const [pending, start] = useTransition()
   return (
-    <Card className="ring-1 ring-neutral-200 shadow-card">
+    <Card className="relative ring-1 ring-neutral-200 shadow-card">
+      {lessonType && (
+        <span className="absolute right-3 top-3 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
+          {lessonTypeLabel(lessonType as Parameters<typeof lessonTypeLabel>[0])}
+        </span>
+      )}
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="pr-24 text-base">{title}</CardTitle>
         <div className="mt-1 flex flex-wrap gap-2 text-xs">
           {[direction, format, `❤ ${likeCount}`].map((b) => (
             <span key={b} className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-600">
