@@ -24,7 +24,8 @@
     "seed:shared": "NODE_OPTIONS=--use-system-ca tsx scripts/seed-shared.ts",
     "set:admin": "tsx scripts/set-admin.ts",
     "gen:qr": "tsx scripts/gen-qr.ts",
-    "gen:promo": "tsx scripts/gen-promo.ts"
+    "gen:promo": "tsx scripts/gen-promo.ts",
+    "backfill:rag-type": "tsx scripts/backfill-rag-lesson-type.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
