@@ -2,7 +2,8 @@ import { chatCompletion } from '@/lib/gigachat/client'
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { type Activity, generateBlockWithGate } from './block-gen'
 import { coerceActivityType } from './coerce'
-import { type RagChunkForPrompt, buildBlockMessages } from './prompt'
+import { buildBlockMessages } from './prompts'
+import type { RagChunkForPrompt } from './prompts/shared'
 import type { GenerationInput, ScenarioSkeleton } from './schema'
 
 type ChatFn = (messages: GigaMessage[], opts?: { temperature?: number }) => Promise<ChatResult>
@@ -34,7 +35,9 @@ export async function regenerateActivity(
     deps.ragChunks ?? [],
     args.runningContext,
   )
-  const res = await generateBlockWithGate(chat, msgs, args.stage.kind, { lessonType: 'rov' })
+  const res = await generateBlockWithGate(chat, msgs, args.stage.kind, {
+    lessonType: args.input.lessonType,
+  })
   if (!res) throw new Error('GigaChat вернул невалидный блок при регенерации')
   return { ...res.value, type: coerceActivityType(args.targetType) as Activity['type'] }
 }

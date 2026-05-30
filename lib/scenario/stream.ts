@@ -13,12 +13,13 @@ import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
 import { getCatalog, selectPersonalResults } from './personal-results'
 import {
-  PROMPT_VERSION,
   type RagChunkForPrompt,
   type SharedExampleForPrompt,
   buildBlockMessages,
   buildSkeletonMessages,
-} from './prompt'
+  getPromptVersion,
+} from './prompts'
+import * as Event from './prompts/event'
 import { checkScenario } from './quality'
 import {
   type GenerationInput,
@@ -158,12 +159,11 @@ export async function* streamScenario(
 
     // STAGE 1: skeleton
     yield { type: 'phase', phase: 'skeleton' }
-    const skMessages = buildSkeletonMessages(
-      input,
-      ragChunks,
-      sharedExamples,
-      input.userMaterial ?? '',
-    )
+    const skMessages = buildSkeletonMessages(input, {
+      chunks: ragChunks,
+      examples: sharedExamples,
+      userMaterial: input.userMaterial ?? '',
+    })
     const skStream = chatStream(skMessages, { temperature: 0.4, onQueued: onQueuedFirst })
     let skRaw = ''
     while (pendingQueued.length > 0)
@@ -187,10 +187,16 @@ export async function* streamScenario(
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
 
-    // Whitelist: личностные результаты только из каталога ФГОС.
-    // Если LLM вернула невалидное/пустое — добираем первыми из каталога.
-    const prCatalog = input.direction ? getCatalog(gradeToLevel(input.grade), input.direction) : []
-    skeleton.personalResults = selectPersonalResults(skeleton.personalResults, prCatalog)
+    // Whitelist личностных результатов — только для rov и event (занятия с ФГОС-каталогом).
+    // krujok/literacy/subject_extension не привязаны к направлениям ФГОС.
+    if (input.lessonType === 'rov') {
+      const prCatalog = input.direction
+        ? getCatalog(gradeToLevel(input.grade), input.direction)
+        : []
+      skeleton.personalResults = selectPersonalResults(skeleton.personalResults, prCatalog)
+    } else if (input.lessonType === 'event' && input.direction) {
+      skeleton = Event.applyPersonalResultsWhitelist(skeleton, input)
+    }
 
     // STAGE 2: детали ПО БЛОКАМ — отдельный фокусный вызов на каждый блок (РоВ-глубина).
     // Объём масштабируется числом блоков; катящийся контекст держит связность;
@@ -223,7 +229,7 @@ export async function* streamScenario(
         input.userMaterial ?? '',
       )
 
-      const r = await generateBlockWithGate(chat, msgs, st.kind, { lessonType: 'rov' })
+      const r = await generateBlockWithGate(chat, msgs, st.kind, { lessonType: input.lessonType })
       if (!r) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
       if (r.repaired) repaired = true
       if (!r.accepted) thinBlocks++
@@ -263,11 +269,11 @@ export async function* streamScenario(
     const content = parsedFull.data
 
     const { content: normalized, changed } = normalizeChronometry(content, input.durationMin)
-    const { warnings } = checkScenario(normalized, { lessonType: 'rov' })
+    const { warnings } = checkScenario(normalized, { lessonType: input.lessonType })
 
     const meta: GenerationMeta = {
       model,
-      promptVersion: PROMPT_VERSION,
+      promptVersion: getPromptVersion(input.lessonType),
       repaired,
       normalized: changed,
       usage: null,

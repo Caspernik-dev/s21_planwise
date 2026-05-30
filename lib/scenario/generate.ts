@@ -6,8 +6,9 @@ import { retrieveChunks } from '@/lib/rag/retrieve'
 import { coerceContentTypes } from './coerce'
 import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
-import { PROMPT_VERSION, buildMessages } from './prompt'
-import type { RagChunkForPrompt, SharedExampleForPrompt } from './prompt'
+import { getPromptVersion } from './prompts'
+import { buildMessages } from './prompts/rov'
+import type { RagChunkForPrompt, SharedExampleForPrompt } from './prompts/shared'
 import {
   type GenerationInput,
   type GenerationMeta,
@@ -123,7 +124,7 @@ export async function generateScenario(
 
   const meta: GenerationMeta = {
     model: cfg.model,
-    promptVersion: PROMPT_VERSION,
+    promptVersion: getPromptVersion(input.lessonType),
     repaired,
     normalized: changed,
     usage,
