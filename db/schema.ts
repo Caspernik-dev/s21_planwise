@@ -80,6 +80,7 @@ export const scenarios = pgTable('scenarios', {
   // Forward-compat: источники (таблицы plan_topics/shared_scenarios появятся в своих планах).
   sourcePlanTopicId: text('source_plan_topic_id'),
   sourceSharedId: text('source_shared_id'),
+  lessonType: text('lesson_type').notNull().default('rov'),
   shareToken: text('share_token').unique(),
   content: jsonb('content').$type<ScenarioContent>().notNull(),
   inputContext: jsonb('input_context').$type<GenerationInput>().notNull(),
@@ -158,6 +159,7 @@ export const ragDocuments = pgTable('rag_documents', {
   gradeRange: text('grade_range'),
   direction: text('direction'),
   rawUrl: text('raw_url').notNull().unique(),
+  lessonType: text('lesson_type'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
@@ -219,6 +221,7 @@ export const sharedScenarios = pgTable(
     durationMin: integer('duration_min').notNull(),
     format: text('format').notNull(),
     topic: text('topic').notNull(),
+    lessonType: text('lesson_type').notNull().default('rov'),
     embedding: vector('embedding', { dimensions: 2560 }),
     likeCount: integer('like_count').notNull().default(1),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
