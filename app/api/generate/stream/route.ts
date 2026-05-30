@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { db } from '@/db'
 import { generations, planTopics, scenarioVersions, scenarios } from '@/db/schema'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { scenarioDirectionValue } from '@/lib/scenario/scenario-fields'
 import { generationInputSchema } from '@/lib/scenario/schema'
 import type { GenerationMeta, ScenarioContent } from '@/lib/scenario/schema'
 import { streamScenario } from '@/lib/scenario/stream'
@@ -73,7 +74,8 @@ export async function POST(req: Request) {
       .values({
         userId,
         title: content.title,
-        direction: input.direction,
+        lessonType: input.lessonType,
+        direction: scenarioDirectionValue(input),
         grade: input.grade,
         durationMin: input.durationMin,
         format: input.format,
@@ -96,7 +98,9 @@ export async function POST(req: Request) {
     })
     try {
       const { embed } = await import('@/lib/gigachat/embeddings')
-      const [vec] = await embed([`${input.direction} ${input.topic} ${content.title}`])
+      const [vec] = await embed([
+        `${scenarioDirectionValue(input)} ${input.topic} ${content.title}`,
+      ])
       await db.execute(
         sql`UPDATE scenarios SET embedding = ${`[${vec.join(',')}]`}::vector WHERE id = ${scenarioId}`,
       )

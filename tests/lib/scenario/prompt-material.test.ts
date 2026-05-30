@@ -3,6 +3,7 @@ import type { GenerationInput, ScenarioSkeleton } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
 const input: GenerationInput = {
+  lessonType: 'rov',
   direction: 'Патриотическое',
   grade: 6,
   topic: 'Дружба',

@@ -26,6 +26,7 @@ export async function prematchAction(formData: FormData): Promise<PrematchCard[]
   })
   if (!rl.allowed) return []
   const parsed = generationInputSchema.safeParse({
+    lessonType: formData.get('lessonType') ?? 'rov',
     direction: formData.get('direction'),
     grade: formData.get('grade'),
     topic: formData.get('topic'),
@@ -36,7 +37,8 @@ export async function prematchAction(formData: FormData): Promise<PrematchCard[]
   const i = parsed.data
   try {
     const matches = await prematchShared({
-      direction: i.direction,
+      lessonType: i.lessonType,
+      direction: i.direction ?? '',
       grade: i.grade,
       topic: i.topic,
       format: i.format,

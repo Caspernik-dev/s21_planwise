@@ -22,6 +22,7 @@ const MATRIX: Array<{
     gradeMin: 1,
     gradeMax: 2,
     input: {
+      lessonType: 'rov',
       direction: 'Духовно-нравственное',
       grade: 2,
       topic: 'Дружба и взаимопомощь в классе',
@@ -35,6 +36,7 @@ const MATRIX: Array<{
     gradeMin: 1,
     gradeMax: 2,
     input: {
+      lessonType: 'rov',
       direction: 'Патриотическое',
       grade: 2,
       topic: 'Моя малая Родина',
@@ -48,6 +50,7 @@ const MATRIX: Array<{
     gradeMin: 3,
     gradeMax: 4,
     input: {
+      lessonType: 'rov',
       direction: 'Экологическое',
       grade: 4,
       topic: 'Береги природу родного края',
@@ -61,6 +64,7 @@ const MATRIX: Array<{
     gradeMin: 3,
     gradeMax: 4,
     input: {
+      lessonType: 'rov',
       direction: 'Трудовое',
       grade: 4,
       topic: 'Все профессии важны',
@@ -74,6 +78,7 @@ const MATRIX: Array<{
     gradeMin: 3,
     gradeMax: 4,
     input: {
+      lessonType: 'rov',
       direction: 'Физическое и здоровье',
       grade: 4,
       topic: 'Режим дня и здоровье',
@@ -87,6 +92,7 @@ const MATRIX: Array<{
     gradeMin: 5,
     gradeMax: 7,
     input: {
+      lessonType: 'rov',
       direction: 'Гражданское',
       grade: 6,
       topic: 'Права и обязанности школьника',
@@ -100,6 +106,7 @@ const MATRIX: Array<{
     gradeMin: 5,
     gradeMax: 7,
     input: {
+      lessonType: 'rov',
       direction: 'Познавательное',
       grade: 6,
       topic: 'Наука вокруг нас',
@@ -113,6 +120,7 @@ const MATRIX: Array<{
     gradeMin: 5,
     gradeMax: 7,
     input: {
+      lessonType: 'rov',
       direction: 'Эстетическое',
       grade: 6,
       topic: 'Искусство в нашей жизни',
@@ -126,6 +134,7 @@ const MATRIX: Array<{
     gradeMin: 8,
     gradeMax: 9,
     input: {
+      lessonType: 'rov',
       direction: 'Патриотическое',
       grade: 9,
       topic: 'Память о Великой Отечественной войне',
@@ -139,6 +148,7 @@ const MATRIX: Array<{
     gradeMin: 8,
     gradeMax: 9,
     input: {
+      lessonType: 'rov',
       direction: 'Трудовое',
       grade: 9,
       topic: 'Как выбрать профессию',
@@ -152,6 +162,7 @@ const MATRIX: Array<{
     gradeMin: 10,
     gradeMax: 11,
     input: {
+      lessonType: 'rov',
       direction: 'Духовно-нравственное',
       grade: 11,
       topic: 'Нравственный выбор и ответственность',
@@ -165,6 +176,7 @@ const MATRIX: Array<{
     gradeMin: 10,
     gradeMax: 11,
     input: {
+      lessonType: 'rov',
       direction: 'Гражданское',
       grade: 11,
       topic: 'Волонтёрство и помощь другим',
@@ -186,7 +198,7 @@ async function main() {
       const { content } = await generateScenario(item.input, { retrieve: async () => [] })
       const md = scenarioToMarkdown(content, {
         title: content.title,
-        direction: item.input.direction,
+        direction: item.input.direction ?? '',
         gradeRange: item.gradeRange,
         gradeMin: item.gradeMin,
         gradeMax: item.gradeMax,

@@ -19,7 +19,13 @@ import {
   removeStage,
 } from '@/lib/scenario/edit-ops'
 import { gradeToLevel, levelLabel } from '@/lib/scenario/levels'
-import { formatGrade } from '@/lib/scenario/options'
+import {
+  LITERACY_KINDS,
+  type LessonType,
+  type LiteracyKind,
+  formatGrade,
+  lessonTypeLabel,
+} from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
@@ -46,6 +52,7 @@ type Meta = {
   grade: number
   durationMin: number
   format: string
+  lessonType: LessonType
 }
 
 export function ScenarioEditor({
@@ -167,16 +174,20 @@ export function ScenarioEditor({
             aria-label="Название сценария"
           />
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            {[meta.direction, formatGrade(meta.grade), `${meta.durationMin} мин`, meta.format].map(
-              (b) => (
-                <span
-                  key={b}
-                  className="rounded-full bg-brand-50 px-3 py-1 text-brand-700 ring-1 ring-brand-200"
-                >
-                  {b}
-                </span>
-              ),
-            )}
+            {[
+              lessonTypeLabel(meta.lessonType),
+              ...(meta.lessonType === 'rov' || meta.lessonType === 'event' ? [meta.direction] : []),
+              formatGrade(meta.grade),
+              `${meta.durationMin} мин`,
+              meta.format,
+            ].map((b) => (
+              <span
+                key={b}
+                className="rounded-full bg-brand-50 px-3 py-1 text-brand-700 ring-1 ring-brand-200"
+              >
+                {b}
+              </span>
+            ))}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -204,6 +215,7 @@ export function ScenarioEditor({
                 grade: meta.grade,
                 durationMin: meta.durationMin,
                 format: meta.format,
+                lessonType: meta.lessonType,
               }}
               onRestore={applyRestored}
             />
@@ -267,12 +279,167 @@ export function ScenarioEditor({
         </CardContent>
       </Card>
 
+      {(meta.lessonType === 'rov' || meta.lessonType === 'event') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Направление воспитания</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-neutral-500">{meta.direction}</p>
+          </CardContent>
+        </Card>
+      )}
+      {meta.lessonType === 'subject_extension' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Предмет</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={content.subject ?? ''}
+              onChange={(e) => update((c) => ({ ...c, subject: e.target.value }))}
+              placeholder="Физика, Биология, Математика..."
+              aria-label="Школьный предмет"
+            />
+          </CardContent>
+        </Card>
+      )}
+      {meta.lessonType === 'literacy' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Вид грамотности</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <select
+              className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
+              value={content.literacyKind ?? ''}
+              onChange={(e) =>
+                update((c) => ({ ...c, literacyKind: e.target.value as LiteracyKind }))
+              }
+              aria-label="Вид грамотности"
+            >
+              <option value="">— выберите —</option>
+              {LITERACY_KINDS.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Метапредметные результаты (УУД)</CardTitle>
+          <p className="text-sm text-neutral-500">
+            Универсальные учебные действия: познавательные, коммуникативные, регулятивные.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(content.metaResults ?? []).map((r, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+            <div key={`mr-${i}`} className="flex gap-2">
+              <Textarea
+                value={r}
+                onChange={(e) =>
+                  update((c) => {
+                    const metaResults = (c.metaResults ?? []).slice()
+                    metaResults[i] = e.target.value
+                    return { ...c, metaResults }
+                  })
+                }
+                rows={2}
+                className="flex-1"
+                aria-label={`Метапредметный результат ${i + 1}`}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  update((c) => ({
+                    ...c,
+                    metaResults: (c.metaResults ?? []).filter((_, k) => k !== i),
+                  }))
+                }
+                aria-label="Удалить метапредметный результат"
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => update((c) => ({ ...c, metaResults: [...(c.metaResults ?? []), ''] }))}
+          >
+            + Добавить
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Планируемые предметные результаты</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(content.subjectResults ?? []).map((r, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+            <div key={`sr-${i}`} className="flex gap-2">
+              <Textarea
+                value={r}
+                onChange={(e) =>
+                  update((c) => {
+                    const subjectResults = (c.subjectResults ?? []).slice()
+                    subjectResults[i] = e.target.value
+                    return { ...c, subjectResults }
+                  })
+                }
+                rows={2}
+                className="flex-1"
+                aria-label={`Предметный результат ${i + 1}`}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  update((c) => ({
+                    ...c,
+                    subjectResults: (c.subjectResults ?? []).filter((_, k) => k !== i),
+                  }))
+                }
+                aria-label="Удалить предметный результат"
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              update((c) => ({ ...c, subjectResults: [...(c.subjectResults ?? []), ''] }))
+            }
+          >
+            + Добавить
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Планируемые личностные результаты</CardTitle>
-          <p className="text-sm text-neutral-500">
-            Из ФГОС {levelLabel(gradeToLevel(meta.grade))}, направление «{meta.direction}»
-          </p>
+          {meta.lessonType === 'rov' || meta.lessonType === 'event' ? (
+            <p className="text-sm text-neutral-500">
+              Из ФГОС {levelLabel(gradeToLevel(meta.grade))}, направление «{meta.direction}»
+            </p>
+          ) : (
+            <p className="text-sm text-neutral-500">Свободный список, не из каталога ФГОС.</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-2">
           {(content.personalResults ?? []).map((r, i) => (

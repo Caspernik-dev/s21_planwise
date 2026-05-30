@@ -39,6 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     grade: row.grade,
     durationMin: row.durationMin,
     format: row.format,
+    lessonType: (row.lessonType ?? 'rov') as import('@/lib/scenario/options').LessonType,
   })
 
   await logEvent('export', { userId: session.user.id, meta: { format } })

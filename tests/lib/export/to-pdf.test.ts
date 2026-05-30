@@ -9,6 +9,7 @@ const meta: ExportMeta = {
   grade: 3,
   durationMin: 40,
   format: 'Беседа',
+  lessonType: 'rov',
 }
 const content: ScenarioContent = {
   title: 'Дружба',

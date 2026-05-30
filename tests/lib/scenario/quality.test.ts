@@ -131,6 +131,100 @@ function withStages(stages: ScenarioContent['stages']): ScenarioContent {
   }
 }
 
+describe('checkBlock — ветвление по lessonType', () => {
+  it('rov: блок без «Учитель:» — thin (FAIL гейт)', () => {
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: 'А'.repeat(700),
+      questions: [],
+    }
+    const r = checkBlock(block, 'main', { lessonType: 'rov' })
+    expect(r.ok).toBe(false)
+  })
+
+  it('rov: блок с двумя «Учитель:»-репликами достаточной длины — PASS', () => {
+    const teacherLong = `Учитель: ${'Б'.repeat(50)} Ответы обучающихся. Учитель: ${'В'.repeat(50)}`
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: `${teacherLong} ${'И'.repeat(700)}`,
+      questions: [],
+    }
+    const r = checkBlock(block, 'main', { lessonType: 'rov' })
+    expect(r.ok).toBe(true)
+  })
+
+  it('event: тот же РоВ-стиль (как rov)', () => {
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: 'А'.repeat(700),
+      questions: [],
+    }
+    const r = checkBlock(block, 'main', { lessonType: 'event' })
+    expect(r.ok).toBe(false)
+  })
+
+  it('krujok: «Учитель:» НЕ обязательно, длина шага ≥200 — PASS', () => {
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: 'А'.repeat(250),
+      questions: [],
+    }
+    const r = checkBlock(block, 'main', { lessonType: 'krujok' })
+    expect(r.ok).toBe(true)
+  })
+
+  it('krujok: длина <200 — thin', () => {
+    const block = { type: 'main', focus: 'x', text: 'А'.repeat(50), questions: [] }
+    const r = checkBlock(block, 'main', { lessonType: 'krujok' })
+    expect(r.ok).toBe(false)
+  })
+
+  it('literacy: мягкий порог (как krujok)', () => {
+    const block = { type: 'main', focus: 'x', text: 'А'.repeat(250), questions: [] }
+    const r = checkBlock(block, 'main', { lessonType: 'literacy' })
+    expect(r.ok).toBe(true)
+  })
+
+  it('subject_extension: мягкий порог', () => {
+    const block = { type: 'main', focus: 'x', text: 'А'.repeat(250), questions: [] }
+    const r = checkBlock(block, 'main', { lessonType: 'subject_extension' })
+    expect(r.ok).toBe(true)
+  })
+})
+
+describe('checkScenario — ветвление по lessonType', () => {
+  const withReflection = (text: string): ScenarioContent => ({
+    title: 'T',
+    goals: ['g'],
+    materials: [],
+    stages: [
+      {
+        kind: 'reflection',
+        title: 'Рефлексия',
+        duration_min: 5,
+        activities: [{ type: 'task', text }],
+      },
+    ],
+    adaptations: { simpler: 's', harder: 'h' },
+  })
+
+  it('рефлексия-warning универсален (rov)', () => {
+    const content = withReflection('Раздать карточки.')
+    const { warnings } = checkScenario(content, { lessonType: 'rov' })
+    expect(warnings.some((w) => w.includes('рефлексии нет вопросов'))).toBe(true)
+  })
+
+  it('рефлексия-warning универсален (krujok)', () => {
+    const content = withReflection('Раздать карточки.')
+    const { warnings } = checkScenario(content, { lessonType: 'krujok' })
+    expect(warnings.some((w) => w.includes('рефлексии нет вопросов'))).toBe(true)
+  })
+})
+
 describe('checkScenario — рефлексия', () => {
   it('warning, когда нет этапа рефлексии', () => {
     const content = withStages([

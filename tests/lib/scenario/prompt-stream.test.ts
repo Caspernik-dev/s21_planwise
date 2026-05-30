@@ -3,6 +3,7 @@ import { skeletonSchema } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
 const input = {
+  lessonType: 'rov' as const,
   direction: 'Патриотическое' as const,
   grade: 5,
   topic: 'Дружба',

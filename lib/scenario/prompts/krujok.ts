@@ -1,0 +1,113 @@
+import { formatGradeForPrompt } from '../options'
+import type { GenerationInput, ScenarioSkeleton } from '../schema'
+import {
+  JSON_FORMAT_HINT,
+  RULE_NO_GRADING,
+  RULE_NO_HALLUCINATIONS,
+  buildGoodExamplesBlock,
+  buildMaterialBlock,
+  buildMethodologyBlock,
+} from './shared'
+import type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt } from './shared'
+
+export type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt }
+
+export const PROMPT_VERSION = 'v1-krujok-2026-05-30'
+
+const SYSTEM_KRUJOK = `Ты — методист, помогаешь учителю придумать занятие тематического кружка / клуба по интересам.
+
+Жанровые рамки:
+- Это НЕ урок и НЕ «Разговоры о важном». Структура свободная, обязательной трёхчастности нет.
+- Видеовход НЕ обязателен — включай видео или демонстрацию только если оно естественно ложится в тему.
+- Главный «выход» занятия — развитие интереса и/или конкретное практическое умение, а не личностные результаты ФГОС.
+- Формы: мастер-класс, творческая мастерская, игра, проект, дискуссия, показ — выбирай под тему.
+- Активности подробные, с пошаговым описанием действий учителя и учеников.
+
+${RULE_NO_HALLUCINATIONS}
+${RULE_NO_GRADING}
+
+${JSON_FORMAT_HINT}
+`
+
+const SKELETON_HINT = `Верни JSON каркаса со структурой:
+{
+  "title": string,
+  "goals": string[],            // 2-3 цели — что научится делать / что узнает
+  "materials": string[],
+  "subjectResults": string[],   // опц., что научились делать (конкретные умения)
+  "stages": [
+    {
+      "kind": "engage" | "main" | "reflection",
+      "title": string,
+      "duration_min": number,
+      "blocks": [ { "type": "discussion"|"quiz"|"game"|"task"|"video", "focus": string } ]
+    }
+  ],
+  "adaptations": { "simpler": string, "harder": string }
+}
+
+НЕ используй поля personalResults / values / coreMeanings — они для занятий «Разговоры о важном».
+`
+
+const BLOCK_HINT = `Верни JSON ОДНОЙ активности:
+{
+  "type": "discussion" | "quiz" | "game" | "task" | "video",
+  "text": string,             // подробное практическое описание шагов (≥300 символов), допускается «Шаг 1: ...», «Учитель: ...» — на твой выбор по теме
+  "questions": string[]       // опц., вопросы для обсуждения если type === "discussion"
+}
+`
+
+export function buildKrujokSkeletonMessages(
+  input: GenerationInput,
+  ragChunks: RagChunkForPrompt[] = [],
+  sharedExamples: SharedExampleForPrompt[] = [],
+  userMaterial = '',
+): ChatMessage[] {
+  const user = [
+    'Построй каркас занятия тематического кружка:',
+    `- Тема: ${input.topic}`,
+    `- Класс: ${formatGradeForPrompt(input.grade)}`,
+    `- Длительность: ${input.durationMin} минут`,
+    `- Формат: ${input.format}`,
+    buildMaterialBlock(userMaterial),
+    buildMethodologyBlock(ragChunks),
+    buildGoodExamplesBlock(sharedExamples),
+    '',
+    SKELETON_HINT,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  return [
+    { role: 'system', content: SYSTEM_KRUJOK },
+    { role: 'user', content: user },
+  ]
+}
+
+export function buildKrujokBlockMessages(
+  input: GenerationInput,
+  skeleton: ScenarioSkeleton,
+  stage: { kind: string; title: string; duration_min: number },
+  brief: { type: string; focus: string },
+  ragChunks: RagChunkForPrompt[] = [],
+  runningContext = '',
+  userMaterial = '',
+): ChatMessage[] {
+  const user = [
+    `Занятие кружка: «${skeleton.title}». Тема «${input.topic}», ${formatGradeForPrompt(input.grade)}, формат ${input.format}.`,
+    `Этап: «${stage.title}» (${stage.kind}, ${stage.duration_min} мин).`,
+    `Блок (${brief.type}): ${brief.focus}`,
+    buildMaterialBlock(userMaterial),
+    buildMethodologyBlock(ragChunks),
+    ...(runningContext ? ['', runningContext] : []),
+    '',
+    BLOCK_HINT,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  return [
+    { role: 'system', content: SYSTEM_KRUJOK },
+    { role: 'user', content: user },
+  ]
+}

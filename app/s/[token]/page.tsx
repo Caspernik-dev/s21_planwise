@@ -37,6 +37,7 @@ export default async function SharedScenarioPage({
     grade: row.grade,
     durationMin: row.durationMin,
     format: row.format,
+    lessonType: (row.lessonType ?? 'rov') as import('@/lib/scenario/options').LessonType,
   })
 
   const session = await auth()

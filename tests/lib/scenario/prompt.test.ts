@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 const input = {
+  lessonType: 'rov' as const,
   direction: 'Патриотическое' as const,
   grade: 6,
   topic: 'День Победы',
@@ -45,6 +46,7 @@ describe('buildMessages', () => {
   it('includes RELEVANT_METHODOLOGY block when rag chunks provided', () => {
     const msgs = buildMessages(
       {
+        lessonType: 'rov',
         direction: 'Гражданское',
         grade: 6,
         topic: 'дружба',
@@ -66,6 +68,7 @@ describe('buildMessages', () => {
 
   it('omits methodology block when no chunks provided', () => {
     const msgs = buildMessages({
+      lessonType: 'rov',
       direction: 'Гражданское',
       grade: 6,
       topic: 'дружба',
@@ -87,6 +90,7 @@ describe('buildSkeletonMessages', () => {
 })
 
 const skeletonInputT4 = {
+  lessonType: 'rov' as const,
   direction: 'Патриотическое' as const,
   grade: 5,
   topic: 'Дружба',

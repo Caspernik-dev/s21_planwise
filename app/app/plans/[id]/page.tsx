@@ -54,7 +54,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
           const scenarioId = coveredBy.get(t.id)
           const href = scenarioId
             ? `/app/scenarios/${scenarioId}`
-            : `/app/new?topic=${encodeURIComponent(t.title)}&planTopicId=${t.id}`
+            : `/app/new?type=rov&topic=${encodeURIComponent(t.title)}&planTopicId=${t.id}`
           return (
             <Card key={t.id}>
               <CardContent className="flex items-center justify-between gap-4 py-4">

@@ -5,6 +5,7 @@ import { streamScenario } from '@/lib/scenario/stream'
 import { describe, expect, it, vi } from 'vitest'
 
 const input = {
+  lessonType: 'rov' as const,
   direction: 'Патриотическое' as const,
   grade: 5,
   topic: 'Дружба',

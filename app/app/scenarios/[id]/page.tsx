@@ -46,6 +46,7 @@ export default async function ScenarioPage({ params }: { params: Promise<{ id: s
         grade: scenario.grade,
         durationMin: scenario.durationMin,
         format: scenario.format,
+        lessonType: (scenario.lessonType ?? 'rov') as import('@/lib/scenario/options').LessonType,
       }}
       initialContent={scenario.content}
       initialLiked={!!like}

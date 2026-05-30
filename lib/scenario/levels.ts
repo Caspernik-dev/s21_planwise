@@ -13,6 +13,7 @@ export type CanonicalDirection =
   | 'Трудовое'
   | 'Экологическое'
   | 'Познавательное'
+  | 'Адаптация'
 
 export function gradeToLevel(grade: number): Level {
   if (grade <= 4) return 'NOO'
@@ -29,9 +30,21 @@ const DIRECTION_MAP: Record<Direction, CanonicalDirection> = {
   Трудовое: 'Трудовое',
   Экологическое: 'Экологическое',
   Познавательное: 'Познавательное',
+  'Адаптация к изменяющимся условиям': 'Адаптация',
   'Семейные ценности': 'Духовно-нравственное',
   Профориентация: 'Трудовое',
   'Здоровый образ жизни': 'Физическое и здоровье',
+}
+
+export type RovGroup = '1-2' | '3-4' | '5-7' | '8-9' | '10-11' | 'СПО'
+
+export function gradeToRovGroup(grade: number): RovGroup {
+  if (grade === 12) return 'СПО'
+  if (grade <= 2) return '1-2'
+  if (grade <= 4) return '3-4'
+  if (grade <= 7) return '5-7'
+  if (grade <= 9) return '8-9'
+  return '10-11'
 }
 
 export function canonicalDirection(direction: Direction): CanonicalDirection {
