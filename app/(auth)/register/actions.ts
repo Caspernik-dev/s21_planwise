@@ -4,8 +4,11 @@ import { signIn } from '@/auth'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { hashPassword } from '@/lib/auth/password'
+import { issueToken } from '@/lib/auth/tokens'
+import { sendVerificationEmail } from '@/lib/email/send'
 import { eq } from 'drizzle-orm'
 import { AuthError } from 'next-auth'
+import { headers } from 'next/headers'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -43,6 +46,27 @@ export async function registerAction(
 
   const passwordHash = await hashPassword(password)
   await db.insert(users).values({ email, name, passwordHash })
+
+  // best-effort: токен подтверждения + письмо. Сбой не валит регистрацию.
+  try {
+    const [created] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+    if (created) {
+      const ttl = Number(process.env.VERIFY_TOKEN_TTL_SEC ?? '86400')
+      const { token } = await issueToken(created.id, 'verify', ttl)
+      const h = await headers()
+      const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000'
+      const proto = h.get('x-forwarded-proto') ?? 'https'
+      const baseUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? `${proto}://${host}`
+      const url = `${baseUrl}/auth/verify?token=${encodeURIComponent(token)}`
+      await sendVerificationEmail(email, url)
+    }
+  } catch (err) {
+    console.error('[register] verify email best-effort failed:', err)
+  }
 
   // авто-вход после регистрации; signIn выбрасывает NEXT_REDIRECT на успехе
   try {
