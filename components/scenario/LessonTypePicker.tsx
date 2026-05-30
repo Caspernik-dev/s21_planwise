@@ -40,6 +40,11 @@ export function LessonTypePicker({ extraQuery }: { extraQuery?: Record<string, s
                         Программа школы
                       </span>
                     )}
+                    {!t.federal && (
+                      <span className="rounded-full bg-warm-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-warm-800">
+                        beta
+                      </span>
+                    )}
                   </div>
                   <p className="mt-2 text-sm text-neutral-600">{t.description}</p>
                 </div>
