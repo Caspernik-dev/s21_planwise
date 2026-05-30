@@ -1,5 +1,6 @@
 import type { LessonType } from '../options'
 import type { GenerationInput, ScenarioSkeleton } from '../schema'
+import * as Event from './event'
 import * as Krujok from './krujok'
 import * as Literacy from './literacy'
 import * as Rov from './rov'
@@ -28,9 +29,7 @@ export function buildSkeletonMessages(input: GenerationInput, deps: PromptDeps):
     case 'subject_extension':
       return Subject.buildSubjectSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     case 'event':
-      // Task 13 переключит на свой модуль.
-      // Временно используем РоВ-логику — поведение идентично прежнему (всё было на РоВ-промпте).
-      return Rov.buildRovSkeletonMessages(input, chunks, examples, userMaterial ?? '')
+      return Event.buildEventSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     default: {
       const _exhaustive: never = input.lessonType
       throw new Error(`Unknown lessonType: ${String(_exhaustive)}`)
@@ -91,16 +90,19 @@ export function buildBlockMessages(
       userMaterial,
     )
   }
-  // Task 13 разнесёт event. Временно — РоВ-логика.
-  return Rov.buildRovBlockMessages(
-    input,
-    skeleton,
-    stage,
-    brief,
-    ragChunks,
-    runningContext,
-    userMaterial,
-  )
+  if (input.lessonType === 'event') {
+    return Event.buildEventBlockMessages(
+      input,
+      skeleton,
+      stage,
+      brief,
+      ragChunks,
+      runningContext,
+      userMaterial,
+    )
+  }
+  const _exhaustiveBlock: never = input.lessonType
+  throw new Error(`Unknown lessonType in buildBlockMessages: ${String(_exhaustiveBlock)}`)
 }
 
 export function getPromptVersion(lessonType: LessonType): string {
@@ -114,6 +116,6 @@ export function getPromptVersion(lessonType: LessonType): string {
     case 'subject_extension':
       return Subject.PROMPT_VERSION
     case 'event':
-      return 'v1-event-2026-05-30'
+      return Event.PROMPT_VERSION
   }
 }
