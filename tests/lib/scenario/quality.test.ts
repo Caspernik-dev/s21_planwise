@@ -89,6 +89,12 @@ describe('checkScenario', () => {
         duration_min: 10,
         activities: [{ type: 'task', text: `дружба ${big(5000)}` }],
       },
+      {
+        kind: 'reflection',
+        title: 'Итоги',
+        duration_min: 5,
+        activities: [{ type: 'discussion', text: big(500), questions: ['Что было важно?'] }],
+      },
     ],
     adaptations: { simpler: 's', harder: 'h' },
   }
@@ -110,5 +116,95 @@ describe('checkScenario', () => {
   it('дубль заголовков этапов → предупреждение', () => {
     const dup = { ...base, stages: [base.stages[0], { ...base.stages[1], title: 'Старт' }] }
     expect(checkScenario(dup).warnings.join(' ')).toContain('заголовк')
+  })
+})
+
+const padText = (n: number) => 'a'.repeat(n)
+
+function withStages(stages: ScenarioContent['stages']): ScenarioContent {
+  return {
+    title: 'T',
+    goals: ['g'],
+    materials: [],
+    stages,
+    adaptations: { simpler: 's', harder: 'h' },
+  }
+}
+
+describe('checkScenario — рефлексия', () => {
+  it('warning, когда нет этапа рефлексии', () => {
+    const content = withStages([
+      {
+        kind: 'engage',
+        title: 'Вовлечение',
+        duration_min: 5,
+        activities: [{ type: 'discussion', text: padText(700), questions: ['Что важно?'] }],
+      },
+      {
+        kind: 'main',
+        title: 'Основная',
+        duration_min: 20,
+        activities: [{ type: 'discussion', text: padText(700), questions: ['А что если?'] }],
+      },
+    ])
+    const { warnings } = checkScenario(content)
+    expect(warnings.some((w) => w.includes('нет этапа рефлексии'))).toBe(true)
+  })
+
+  it('warning, когда рефлексия есть, но без вопросов', () => {
+    const content = withStages([
+      {
+        kind: 'main',
+        title: 'M',
+        duration_min: 20,
+        activities: [{ type: 'discussion', text: padText(700), questions: ['Q1'] }],
+      },
+      {
+        kind: 'reflection',
+        title: 'Рефлексия',
+        duration_min: 5,
+        activities: [{ type: 'task', text: 'Раздать карточки.' }],
+      },
+    ])
+    const { warnings } = checkScenario(content)
+    expect(warnings.some((w) => w.includes('рефлексии нет вопросов'))).toBe(true)
+  })
+
+  it('нет warning, когда рефлексия с вопросами в questions', () => {
+    const content = withStages([
+      {
+        kind: 'main',
+        title: 'M',
+        duration_min: 20,
+        activities: [{ type: 'discussion', text: padText(700), questions: ['Q'] }],
+      },
+      {
+        kind: 'reflection',
+        title: 'Рефлексия',
+        duration_min: 5,
+        activities: [
+          {
+            type: 'discussion',
+            text: padText(700),
+            questions: ['Что для тебя было важно?'],
+          },
+        ],
+      },
+    ])
+    const { warnings } = checkScenario(content)
+    expect(warnings.some((w) => w.includes('рефлексии'))).toBe(false)
+  })
+
+  it('нет warning, когда вопрос вшит в text активности (содержит ?)', () => {
+    const content = withStages([
+      {
+        kind: 'reflection',
+        title: 'Р',
+        duration_min: 5,
+        activities: [{ type: 'task', text: 'Учитель: что вы возьмёте с собой?' }],
+      },
+    ])
+    const { warnings } = checkScenario(content)
+    expect(warnings.some((w) => w.includes('рефлексии нет вопросов'))).toBe(false)
   })
 })

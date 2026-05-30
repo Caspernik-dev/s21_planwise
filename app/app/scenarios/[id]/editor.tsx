@@ -18,6 +18,7 @@ import {
   removeActivity,
   removeStage,
 } from '@/lib/scenario/edit-ops'
+import { gradeToLevel, levelLabel } from '@/lib/scenario/levels'
 import { formatGrade } from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import Link from 'next/link'
@@ -263,6 +264,62 @@ export function ScenarioEditor({
               }
             />
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Планируемые личностные результаты</CardTitle>
+          <p className="text-sm text-neutral-500">
+            Из ФГОС {levelLabel(gradeToLevel(meta.grade))}, направление «{meta.direction}»
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(content.personalResults ?? []).map((r, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+            <div key={`pr-${i}`} className="flex gap-2">
+              <Textarea
+                value={r}
+                onChange={(e) =>
+                  update((c) => {
+                    const personalResults = (c.personalResults ?? []).slice()
+                    personalResults[i] = e.target.value
+                    return { ...c, personalResults }
+                  })
+                }
+                rows={2}
+                className="flex-1"
+                aria-label={`Личностный результат ${i + 1}`}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  update((c) => ({
+                    ...c,
+                    personalResults: (c.personalResults ?? []).filter((_, k) => k !== i),
+                  }))
+                }
+                aria-label="Удалить личностный результат"
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              update((c) => ({
+                ...c,
+                personalResults: [...(c.personalResults ?? []), ''],
+              }))
+            }
+          >
+            + Добавить
+          </Button>
         </CardContent>
       </Card>
 

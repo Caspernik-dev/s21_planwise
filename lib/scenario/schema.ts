@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DIRECTIONS, FORMATS, SPO_GRADE } from './options'
+import { DIRECTIONS, FORMATS, SPO_GRADE, formatGrade } from './options'
 
 export const activitySchema = z.object({
   type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
@@ -19,6 +19,7 @@ export const scenarioContentSchema = z.object({
   goals: z.array(z.string().min(1)).min(1),
   values: z.array(z.string()).optional(), // формируемые ценности (РоВ)
   coreMeanings: z.array(z.string()).optional(), // основные смыслы (РоВ)
+  personalResults: z.array(z.string().min(1)).max(8).optional(),
   materials: z.array(z.string()),
   stages: z.array(stageSchema).min(1),
   adaptations: z.object({
@@ -30,14 +31,28 @@ export const scenarioContentSchema = z.object({
 export type ScenarioContent = z.infer<typeof scenarioContentSchema>
 export type ScenarioStage = z.infer<typeof stageSchema>
 
-export const generationInputSchema = z.object({
-  direction: z.enum(DIRECTIONS),
-  grade: z.coerce.number().int().min(1).max(SPO_GRADE),
-  topic: z.string().trim().min(1, 'Укажите тему').max(200),
-  durationMin: z.coerce.number().int().min(5).max(120),
-  format: z.enum(FORMATS),
-  userMaterial: z.string().max(20_000).optional(),
-})
+export const generationInputSchema = z
+  .object({
+    direction: z.enum(DIRECTIONS),
+    grade: z.coerce.number().int().min(1).max(SPO_GRADE),
+    topic: z.string().trim().min(1, 'Укажите тему').max(200),
+    durationMin: z.coerce.number().int().min(5).max(120),
+    format: z.enum(FORMATS),
+    userMaterial: z.string().max(20_000).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const cap = data.grade === 1 ? 35 : 45
+    if (data.durationMin > cap) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['durationMin'],
+        message:
+          data.grade === 1
+            ? 'Для 1 класса длительность занятия не более 35 мин (СанПиН).'
+            : `Для ${formatGrade(data.grade)} длительность занятия не более 45 мин (СанПиН).`,
+      })
+    }
+  })
 
 export type GenerationInput = z.infer<typeof generationInputSchema>
 
@@ -60,6 +75,7 @@ export const skeletonSchema = z.object({
   goals: z.array(z.string().min(1)).min(1),
   values: z.array(z.string()).optional(),
   coreMeanings: z.array(z.string()).optional(),
+  personalResults: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
   // адаптации в каркасе мягкие: модель часто шлёт {} или частичный объект; недостающие
   // поля доводятся дефолтами при сборке (см. stream.ts). Строгая проверка — на финальном

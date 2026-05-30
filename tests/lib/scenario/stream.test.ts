@@ -1,3 +1,5 @@
+import { gradeToLevel } from '@/lib/scenario/levels'
+import { getCatalog } from '@/lib/scenario/personal-results'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import { streamScenario } from '@/lib/scenario/stream'
 import { describe, expect, it, vi } from 'vitest'
@@ -116,6 +118,39 @@ describe('streamScenario (per-block)', () => {
     expect(calls[0]).toBe('thin')
     expect(chat.mock.calls.length).toBeGreaterThan(3) // 3 блока + ≥1 ретрай
     expect(save).toHaveBeenCalledTimes(1)
+  })
+
+  it('whitelist: personalResults из левых фраз заменяются на каталог ФГОС', async () => {
+    const SKELETON_BAD_PR = {
+      ...SKELETON,
+      personalResults: ['какая-то левая фраза от LLM', 'ещё одна выдумка'],
+    }
+    const badStream = async function* () {
+      for (const piece of chunked(JSON.stringify(SKELETON_BAD_PR))) yield piece
+    }
+    const save = vi.fn(async (_c: ScenarioContent, _m: unknown) => 'id-1')
+    const chat = vi.fn(async () => ({ content: BLOCK, usage: null }))
+    for await (const _ev of streamScenario(input, {
+      chatStream: (() => badStream()) as any,
+      chat: chat as any,
+      retrieve: async () => [],
+      prematch: (async () => []) as any,
+      save,
+    })) {
+      // drain
+    }
+    expect(save).toHaveBeenCalledTimes(1)
+    const [savedContent] = save.mock.calls[0]
+    const catalog = getCatalog(gradeToLevel(input.grade), input.direction)
+    const catalogSet = new Set(catalog.map((s) => s.replace(/\s+/g, ' ').trim()))
+    const pr = savedContent.personalResults
+    expect(Array.isArray(pr)).toBe(true)
+    expect(pr).toBeDefined()
+    if (!pr) throw new Error('personalResults must be defined')
+    expect(pr.length).toBeGreaterThanOrEqual(3)
+    for (const item of pr) {
+      expect(catalogSet.has(item)).toBe(true)
+    }
   })
 
   it('эмитит error при невалидном каркасе', async () => {
