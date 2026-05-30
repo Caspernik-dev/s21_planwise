@@ -27,8 +27,10 @@ export function buildSkeletonMessages(
     case 'subject_extension':
     case 'event':
       return Legacy.buildSkeletonMessages(input, chunks, examples, userMaterial ?? '')
-    default:
-      throw new Error(`Unknown lessonType: ${input.lessonType}`)
+    default: {
+      const _exhaustive: never = input.lessonType
+      throw new Error(`Unknown lessonType: ${String(_exhaustive)}`)
+    }
   }
 }
 

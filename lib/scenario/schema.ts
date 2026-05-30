@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { LessonType } from './options'
 import {
   DIRECTIONS,
   FORMATS,
@@ -46,7 +47,7 @@ export type ScenarioStage = z.infer<typeof stageSchema>
 
 export const generationInputSchema = z
   .object({
-    lessonType: z.enum(LESSON_TYPE_VALUES as unknown as [string, ...string[]]),
+    lessonType: z.enum(LESSON_TYPE_VALUES as unknown as [LessonType, ...LessonType[]]),
     direction: z.enum(DIRECTIONS).optional(),
     subject: z.string().trim().min(1).max(80).optional(),
     literacyKind: z.enum(literacyKindValues).optional(),
