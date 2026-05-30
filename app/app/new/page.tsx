@@ -26,6 +26,8 @@ function NewScenarioForm() {
     planTopicId ? 'plan' : calendarDate ? 'calendar' : 'manual',
   )
   const [topicValue, setTopicValue] = useState(topic)
+  const [grade, setGrade] = useState(5)
+  const [durationMin, setDurationMin] = useState(30)
   const [matches, setMatches] = useState<PrematchCard[] | null>(null)
   const [matching, startMatch] = useTransition()
   const [generating, setGenerating] = useState<Record<string, unknown> | null>(null)
@@ -110,7 +112,19 @@ function NewScenarioForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="grade">Класс / аудитория</Label>
-                <select id="grade" name="grade" required className={selectClass} defaultValue="5">
+                <select
+                  id="grade"
+                  name="grade"
+                  required
+                  className={selectClass}
+                  value={grade}
+                  onChange={(e) => {
+                    const g = Number(e.target.value)
+                    setGrade(g)
+                    const cap = g === 1 ? 35 : 45
+                    if (durationMin > cap) setDurationMin(cap)
+                  }}
+                >
                   {GRADES.map((g) => (
                     <option key={g} value={g}>
                       {formatGrade(g)}
@@ -125,9 +139,10 @@ function NewScenarioForm() {
                   name="durationMin"
                   required
                   className={selectClass}
-                  defaultValue="30"
+                  value={durationMin}
+                  onChange={(e) => setDurationMin(Number(e.target.value))}
                 >
-                  {DURATIONS.map((d) => (
+                  {DURATIONS.filter((d) => d <= (grade === 1 ? 35 : 45)).map((d) => (
                     <option key={d} value={d}>
                       {d} минут
                     </option>
