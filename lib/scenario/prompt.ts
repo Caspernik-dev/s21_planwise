@@ -3,7 +3,7 @@ import { formatGradeForPrompt } from './options'
 import { getCatalog } from './personal-results'
 import type { GenerationInput, ScenarioSkeleton } from './schema'
 
-export const PROMPT_VERSION = 'v9-personal-results-2026-05-30'
+export const PROMPT_VERSION = 'v10-pr-relevance-2026-05-30'
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -189,7 +189,9 @@ export function buildSkeletonMessages(
     `[PERSONAL_RESULTS_CATALOG] (личностные результаты из ФГОС ${levelLabel(gradeToLevel(input.grade))}, направление «${input.direction}»):`,
     ...personalResultsCatalog.map((f, i) => `${i + 1}. ${f}`),
     '',
-    `Выбери 3-5 формулировок из списка выше, наиболее релевантных теме «${input.topic}».`,
+    `Из списка выше выбери ТОЛЬКО те формулировки (3-5), которые ПРЯМО связаны с темой «${input.topic}».`,
+    'Критерий: формулировка должна описывать изменение в личности ученика, которое реально достигается этим занятием по этой теме.',
+    'Если связь натянутая, общая («про всё хорошее») или формулировка про другой контекст (экстремизм, выборы, экология и т.п., когда тема про другое) — НЕ ВЫБИРАЙ её. Лучше 3 точно подходящих, чем 5 случайных.',
     'Верни их ДОСЛОВНО, без правок и сокращений, в массиве "personalResults" каркаса.',
     'Не придумывай свои формулировки — только из этого списка.',
   ]
