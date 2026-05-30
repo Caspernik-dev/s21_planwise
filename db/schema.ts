@@ -229,6 +229,7 @@ export const sharedScenarios = pgTable(
   (t) => ({
     sourceUq: unique('shared_source_scenario_uq').on(t.sourceScenarioId),
     dirIdx: index('shared_direction_idx').on(t.direction),
+    lessonTypeIdx: index('shared_scenarios_lesson_type_idx').on(t.lessonType),
   }),
 )
 
