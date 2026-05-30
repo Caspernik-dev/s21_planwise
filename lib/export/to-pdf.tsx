@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
   h2Row: { flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 7 },
   h2Bar: { width: 3, height: 13, backgroundColor: c.brand500, borderRadius: 2, marginRight: 7 },
   h2: { fontSize: 13, fontWeight: 'bold', color: c.brand700 },
-  p: { marginBottom: 6, lineHeight: 1.45 },
+  p: { marginBottom: 6, lineHeight: 1.25 },
   bulletRow: { flexDirection: 'row', marginBottom: 4 },
   bulletDot: { width: 12, color: c.brand500, fontWeight: 'bold' },
-  bulletText: { flex: 1, lineHeight: 1.45 },
+  bulletText: { flex: 1, lineHeight: 1.25 },
   metaCard: {
     backgroundColor: c.brand50,
     borderRadius: 8,
