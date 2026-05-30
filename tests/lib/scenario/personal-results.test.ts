@@ -7,6 +7,28 @@ import {
 } from '@/lib/scenario/personal-results'
 import { describe, expect, it } from 'vitest'
 
+describe('Каталог: новое направление «Адаптация…»', () => {
+  it('ООО + Адаптация → непустой набор формулировок (≥3)', () => {
+    const items = getCatalog('OOO', 'Адаптация к изменяющимся условиям')
+    expect(items.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('СОО + Адаптация → непустой набор (≥3)', () => {
+    const items = getCatalog('SOO', 'Адаптация к изменяющимся условиям')
+    expect(items.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('НОО + Адаптация → пустой массив (нормативно отсутствует в приказе № 286)', () => {
+    const items = getCatalog('NOO', 'Адаптация к изменяющимся условиям')
+    expect(items).toEqual([])
+  })
+
+  it('selectPersonalResults для НОО+Адаптация — возвращает []', () => {
+    const items = selectPersonalResults([], getCatalog('NOO', 'Адаптация к изменяющимся условиям'))
+    expect(items).toEqual([])
+  })
+})
+
 const LEVELS: Level[] = ['NOO', 'OOO', 'SOO']
 const CANONICAL: CanonicalDirection[] = [
   'Гражданское',
