@@ -72,5 +72,18 @@ export function checkScenario(content: ScenarioContent): { warnings: string[] } 
     }
   }
 
+  const reflectionStages = content.stages.filter((s) => s.kind === 'reflection')
+  if (reflectionStages.length === 0) {
+    warnings.push('В сценарии нет этапа рефлексии (заключительная часть)')
+  }
+  for (const stage of reflectionStages) {
+    const hasQuestions = stage.activities.some(
+      (a) => (a.questions?.length ?? 0) > 0 || a.text.includes('?'),
+    )
+    if (!hasQuestions) {
+      warnings.push('В этапе рефлексии нет вопросов для обратной связи')
+    }
+  }
+
   return { warnings }
 }
