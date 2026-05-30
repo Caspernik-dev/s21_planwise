@@ -83,7 +83,7 @@ export function CalendarGrid({
                 {(byMonth.get(m) ?? []).map((o) => (
                   <li key={o.date}>
                     <Link
-                      href={`/app/new?topic=${encodeURIComponent(o.title)}&calendarDate=${o.date}`}
+                      href={`/app/new?type=rov&topic=${encodeURIComponent(o.title)}&calendarDate=${o.date}`}
                       className="block rounded-md px-2 py-1.5 hover:bg-brand-50"
                     >
                       <span className="text-sm font-medium text-neutral-900">{o.title}</span>

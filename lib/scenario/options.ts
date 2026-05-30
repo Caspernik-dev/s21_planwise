@@ -113,3 +113,19 @@ export type LiteracyKind = (typeof LITERACY_KINDS)[number]['value']
 export function literacyKindLabel(value: LiteracyKind): string {
   return LITERACY_KINDS.find((k) => k.value === value)?.label ?? value
 }
+
+export const FORMATS_BY_TYPE: Record<LessonType, readonly Format[]> = {
+  rov: ['классный час', 'беседа', 'квиз', 'игра', 'киноклуб', 'дебаты'],
+  krujok: ['мастер-класс', 'творческая мастерская', 'игра', 'мастерская', 'проектная сессия'],
+  literacy: ['практикум', 'кейс-сессия', 'игра', 'квиз'],
+  subject_extension: ['лабораторная', 'эксперимент', 'проект', 'олимпиадный тренинг'],
+  event: ['классный час', 'праздник', 'тематический день', 'КТД', 'мастерская'],
+}
+
+export const DURATIONS_BY_TYPE: Record<LessonType, readonly number[]> = {
+  rov: [20, 30, 40],
+  krujok: [30, 40, 45, 60, 90],
+  literacy: [40, 60, 90],
+  subject_extension: [40, 60, 90],
+  event: [30, 40, 45, 60],
+}
