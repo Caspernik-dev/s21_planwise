@@ -7,9 +7,11 @@ import { retrieveChunks } from '@/lib/rag/retrieve'
 import { type Activity, generateBlockWithGate } from './block-gen'
 import { coerceActivityType } from './coerce'
 import { type GeneratedBlock, buildRunningContext } from './context'
+import { gradeToLevel } from './levels'
 import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
+import { getCatalog, selectPersonalResults } from './personal-results'
 import {
   PROMPT_VERSION,
   type RagChunkForPrompt,
@@ -185,6 +187,11 @@ export async function* streamScenario(
     }
     if (!skeleton) throw new Error('Невалидный каркас сценария')
 
+    // Whitelist: личностные результаты только из каталога ФГОС.
+    // Если LLM вернула невалидное/пустое — добираем первыми из каталога.
+    const prCatalog = getCatalog(gradeToLevel(input.grade), input.direction)
+    skeleton.personalResults = selectPersonalResults(skeleton.personalResults, prCatalog)
+
     // STAGE 2: детали ПО БЛОКАМ — отдельный фокусный вызов на каждый блок (РоВ-глубина).
     // Объём масштабируется числом блоков; катящийся контекст держит связность;
     // локальный гейт перегенерирует тонкие блоки.
@@ -233,6 +240,7 @@ export async function* streamScenario(
       goals: skeleton.goals,
       values: skeleton.values,
       coreMeanings: skeleton.coreMeanings,
+      personalResults: skeleton.personalResults,
       materials: skeleton.materials ?? [],
       // мягкие адаптации каркаса доводим дефолтами по-полю (модель шлёт {} или частичный объект)
       adaptations: {
