@@ -223,7 +223,7 @@ export async function* streamScenario(
         input.userMaterial ?? '',
       )
 
-      const r = await generateBlockWithGate(chat, msgs, st.kind)
+      const r = await generateBlockWithGate(chat, msgs, st.kind, { lessonType: 'rov' })
       if (!r) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
       if (r.repaired) repaired = true
       if (!r.accepted) thinBlocks++
@@ -263,7 +263,7 @@ export async function* streamScenario(
     const content = parsedFull.data
 
     const { content: normalized, changed } = normalizeChronometry(content, input.durationMin)
-    const { warnings } = checkScenario(normalized)
+    const { warnings } = checkScenario(normalized, { lessonType: 'rov' })
 
     const meta: GenerationMeta = {
       model,

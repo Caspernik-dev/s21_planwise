@@ -34,7 +34,7 @@ export async function regenerateActivity(
     deps.ragChunks ?? [],
     args.runningContext,
   )
-  const res = await generateBlockWithGate(chat, msgs, args.stage.kind)
+  const res = await generateBlockWithGate(chat, msgs, args.stage.kind, { lessonType: 'rov' })
   if (!res) throw new Error('GigaChat вернул невалидный блок при регенерации')
   return { ...res.value, type: coerceActivityType(args.targetType) as Activity['type'] }
 }

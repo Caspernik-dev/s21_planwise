@@ -1,6 +1,7 @@
 import type { ChatResult, GigaMessage } from '@/lib/gigachat/types'
 import { coerceActivityType } from './coerce'
 import { generateValidated } from './llm-retry'
+import type { LessonType } from './options'
 import { parsePartialJson } from './partial'
 import { checkBlock } from './quality'
 import { type ScenarioContent, activitySchema } from './schema'
@@ -28,7 +29,7 @@ export async function generateBlockWithGate(
   chat: ChatFn,
   messages: GigaMessage[],
   stageKind: string,
-  opts: { maxRetries?: number } = {},
+  opts: { maxRetries?: number; lessonType?: LessonType } = {},
 ): Promise<{ value: Activity; repaired: boolean; accepted: boolean } | null> {
   const maxRetries = opts.maxRetries ?? DEFAULT_MAX_RETRIES
   let msgs = messages
@@ -46,7 +47,7 @@ export async function generateBlockWithGate(
     if (!res) break
     if (res.attempts > 1) repaired = true
     best = res.value
-    const gate = checkBlock(res.value, stageKind)
+    const gate = checkBlock(res.value, stageKind, { lessonType: opts.lessonType ?? 'rov' })
     if (gate.ok) {
       accepted = true
       break
