@@ -46,10 +46,12 @@ describe('buildScenarioDocument', () => {
     if (metaBlock.type !== 'metaTable') throw new Error('expected metaTable')
     expect(metaBlock.rows).toEqual([
       { label: 'Тема', value: 'О дружбе' },
-      { label: 'Направление', value: 'Патриотическое' },
-      { label: 'Аудитория', value: '3 класс' },
+      { label: 'Направление воспитания', value: 'Патриотическое' },
+      { label: 'Класс / уровень', value: '3 класс (НОО)' },
       { label: 'Длительность', value: '40 мин' },
       { label: 'Формат', value: 'Беседа' },
+      { label: 'Цель занятия', value: 'Понять ценность дружбы (и др.)' },
+      { label: 'Оборудование', value: 'Карточки, Проектор' },
     ])
   })
 
@@ -78,19 +80,26 @@ describe('buildScenarioDocument', () => {
     expect(q).toBeTruthy()
   })
 
-  it('пропускает раздел материалов, если он пуст', () => {
-    const blocks = buildScenarioDocument({ ...content, materials: [] }, meta)
+  it('не дублирует материалы в теле документа (они в шапке metaTable)', () => {
+    const blocks = buildScenarioDocument(content, meta)
     expect(blocks.some((b) => b.type === 'heading' && b.text === 'Материалы')).toBe(false)
   })
 
-  it('выводит ценности и основные смыслы, когда они есть', () => {
+  it('опускает строку «Оборудование», если materials пуст', () => {
+    const blocks = buildScenarioDocument({ ...content, materials: [] }, meta)
+    const metaBlock = blocks[1]
+    if (metaBlock.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r) => r.label === 'Оборудование')).toBe(false)
+  })
+
+  it('выводит основные смыслы, когда они есть; ценности уходят в шапку', () => {
     const blocks = buildScenarioDocument(
       { ...content, values: ['Дружба'], coreMeanings: ['Друзья поддерживают друг друга'] },
       meta,
     )
-    const vIdx = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Формируемые ценности')
-    expect(vIdx).toBeGreaterThan(-1)
-    expect(blocks[vIdx + 1]).toEqual({ type: 'bullets', items: ['Дружба'] })
+    const metaBlock = blocks[1]
+    if (metaBlock.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.find((r) => r.label === 'Формируемые ценности')?.value).toBe('Дружба')
     const mIdx = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Основные смыслы')
     expect(blocks[mIdx + 1]).toEqual({
       type: 'bullets',
@@ -100,9 +109,9 @@ describe('buildScenarioDocument', () => {
 
   it('пропускает ценности/смыслы, когда их нет', () => {
     const blocks = buildScenarioDocument(content, meta)
-    expect(blocks.some((b) => b.type === 'heading' && b.text === 'Формируемые ценности')).toBe(
-      false,
-    )
+    const metaBlock = blocks[1]
+    if (metaBlock.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r) => r.label === 'Формируемые ценности')).toBe(false)
     expect(blocks.some((b) => b.type === 'heading' && b.text === 'Основные смыслы')).toBe(false)
   })
 
@@ -129,5 +138,94 @@ describe('buildScenarioDocument', () => {
       'task',
       'video',
     ])
+  })
+})
+
+const baseContent: ScenarioContent = {
+  title: 'День Победы',
+  goals: ['Сформировать уважение к подвигу', 'Развить понимание исторической памяти'],
+  values: ['память', 'долг'],
+  materials: ['презентация', 'видео'],
+  stages: [
+    {
+      kind: 'engage',
+      title: 'Вовлечение',
+      duration_min: 5,
+      activities: [{ type: 'discussion', text: 'x' }],
+    },
+  ],
+  adaptations: { simpler: 's', harder: 'h' },
+}
+
+const baseMeta: ExportMeta = {
+  topic: 'День Победы',
+  direction: 'Патриотическое',
+  grade: 6,
+  durationMin: 30,
+  format: 'беседа',
+}
+
+describe('buildScenarioDocument — методическая шапка', () => {
+  it('шапка содержит класс с уровнем образования в скобках', () => {
+    const doc = buildScenarioDocument(baseContent, baseMeta)
+    const meta = doc.find((b) => b.type === 'metaTable')
+    expect(meta).toBeDefined()
+    if (meta?.type !== 'metaTable') throw new Error('not metaTable')
+    const audience = meta.rows.find((r) => r.label === 'Класс / уровень')
+    expect(audience?.value).toMatch(/ООО/)
+    expect(audience?.value).toMatch(/6 класс/)
+  })
+
+  it('шапка содержит цель занятия (первую из goals с пометкой и др.)', () => {
+    const doc = buildScenarioDocument(baseContent, baseMeta)
+    const meta = doc.find((b) => b.type === 'metaTable')
+    if (meta?.type !== 'metaTable') throw new Error('not metaTable')
+    const goal = meta.rows.find((r) => r.label === 'Цель занятия')
+    expect(goal?.value).toContain('Сформировать уважение к подвигу')
+    expect(goal?.value).toContain('и др.')
+  })
+
+  it('шапка содержит формируемые ценности (если есть)', () => {
+    const doc = buildScenarioDocument(baseContent, baseMeta)
+    const meta = doc.find((b) => b.type === 'metaTable')
+    if (meta?.type !== 'metaTable') throw new Error('not metaTable')
+    const values = meta.rows.find((r) => r.label === 'Формируемые ценности')
+    expect(values?.value).toBe('память, долг')
+  })
+
+  it('шапка содержит оборудование (materials)', () => {
+    const doc = buildScenarioDocument(baseContent, baseMeta)
+    const meta = doc.find((b) => b.type === 'metaTable')
+    if (meta?.type !== 'metaTable') throw new Error('not metaTable')
+    const eq = meta.rows.find((r) => r.label === 'Оборудование')
+    expect(eq?.value).toBe('презентация, видео')
+  })
+})
+
+describe('buildScenarioDocument — блок личностных результатов', () => {
+  it('рендерится, если personalResults непустой', () => {
+    const doc = buildScenarioDocument(
+      { ...baseContent, personalResults: ['результат А', 'результат Б', 'результат В'] },
+      baseMeta,
+    )
+    const idx = doc.findIndex(
+      (b) => b.type === 'heading' && b.text === 'Планируемые личностные результаты',
+    )
+    expect(idx).toBeGreaterThan(-1)
+    const next = doc[idx + 1]
+    expect(next.type).toBe('bullets')
+    if (next.type === 'bullets') {
+      expect(next.items).toEqual(['результат А', 'результат Б', 'результат В'])
+    }
+  })
+
+  it('не рендерится, если personalResults пустой или отсутствует', () => {
+    const doc1 = buildScenarioDocument(baseContent, baseMeta)
+    const doc2 = buildScenarioDocument({ ...baseContent, personalResults: [] }, baseMeta)
+    for (const doc of [doc1, doc2]) {
+      expect(
+        doc.some((b) => b.type === 'heading' && b.text === 'Планируемые личностные результаты'),
+      ).toBe(false)
+    }
   })
 })

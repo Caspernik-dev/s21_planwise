@@ -1,3 +1,4 @@
+import { gradeToLevel, levelLabel } from '@/lib/scenario/levels'
 import { formatGrade } from '@/lib/scenario/options'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
@@ -27,28 +28,37 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   const blocks: DocBlock[] = []
 
   blocks.push({ type: 'heading', level: 1, text: content.title })
-  blocks.push({
-    type: 'metaTable',
-    rows: [
-      { label: 'Тема', value: meta.topic },
-      { label: 'Направление', value: meta.direction },
-      { label: 'Аудитория', value: formatGrade(meta.grade) },
-      { label: 'Длительность', value: `${meta.durationMin} мин` },
-      { label: 'Формат', value: meta.format },
-    ],
-  })
+
+  const audience = `${formatGrade(meta.grade)} (${levelLabel(gradeToLevel(meta.grade))})`
+  const goalValue =
+    content.goals.length > 0 ? content.goals[0] + (content.goals.length > 1 ? ' (и др.)' : '') : '—'
+  const metaRows: { label: string; value: string }[] = [
+    { label: 'Тема', value: meta.topic || '—' },
+    { label: 'Направление воспитания', value: meta.direction },
+    { label: 'Класс / уровень', value: audience },
+    { label: 'Длительность', value: `${meta.durationMin} мин` },
+    { label: 'Формат', value: meta.format },
+    { label: 'Цель занятия', value: goalValue },
+  ]
+  if (content.values && content.values.length > 0) {
+    metaRows.push({ label: 'Формируемые ценности', value: content.values.join(', ') })
+  }
+  if (content.materials.length > 0) {
+    metaRows.push({ label: 'Оборудование', value: content.materials.join(', ') })
+  }
+  blocks.push({ type: 'metaTable', rows: metaRows })
 
   blocks.push({ type: 'heading', level: 2, text: 'Цель' })
   blocks.push({ type: 'bullets', items: content.goals })
 
-  if (content.values && content.values.length > 0) {
-    blocks.push({ type: 'heading', level: 2, text: 'Формируемые ценности' })
-    blocks.push({ type: 'bullets', items: content.values })
-  }
-
   if (content.coreMeanings && content.coreMeanings.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Основные смыслы' })
     blocks.push({ type: 'bullets', items: content.coreMeanings })
+  }
+
+  if (content.personalResults && content.personalResults.length > 0) {
+    blocks.push({ type: 'heading', level: 2, text: 'Планируемые личностные результаты' })
+    blocks.push({ type: 'bullets', items: content.personalResults })
   }
 
   let stageNum = 0
@@ -69,11 +79,6 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
         blocks.push({ type: 'bullets', items: act.questions })
       }
     }
-  }
-
-  if (content.materials.length > 0) {
-    blocks.push({ type: 'heading', level: 2, text: 'Материалы' })
-    blocks.push({ type: 'bullets', items: content.materials })
   }
 
   blocks.push({ type: 'heading', level: 2, text: 'Адаптация' })
