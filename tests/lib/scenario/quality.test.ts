@@ -166,11 +166,11 @@ describe('checkBlock — ветвление по lessonType', () => {
     expect(r.ok).toBe(false)
   })
 
-  it('krujok: «Учитель:» НЕ обязательно, длина шага ≥200 — PASS', () => {
+  it('krujok: «Учитель:» НЕ обязательно (Шаг N: достаточно), длина шага ≥200 — PASS', () => {
     const block = {
       type: 'main',
       focus: 'x',
-      text: 'А'.repeat(250),
+      text: `Шаг 1: ${'А'.repeat(250)}`,
       questions: [],
     }
     const r = checkBlock(block, 'main', { lessonType: 'krujok' })
@@ -178,19 +178,35 @@ describe('checkBlock — ветвление по lessonType', () => {
   })
 
   it('krujok: длина <200 — thin', () => {
-    const block = { type: 'main', focus: 'x', text: 'А'.repeat(50), questions: [] }
+    const block = { type: 'main', focus: 'x', text: `Шаг 1: ${'А'.repeat(50)}`, questions: [] }
     const r = checkBlock(block, 'main', { lessonType: 'krujok' })
     expect(r.ok).toBe(false)
   })
 
-  it('literacy: мягкий порог (как krujok)', () => {
+  it('krujok: нет прямой речи и шагов — гейт отбраковывает (защита от пересказа)', () => {
     const block = { type: 'main', focus: 'x', text: 'А'.repeat(250), questions: [] }
+    const r = checkBlock(block, 'main', { lessonType: 'krujok' })
+    expect(r.ok).toBe(false)
+  })
+
+  it('literacy: «Учитель:» или «Кейс:» достаточно', () => {
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: `Учитель: ${'А'.repeat(250)}`,
+      questions: [],
+    }
     const r = checkBlock(block, 'main', { lessonType: 'literacy' })
     expect(r.ok).toBe(true)
   })
 
-  it('subject_extension: мягкий порог', () => {
-    const block = { type: 'main', focus: 'x', text: 'А'.repeat(250), questions: [] }
+  it('subject_extension: «Шаг N:» достаточно', () => {
+    const block = {
+      type: 'main',
+      focus: 'x',
+      text: `Шаг 1: ${'А'.repeat(250)}`,
+      questions: [],
+    }
     const r = checkBlock(block, 'main', { lessonType: 'subject_extension' })
     expect(r.ok).toBe(true)
   })

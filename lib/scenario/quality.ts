@@ -53,6 +53,14 @@ export function checkBlock(
         reasons.push('слишком короткий или неполный вопрос')
       }
     }
+  } else {
+    // Мягкий путь (krujok/literacy/subject_extension): хотя бы один маркер прямой речи или шага —
+    // защита от «учитель спрашивает / учитель предлагает» в пересказе. Промпт уже это требует;
+    // гейт перегенерирует блок, если LLM сорвался в нарратив.
+    const isLed = stageKind === 'engage' || stageKind === 'main'
+    if (isLed && !/(Учитель\s*:|Шаг\s*\d+\s*:|Кейс\s*:)/.test(text)) {
+      reasons.push('нет прямой речи учителя или шагов — блок написан пересказом')
+    }
   }
 
   return { ok: reasons.length === 0, reasons }
