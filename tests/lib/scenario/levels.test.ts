@@ -1,4 +1,9 @@
-import { canonicalDirection, gradeToLevel, levelLabel } from '@/lib/scenario/levels'
+import {
+  canonicalDirection,
+  gradeToLevel,
+  gradeToRovGroup,
+  levelLabel,
+} from '@/lib/scenario/levels'
 import { describe, expect, it } from 'vitest'
 
 describe('gradeToLevel', () => {
@@ -31,6 +36,31 @@ describe('canonicalDirection', () => {
   })
   it('Здоровый образ жизни → Физическое и здоровье', () => {
     expect(canonicalDirection('Здоровый образ жизни')).toBe('Физическое и здоровье')
+  })
+})
+
+describe('gradeToRovGroup', () => {
+  it.each([
+    [1, '1-2'],
+    [2, '1-2'],
+    [3, '3-4'],
+    [4, '3-4'],
+    [5, '5-7'],
+    [6, '5-7'],
+    [7, '5-7'],
+    [8, '8-9'],
+    [9, '8-9'],
+    [10, '10-11'],
+    [11, '10-11'],
+    [12, 'СПО'],
+  ])('grade %i → %s', (grade, expected) => {
+    expect(gradeToRovGroup(grade)).toBe(expected)
+  })
+})
+
+describe('canonicalDirection — новое направление «Адаптация…»', () => {
+  it('Адаптация к изменяющимся условиям → Адаптация', () => {
+    expect(canonicalDirection('Адаптация к изменяющимся условиям')).toBe('Адаптация')
   })
 })
 
