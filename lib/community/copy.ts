@@ -11,7 +11,9 @@ export type SharedRow = {
 }
 
 export function sharedToScenarioInsert(shared: SharedRow, userId: string) {
+  // TODO(Task 14-16): lessonType will be stored in shared_scenarios; defaulting to 'rov' for existing rows
   const inputContext: GenerationInput = {
+    lessonType: 'rov',
     direction: shared.direction as GenerationInput['direction'],
     grade: shared.grade,
     topic: shared.topic,

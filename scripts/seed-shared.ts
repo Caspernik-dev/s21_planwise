@@ -16,8 +16,10 @@ const LIMIT = LIMIT_ARG ? Number(LIMIT_ARG.split('=')[1]) : Number.POSITIVE_INFI
 
 // Спецификации 14 эталонных сценариев. КОНТЕНТ генерируется новым per-stage пайплайном
 // (ценности + основные смыслы + плотный «Учитель: …»), а не пишется руками.
-type Spec = Pick<GenerationInput, 'direction' | 'grade' | 'durationMin' | 'format'> & {
+type Spec = Pick<GenerationInput, 'grade' | 'durationMin' | 'format'> & {
   topic: string
+  // direction required for seed specs (all rov-type)
+  direction: NonNullable<GenerationInput['direction']>
 }
 
 const SPECS: Spec[] = [
@@ -129,6 +131,7 @@ async function main() {
 
   async function generate(spec: Spec): Promise<ScenarioContent | null> {
     const input: GenerationInput = {
+      lessonType: 'rov',
       direction: spec.direction,
       grade: spec.grade,
       topic: spec.topic,
@@ -230,6 +233,7 @@ async function main() {
         topic: spec.topic,
         content,
         inputContext: {
+          lessonType: 'rov',
           direction: spec.direction as never,
           grade: spec.grade,
           topic: spec.topic,

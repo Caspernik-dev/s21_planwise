@@ -112,7 +112,7 @@ export async function* streamScenario(
     let usedChunkIds: string[] = []
     try {
       const found = await retrieve({
-        direction: input.direction,
+        direction: input.direction ?? null,
         grade: input.grade,
         topic: input.topic,
       })
@@ -131,7 +131,7 @@ export async function* streamScenario(
     try {
       const matches = await prematch(
         {
-          direction: input.direction,
+          direction: input.direction ?? '',
           grade: input.grade,
           topic: input.topic,
           format: input.format,
@@ -189,7 +189,7 @@ export async function* streamScenario(
 
     // Whitelist: личностные результаты только из каталога ФГОС.
     // Если LLM вернула невалидное/пустое — добираем первыми из каталога.
-    const prCatalog = getCatalog(gradeToLevel(input.grade), input.direction)
+    const prCatalog = input.direction ? getCatalog(gradeToLevel(input.grade), input.direction) : []
     skeleton.personalResults = selectPersonalResults(skeleton.personalResults, prCatalog)
 
     // STAGE 2: детали ПО БЛОКАМ — отдельный фокусный вызов на каждый блок (РоВ-глубина).

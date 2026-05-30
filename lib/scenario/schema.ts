@@ -1,5 +1,12 @@
 import { z } from 'zod'
-import { DIRECTIONS, FORMATS, SPO_GRADE, formatGrade } from './options'
+import {
+  DIRECTIONS,
+  FORMATS,
+  LESSON_TYPE_VALUES,
+  LITERACY_KINDS,
+  SPO_GRADE,
+  formatGrade,
+} from './options'
 
 export const activitySchema = z.object({
   type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
@@ -14,12 +21,18 @@ export const stageSchema = z.object({
   activities: z.array(activitySchema).min(1),
 })
 
+const literacyKindValues = LITERACY_KINDS.map((k) => k.value) as [string, ...string[]]
+
 export const scenarioContentSchema = z.object({
   title: z.string().min(1),
   goals: z.array(z.string().min(1)).min(1),
   values: z.array(z.string()).optional(), // формируемые ценности (РоВ)
   coreMeanings: z.array(z.string()).optional(), // основные смыслы (РоВ)
   personalResults: z.array(z.string().min(1)).max(8).optional(),
+  metaResults: z.array(z.string().min(1)).max(10).optional(),
+  subjectResults: z.array(z.string().min(1)).max(10).optional(),
+  subject: z.string().min(1).max(80).optional(),
+  literacyKind: z.enum(literacyKindValues).optional(),
   materials: z.array(z.string()),
   stages: z.array(stageSchema).min(1),
   adaptations: z.object({
@@ -33,7 +46,10 @@ export type ScenarioStage = z.infer<typeof stageSchema>
 
 export const generationInputSchema = z
   .object({
-    direction: z.enum(DIRECTIONS),
+    lessonType: z.enum(LESSON_TYPE_VALUES as unknown as [string, ...string[]]),
+    direction: z.enum(DIRECTIONS).optional(),
+    subject: z.string().trim().min(1).max(80).optional(),
+    literacyKind: z.enum(literacyKindValues).optional(),
     grade: z.coerce.number().int().min(1).max(SPO_GRADE),
     topic: z.string().trim().min(1, 'Укажите тему').max(200),
     durationMin: z.coerce.number().int().min(5).max(120),
@@ -50,6 +66,23 @@ export const generationInputSchema = z
           data.grade === 1
             ? 'Для 1 класса длительность занятия не более 35 мин (СанПиН).'
             : `Для ${formatGrade(data.grade)} длительность занятия не более 45 мин (СанПиН).`,
+      })
+    }
+    if ((data.lessonType === 'rov' || data.lessonType === 'event') && !data.direction) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['direction'],
+        message: 'Выберите направление воспитания.',
+      })
+    }
+    if (data.lessonType === 'subject_extension' && !data.subject) {
+      ctx.addIssue({ code: 'custom', path: ['subject'], message: 'Укажите школьный предмет.' })
+    }
+    if (data.lessonType === 'literacy' && !data.literacyKind) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['literacyKind'],
+        message: 'Выберите вид функциональной грамотности.',
       })
     }
   })
@@ -76,6 +109,8 @@ export const skeletonSchema = z.object({
   values: z.array(z.string()).optional(),
   coreMeanings: z.array(z.string()).optional(),
   personalResults: z.array(z.string()).optional(),
+  metaResults: z.array(z.string()).optional(),
+  subjectResults: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
   // адаптации в каркасе мягкие: модель часто шлёт {} или частичный объект; недостающие
   // поля доводятся дефолтами при сборке (см. stream.ts). Строгая проверка — на финальном

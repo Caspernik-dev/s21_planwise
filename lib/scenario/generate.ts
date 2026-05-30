@@ -71,7 +71,7 @@ export async function generateScenario(
   let usedChunkIds: string[] = []
   try {
     const found = await retrieve({
-      direction: input.direction,
+      direction: input.direction ?? null,
       grade: input.grade,
       topic: input.topic,
     })
@@ -89,7 +89,12 @@ export async function generateScenario(
   let sharedExamples: SharedExampleForPrompt[] = []
   try {
     const matches = await prematch(
-      { direction: input.direction, grade: input.grade, topic: input.topic, format: input.format },
+      {
+        direction: input.direction ?? '',
+        grade: input.grade,
+        topic: input.topic,
+        format: input.format,
+      },
       { topK: 2 },
     )
     sharedExamples = matches.map((m) => ({

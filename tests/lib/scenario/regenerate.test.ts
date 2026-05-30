@@ -4,6 +4,7 @@ import type { ScenarioSkeleton } from '@/lib/scenario/schema'
 import { describe, expect, it, vi } from 'vitest'
 
 const input = {
+  lessonType: 'rov' as const,
   direction: 'Гражданское' as const,
   grade: 5,
   topic: 'Дружба',

@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       .values({
         userId,
         title: content.title,
-        direction: input.direction,
+        direction: input.direction ?? '',
         grade: input.grade,
         durationMin: input.durationMin,
         format: input.format,

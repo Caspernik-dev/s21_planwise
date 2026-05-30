@@ -26,6 +26,7 @@ describe('sharedToScenarioInsert', () => {
     expect(ins.direction).toBe('Гражданское')
     expect(ins.content).toEqual(shared.anonymizedContent)
     expect(ins.inputContext).toEqual({
+      lessonType: 'rov',
       direction: 'Гражданское',
       grade: 5,
       topic: 'дружба',

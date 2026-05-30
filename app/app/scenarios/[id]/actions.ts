@@ -144,6 +144,8 @@ export async function regenerateActivityAction(
     const activity = await regenerateActivity(
       {
         input: {
+          // TODO(Task 16): pass real lessonType from scenarios.lesson_type once column is populated
+          lessonType: (owned.lessonType ?? 'rov') as GenerationInput['lessonType'],
           direction: owned.direction as GenerationInput['direction'],
           grade: owned.grade,
           topic: owned.topic,
