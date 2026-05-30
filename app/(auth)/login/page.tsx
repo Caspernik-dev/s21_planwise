@@ -14,10 +14,16 @@ function LoginForm() {
   const params = useSearchParams()
   const rawNext = params.get('next')
   const next = rawNext?.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/app'
+  const reset = params.get('reset')
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, null)
 
   return (
     <form action={formAction} className="space-y-4">
+      {reset === '1' && (
+        <div className="mb-4 rounded-xl bg-brand-50 ring-1 ring-brand-200 p-3 text-brand-900 text-sm">
+          Пароль обновлён. Войдите с новым паролем.
+        </div>
+      )}
       <input type="hidden" name="next" value={next} />
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
@@ -26,6 +32,11 @@ function LoginForm() {
       <div className="space-y-1.5">
         <Label htmlFor="password">Пароль</Label>
         <Input id="password" name="password" type="password" required />
+        <div className="flex justify-end">
+          <Link href="/forgot" className="text-xs text-brand-700 hover:underline">
+            Забыли пароль?
+          </Link>
+        </div>
       </div>
       {state?.error && <p className="text-sm text-error">{state.error}</p>}
       <Button type="submit" disabled={pending} size="lg" className="w-full">

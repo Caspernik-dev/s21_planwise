@@ -11,7 +11,13 @@ import { and, count, desc, eq, ilike, isNotNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-type SearchParams = { q?: string; direction?: string; grade?: string; format?: string }
+type SearchParams = {
+  q?: string
+  direction?: string
+  grade?: string
+  format?: string
+  verified?: string
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -23,6 +29,7 @@ export default async function DashboardPage({
   const userId = session.user.id
 
   const sp = await searchParams
+  const verified = sp.verified
   const q = typeof sp.q === 'string' ? sp.q.trim() : ''
   const direction = DIRECTIONS.includes(sp.direction as never) ? sp.direction : undefined
   const gradeNum = Number(sp.grade)
@@ -112,6 +119,11 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
+      {verified === '1' && (
+        <div className="mb-4 rounded-xl bg-brand-50 ring-1 ring-brand-200 p-3 text-brand-900 text-sm">
+          Email подтверждён. Спасибо!
+        </div>
+      )}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-semibold text-neutral-900">Мои сценарии</h1>
         <Button asChild>
