@@ -1,6 +1,8 @@
-import type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt } from '../prompt'
+export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
-export type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt }
+export type RagChunkForPrompt = { text: string; documentTitle: string; sectionKind: string }
+
+export type SharedExampleForPrompt = { title: string; summary: string }
 
 export const JSON_FORMAT_HINT =
   'Отвечай СТРОГО валидным JSON без дополнительного текста и без markdown-обёрток.'

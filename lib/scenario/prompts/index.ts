@@ -1,6 +1,6 @@
 import type { LessonType } from '../options'
-import * as Legacy from '../prompt'
 import type { GenerationInput, ScenarioSkeleton } from '../schema'
+import * as Rov from './rov'
 import type { PromptDeps } from './shared'
 
 export type { ChatMessage, PromptDeps } from './shared'
@@ -9,24 +9,22 @@ export type { RagChunkForPrompt, SharedExampleForPrompt } from './shared'
 /**
  * Диспетчер сборки промпта по типу занятия.
  *
- * На этом этапе ВСЕ типы делегируют в существующий `lib/scenario/prompt.ts` (РоВ-логика).
- * Tasks 9-13 постепенно переключат каждый case на свой модуль (`./rov`, `./krujok`, ...).
- *
- * Когда все типы переедут, `lib/scenario/prompt.ts` станет тонким реэкспортом
- * из этого index.ts (см. Task 9).
+ * Task 9: РоВ-логика переехала в ./rov.ts.
+ * Tasks 10-13 постепенно переключат каждый оставшийся case на свой модуль.
+ * До тех пор non-rov типы используют РоВ-логику как placeholder (поведение не меняется).
  */
-export function buildSkeletonMessages(
-  input: GenerationInput,
-  deps: PromptDeps,
-): Legacy.ChatMessage[] {
+export function buildSkeletonMessages(input: GenerationInput, deps: PromptDeps): Rov.ChatMessage[] {
   const { chunks = [], examples = [], userMaterial = '' } = deps
   switch (input.lessonType) {
     case 'rov':
+      return Rov.buildRovSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     case 'krujok':
     case 'literacy':
     case 'subject_extension':
     case 'event':
-      return Legacy.buildSkeletonMessages(input, chunks, examples, userMaterial ?? '')
+      // Tasks 10-13 переключат каждый case на свой модуль.
+      // Временно используем РоВ-логику — поведение идентично прежнему (всё было на РоВ-промпте).
+      return Rov.buildRovSkeletonMessages(input, chunks, examples, userMaterial ?? '')
     default: {
       const _exhaustive: never = input.lessonType
       throw new Error(`Unknown lessonType: ${String(_exhaustive)}`)
@@ -39,12 +37,23 @@ export function buildBlockMessages(
   skeleton: ScenarioSkeleton,
   stage: { kind: string; title: string; duration_min: number },
   brief: { type: string; focus: string },
-  ragChunks: Legacy.RagChunkForPrompt[] = [],
+  ragChunks: Rov.RagChunkForPrompt[] = [],
   runningContext = '',
   userMaterial = '',
-): Legacy.ChatMessage[] {
-  // На этом этапе аргументы не зависят от типа — Task 9 разнесёт.
-  return Legacy.buildBlockMessages(
+): Rov.ChatMessage[] {
+  if (input.lessonType === 'rov') {
+    return Rov.buildRovBlockMessages(
+      input,
+      skeleton,
+      stage,
+      brief,
+      ragChunks,
+      runningContext,
+      userMaterial,
+    )
+  }
+  // Tasks 10-13 разнесут остальные типы. Временно — РоВ-логика.
+  return Rov.buildRovBlockMessages(
     input,
     skeleton,
     stage,
@@ -58,7 +67,7 @@ export function buildBlockMessages(
 export function getPromptVersion(lessonType: LessonType): string {
   switch (lessonType) {
     case 'rov':
-      return 'v10-rov-2026-05-30'
+      return Rov.PROMPT_VERSION
     case 'krujok':
       return 'v1-krujok-2026-05-30'
     case 'literacy':
