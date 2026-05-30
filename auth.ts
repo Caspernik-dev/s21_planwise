@@ -8,7 +8,13 @@ import Credentials from 'next-auth/providers/credentials'
 
 declare module 'next-auth' {
   interface Session {
-    user: { id: string; email: string; name?: string | null; role: string } & DefaultSession['user']
+    user: {
+      id: string
+      email: string
+      name?: string | null
+      role: string
+      emailVerified: Date | null
+    } & DefaultSession['user']
   }
 }
 
@@ -38,21 +44,58 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { logEvent } = await import('@/lib/events/log')
         await logEvent('login', { userId: user.id })
 
-        return { id: user.id, email: user.email, name: user.name ?? null, role: user.role }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? null,
+          role: user.role,
+          passwordVersion: user.passwordVersion,
+          emailVerified: user.emailVerified ?? null,
+        }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      const intervalSec = Number(process.env.PV_CHECK_INTERVAL_SEC ?? '60')
+      const nowSec = Math.floor(Date.now() / 1000)
       if (user) {
-        token.id = user.id as string
-        token.role = (user as { role?: string }).role ?? 'user'
+        const u = user as {
+          id: string
+          role?: string
+          passwordVersion?: number
+          emailVerified?: Date | null
+        }
+        token.id = u.id
+        token.role = u.role ?? 'user'
+        token.passwordVersion = u.passwordVersion ?? 1
+        token.emailVerified = u.emailVerified ? u.emailVerified.toISOString() : null
+        token.pvCheckedAt = nowSec
+        return token
+      }
+      const { needsPvRecheck } = await import('@/lib/auth/pv-check')
+      if (needsPvRecheck(token.pvCheckedAt as number | undefined, nowSec, intervalSec)) {
+        if (!token.id) return token
+        const { db } = await import('@/db')
+        const { users } = await import('@/db/schema')
+        const { eq } = await import('drizzle-orm')
+        const [row] = await db
+          .select({ pv: users.passwordVersion, ev: users.emailVerified })
+          .from(users)
+          .where(eq(users.id, token.id as string))
+          .limit(1)
+        if (!row) return null
+        if (row.pv !== (token.passwordVersion as number)) return null
+        token.emailVerified = row.ev ? row.ev.toISOString() : null
+        token.pvCheckedAt = nowSec
       }
       return token
     },
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string
       session.user.role = (token.role as string) ?? 'user'
+      const ev = token.emailVerified as string | null | undefined
+      session.user.emailVerified = ev ? new Date(ev) : null
       return session
     },
   },
