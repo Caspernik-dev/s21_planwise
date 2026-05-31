@@ -89,9 +89,14 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   metaRows.push(
     { label: 'Длительность', value: `${meta.durationMin} мин` },
     { label: 'Формат', value: meta.format },
-    { label: 'Форма проведения', value: deriveFormLabel(meta.format) },
-    { label: 'Цель занятия', value: goalValue },
   )
+  // «Форма проведения» — только если это методический развёрнутый лейбл, отличный от «Формат».
+  // Для форматов вроде «классный час» / «беседа» он совпадает один-в-один → не дублируем.
+  const formLabel = deriveFormLabel(meta.format)
+  if (formLabel.toLowerCase() !== meta.format.toLowerCase()) {
+    metaRows.push({ label: 'Форма проведения', value: formLabel })
+  }
+  metaRows.push({ label: 'Цель занятия', value: goalValue })
   if (meta.lessonType === 'rov' && content.leadingValue) {
     metaRows.push({ label: 'Формируемая ценность (ведущая)', value: content.leadingValue })
     if (content.secondaryValues && content.secondaryValues.length > 0) {

@@ -5,7 +5,6 @@ import {
   Font,
   G,
   Image,
-  Link,
   Page,
   Path,
   StyleSheet,
@@ -130,7 +129,7 @@ const styles = StyleSheet.create({
   videoLinkText: { flex: 1, marginRight: 8 },
   videoLinkTitle: { fontSize: 10, fontWeight: 'bold', color: c.brand700, marginBottom: 3 },
   videoLinkQuery: { fontSize: 10, color: c.neutral800, marginBottom: 3 },
-  videoLinkUrl: { fontSize: 8, color: c.brand700 },
+  videoLinkHint: { fontSize: 8, color: c.neutral500 },
   videoLinkQr: { width: 64, height: 64 },
 })
 
@@ -198,15 +197,16 @@ function renderBlock(b: DocBlock, i: number, qrByUrl?: Map<string, string>) {
         </View>
       )
     case 'videoLink': {
+      // URL текстом в PDF не показываем: react-pdf v4 не разрывает длинные encoded-URL
+      // (кириллица в %XX) и они наезжают на QR. На печати ссылку всё равно не нажмут —
+      // QR работает с любого телефона. Кликабельный URL остаётся в DOCX.
       const qr = qrByUrl?.get(b.url)
       return (
         <View key={i} style={styles.videoLinkCard} wrap={false}>
           <View style={styles.videoLinkText}>
             <Text style={styles.videoLinkTitle}>🔍 Поиск на RuTube</Text>
             <Text style={styles.videoLinkQuery}>{b.query}</Text>
-            <Link src={b.url} style={styles.videoLinkUrl}>
-              {b.url}
-            </Link>
+            <Text style={styles.videoLinkHint}>Сосканируйте QR справа для открытия поиска</Text>
           </View>
           {qr && <Image src={qr} style={styles.videoLinkQr} />}
         </View>
