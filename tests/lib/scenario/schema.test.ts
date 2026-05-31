@@ -356,3 +356,93 @@ describe('scenarioContentSchema — новые опц. поля', () => {
     ).toBe(true)
   })
 })
+
+describe('scenarioContentSchema — enum-валидация полей VALUES_809', () => {
+  const base = {
+    title: 'X',
+    goals: ['G'],
+    materials: [],
+    stages: [
+      {
+        kind: 'engage',
+        title: 'Вход',
+        duration_min: 5,
+        activities: [{ type: 'discussion', text: 'A' }],
+      },
+    ],
+    adaptations: { simpler: 's', harder: 'h' },
+  }
+
+  it('leadingValue: валидное значение «патриотизм» — ok', () => {
+    const r = scenarioContentSchema.safeParse({ ...base, leadingValue: 'патриотизм' })
+    expect(r.success).toBe(true)
+  })
+
+  it('leadingValue: значение вне каталога «свобода» — ошибка на [leadingValue]', () => {
+    const r = scenarioContentSchema.safeParse({ ...base, leadingValue: 'свобода' })
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error.issues.some((i) => i.path.includes('leadingValue'))).toBe(true)
+  })
+
+  it('secondaryValues: 3 валидных значения — ok', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'достоинство', 'патриотизм'],
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it('secondaryValues: 4 значения (превышает max 3) — ошибка на [secondaryValues]', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'достоинство', 'патриотизм', 'гражданственность'],
+    })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path.includes('secondaryValues'))).toBe(true)
+  })
+
+  it('secondaryValues: 1 невалидное значение — ошибка на [secondaryValues, 1]', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'свобода'],
+    })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path[0] === 'secondaryValues' && i.path[1] === 1)).toBe(
+        true,
+      )
+  })
+
+  it('valueFormulations: валидный объект — ok', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: 'дружба', basedOn: 'коллективизм' }],
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it('valueFormulations: невалидный basedOn — ошибка', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: 'дружба', basedOn: 'своё' }],
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('valueFormulations: пустой text (min 1) — ошибка', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: '', basedOn: 'коллективизм' }],
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('valueFormulations: 9 элементов (превышает max 8) — ошибка', () => {
+    const items = Array.from({ length: 9 }, () => ({ text: 'х', basedOn: 'гуманизм' }))
+    const r = scenarioContentSchema.safeParse({ ...base, valueFormulations: items })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path.includes('valueFormulations'))).toBe(true)
+  })
+})

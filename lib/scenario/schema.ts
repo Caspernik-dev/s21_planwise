@@ -149,14 +149,14 @@ export const skeletonSchema = z.object({
       regulatory: z.array(z.string()).optional(),
     })
     .optional(),
-  metaResults: z.array(z.string()).optional(),
-  subjectResults: z.array(z.string()).optional(),
   lessonDate: z.string().optional(),
   leadingValue: z.string().optional(),
   secondaryValues: z.array(z.string()).optional(),
   valueFormulations: z
     .array(z.object({ text: z.string(), basedOn: z.string() }).partial())
     .optional(),
+  metaResults: z.array(z.string()).optional(),
+  subjectResults: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
   // адаптации в каркасе мягкие: модель часто шлёт {} или частичный объект; недостающие
   // поля доводятся дефолтами при сборке (см. stream.ts). Строгая проверка — на финальном
