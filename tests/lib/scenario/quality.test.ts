@@ -318,3 +318,45 @@ describe('checkScenario — рефлексия', () => {
     expect(warnings.some((w) => w.includes('рефлексии нет вопросов'))).toBe(false)
   })
 })
+
+describe('checkScenario — физкультминутка', () => {
+  const makeNooContent = (activityText: string): ScenarioContent =>
+    withStages([
+      {
+        kind: 'engage',
+        title: 'Вовлечение',
+        duration_min: 10,
+        activities: [{ type: 'task', text: activityText }],
+      },
+      {
+        kind: 'main',
+        title: 'Основная',
+        duration_min: 25,
+        activities: [{ type: 'task', text: activityText }],
+      },
+      {
+        kind: 'reflection',
+        title: 'Рефлексия',
+        duration_min: 5,
+        activities: [{ type: 'task', text: 'Что было важно?' }],
+      },
+    ])
+
+  it('warning физкультминутки для НОО ≥40 мин без двигательной паузы', () => {
+    const content = makeNooContent(padText(700))
+    const { warnings } = checkScenario(content, { grade: 3, durationMin: 40 })
+    expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(true)
+  })
+
+  it('нет warning физкультминутки для ООО (grade=5)', () => {
+    const content = makeNooContent(padText(700))
+    const { warnings } = checkScenario(content, { grade: 5, durationMin: 40 })
+    expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(false)
+  })
+
+  it('нет warning если в тексте активности есть физкультминутка', () => {
+    const content = makeNooContent(`Физкультминутка. Встаньте. ${padText(700)}`)
+    const { warnings } = checkScenario(content, { grade: 3, durationMin: 40 })
+    expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(false)
+  })
+})

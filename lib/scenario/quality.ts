@@ -70,7 +70,7 @@ const significantWords = (s: string): string[] => s.toLowerCase().match(/[а-я�
 
 export function checkScenario(
   content: ScenarioContent,
-  opts?: { lessonType?: LessonType },
+  opts?: { lessonType?: LessonType; grade?: number; durationMin?: number },
 ): { warnings: string[] } {
   const warnings: string[] = []
 
@@ -105,6 +105,19 @@ export function checkScenario(
     )
     if (!hasQuestions) {
       warnings.push('В этапе рефлексии нет вопросов для обратной связи')
+    }
+  }
+
+  // Физкультминутка — нормативное требование СП 2.4.3648-20 п. 2.10.3
+  if (opts?.grade !== undefined && opts.grade <= 4 && (opts.durationMin ?? 0) >= 40) {
+    const allText = content.stages
+      .flatMap((s) => s.activities.map((a) => a.text))
+      .join(' ')
+      .toLowerCase()
+    if (!/физкульт|двигат|встань|разминк/.test(allText)) {
+      warnings.push(
+        'Для начальной школы на занятии 40+ мин нормативно требуется физкультминутка (СП 2.4.3648-20 п. 2.10.3)',
+      )
     }
   }
 
