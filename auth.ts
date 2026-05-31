@@ -76,24 +76,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const { needsPvRecheck } = await import('@/lib/auth/pv-check')
       if (needsPvRecheck(token.pvCheckedAt as number | undefined, nowSec, intervalSec)) {
         if (!token.id) return token
-        const { db } = await import('@/db')
-        const { users } = await import('@/db/schema')
-        const { eq } = await import('drizzle-orm')
-        const [row] = await db
-          .select({ pv: users.passwordVersion, ev: users.emailVerified })
-          .from(users)
-          .where(eq(users.id, token.id as string))
-          .limit(1)
-        if (!row) return null
-        const tokenPv = token.passwordVersion as number | undefined
-        if (tokenPv === undefined) {
-          // legacy-токен (выдан до того, как passwordVersion попал в JWT) — бэкфилл, не инвалидируем
-          token.passwordVersion = row.pv
-        } else if (row.pv !== tokenPv) {
-          return null
+        try {
+          const { db } = await import('@/db')
+          const { users } = await import('@/db/schema')
+          const { eq } = await import('drizzle-orm')
+          const [row] = await db
+            .select({ pv: users.passwordVersion, ev: users.emailVerified })
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .limit(1)
+          if (!row) return null
+          const tokenPv = token.passwordVersion as number | undefined
+          if (tokenPv === undefined) {
+            // legacy-токен (выдан до того, как passwordVersion попал в JWT) — бэкфилл, не инвалидируем
+            token.passwordVersion = row.pv
+          } else if (row.pv !== tokenPv) {
+            return null
+          }
+          token.emailVerified = row.ev ? row.ev.toISOString() : null
+          token.pvCheckedAt = nowSec
+        } catch (err) {
+          // БД недоступна (например, jwt-callback запущен из middleware на Edge-рантайме,
+          // где postgres-js не работает). Не валим сессию — оставляем токен как есть и не
+          // обновляем pvCheckedAt; следующий запрос из node-рантайма (server action,
+          // page render) повторит проверку и реально подтянет/инвалидирует.
+          console.warn('[auth] pv-recheck skipped (DB unavailable):', err)
         }
-        token.emailVerified = row.ev ? row.ev.toISOString() : null
-        token.pvCheckedAt = nowSec
       }
       return token
     },
