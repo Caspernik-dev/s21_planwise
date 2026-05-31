@@ -107,10 +107,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.emailVerified = row.ev ? row.ev.toISOString() : null
           token.pvCheckedAt = nowSec
         } catch (err) {
-          // БД недоступна / таймаут пула / Edge-рантайм без postgres-js. Не валим сессию,
-          // оставляем токен как есть и НЕ обновляем pvCheckedAt — следующий запрос
-          // попробует снова, как только пул освободится.
+          // БД недоступна / таймаут пула / Edge-рантайм без postgres-js. Не валим сессию.
+          // Штампуем pvCheckedAt = nowSec даже при сбое — иначе при стампиде запросов
+          // (особенно с легаси-токенами без pvCheckedAt после деплоя или под RSC-prefetch)
+          // каждый следующий запрос снова бьёт в БД и усугубляет перегрузку пула.
+          // Окно атаки расширяется до полного intervalSec — приемлемо для soft-инвалидации.
           console.warn('[auth] pv-recheck skipped (DB unavailable):', err)
+          token.pvCheckedAt = nowSec
         }
       }
       return token
