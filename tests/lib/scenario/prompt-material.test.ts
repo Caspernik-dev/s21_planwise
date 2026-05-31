@@ -31,7 +31,7 @@ describe('инъекция [TEACHER_MATERIAL]', () => {
     const text = msgs.map((m) => m.content).join('\n')
     expect(text).toContain('[TEACHER_MATERIAL]')
     expect(text).toContain('Мой конспект про дружбу.')
-    expect(text).toContain('ГЛАВНЫЙ источник')
+    expect(text).toContain('главный источник содержания')
   })
 
   it('block: секция присутствует с материалом', () => {

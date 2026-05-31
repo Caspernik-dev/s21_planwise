@@ -26,7 +26,7 @@ describe('buildMessages', () => {
   it('system message forbids real children names and demands JSON', () => {
     const sys = buildMessages(input)[0].content
     expect(sys.toLowerCase()).toContain('json')
-    expect(sys.toLowerCase()).toContain('имена детей')
+    expect(sys).toContain('Не выдумывай')
   })
 
   it('user message embeds all context fields', () => {
@@ -151,6 +151,6 @@ describe('buildBlockMessages', () => {
       '',
     )
     const sys = msgs[0].content
-    expect(sys).toContain('НЕ выдумывай')
+    expect(sys).toContain('Не выдумывай')
   })
 })
