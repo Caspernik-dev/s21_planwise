@@ -266,6 +266,48 @@ describe('generationInputSchema — lessonType', () => {
   })
 })
 
+describe('generationInputSchema — lessonDate (РоВ понедельник)', () => {
+  const base = {
+    lessonType: 'rov' as const,
+    direction: 'Патриотическое' as const,
+    grade: 6,
+    topic: 'День народного единства',
+    durationMin: 30,
+    format: 'беседа',
+  }
+
+  it('rov + lessonDate понедельник 2026-09-07 → ok', () => {
+    const r = generationInputSchema.safeParse({ ...base, lessonDate: '2026-09-07' })
+    expect(r.success).toBe(true)
+  })
+
+  it('rov + lessonDate вторник 2026-09-08 → ошибка на lessonDate', () => {
+    const r = generationInputSchema.safeParse({ ...base, lessonDate: '2026-09-08' })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.includes('lessonDate'))).toBe(true)
+      expect(r.error.issues.some((i) => i.message.includes('понедельник'))).toBe(true)
+    }
+  })
+
+  it('rov без lessonDate → ok (поле опциональное)', () => {
+    const r = generationInputSchema.safeParse(base)
+    expect(r.success).toBe(true)
+  })
+
+  it('krujok + lessonDate вторник 2026-09-08 → ok (проверка только для rov)', () => {
+    const r = generationInputSchema.safeParse({
+      lessonType: 'krujok',
+      grade: 6,
+      topic: 'Робототехника',
+      durationMin: 30,
+      format: 'беседа',
+      lessonDate: '2026-09-08',
+    })
+    expect(r.success).toBe(true)
+  })
+})
+
 describe('scenarioContentSchema — новые опц. поля', () => {
   const baseContent = {
     title: 'X',
@@ -312,5 +354,95 @@ describe('scenarioContentSchema — новые опц. поля', () => {
         subjectResults: ['решать задачи на оптимизацию'],
       }).success,
     ).toBe(true)
+  })
+})
+
+describe('scenarioContentSchema — enum-валидация полей VALUES_809', () => {
+  const base = {
+    title: 'X',
+    goals: ['G'],
+    materials: [],
+    stages: [
+      {
+        kind: 'engage',
+        title: 'Вход',
+        duration_min: 5,
+        activities: [{ type: 'discussion', text: 'A' }],
+      },
+    ],
+    adaptations: { simpler: 's', harder: 'h' },
+  }
+
+  it('leadingValue: валидное значение «патриотизм» — ok', () => {
+    const r = scenarioContentSchema.safeParse({ ...base, leadingValue: 'патриотизм' })
+    expect(r.success).toBe(true)
+  })
+
+  it('leadingValue: значение вне каталога «свобода» — ошибка на [leadingValue]', () => {
+    const r = scenarioContentSchema.safeParse({ ...base, leadingValue: 'свобода' })
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error.issues.some((i) => i.path.includes('leadingValue'))).toBe(true)
+  })
+
+  it('secondaryValues: 3 валидных значения — ok', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'достоинство', 'патриотизм'],
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it('secondaryValues: 4 значения (превышает max 3) — ошибка на [secondaryValues]', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'достоинство', 'патриотизм', 'гражданственность'],
+    })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path.includes('secondaryValues'))).toBe(true)
+  })
+
+  it('secondaryValues: 1 невалидное значение — ошибка на [secondaryValues, 1]', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      secondaryValues: ['жизнь', 'свобода'],
+    })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path[0] === 'secondaryValues' && i.path[1] === 1)).toBe(
+        true,
+      )
+  })
+
+  it('valueFormulations: валидный объект — ok', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: 'дружба', basedOn: 'коллективизм' }],
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it('valueFormulations: невалидный basedOn — ошибка', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: 'дружба', basedOn: 'своё' }],
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('valueFormulations: пустой text (min 1) — ошибка', () => {
+    const r = scenarioContentSchema.safeParse({
+      ...base,
+      valueFormulations: [{ text: '', basedOn: 'коллективизм' }],
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('valueFormulations: 9 элементов (превышает max 8) — ошибка', () => {
+    const items = Array.from({ length: 9 }, () => ({ text: 'х', basedOn: 'гуманизм' }))
+    const r = scenarioContentSchema.safeParse({ ...base, valueFormulations: items })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues.some((i) => i.path.includes('valueFormulations'))).toBe(true)
   })
 })

@@ -60,3 +60,16 @@ const LEVEL_LABEL: Record<Level, string> = {
 export function levelLabel(level: Level): string {
   return LEVEL_LABEL[level]
 }
+
+const ROV_GROUP_LABEL: Record<RovGroup, string> = {
+  '1-2': '1–2 классы',
+  '3-4': '3–4 классы',
+  '5-7': '5–7 классы',
+  '8-9': '8–9 классы',
+  '10-11': '10–11 классы',
+  СПО: 'СПО',
+}
+
+export function rovGroupLabel(grade: number): string {
+  return ROV_GROUP_LABEL[gradeToRovGroup(grade)]
+}

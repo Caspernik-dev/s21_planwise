@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CALENDAR_EVENTS } from '@/lib/calendar-events'
+import { rovGroupLabel } from '@/lib/scenario/levels'
 import {
   DIRECTIONS,
   DURATIONS_BY_TYPE,
@@ -19,6 +20,12 @@ import {
   formatGrade,
   lessonTypeLabel,
 } from '@/lib/scenario/options'
+import {
+  formatLessonDateRu,
+  isMonday,
+  nearestMonday,
+  rovLessonNumber,
+} from '@/lib/scenario/rov-date'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useActionState, useRef, useState, useTransition } from 'react'
@@ -87,8 +94,8 @@ function ScenarioForm({
   const [topicValue, setTopicValue] = useState(initialTopic)
   const [grade, setGrade] = useState(5)
   const [durationMin, setDurationMin] = useState(() => {
-    // grade starts at 5, cap = 45
     const allowed = durationsAllowed.filter((d) => d <= 45)
+    if (lessonType === 'rov' && allowed.includes(30)) return 30
     return allowed[0] ?? durationsAllowed[0]
   })
   const [matches, setMatches] = useState<PrematchCard[] | null>(null)
@@ -100,6 +107,7 @@ function ScenarioForm({
     FormData
   >(analyzeMaterialAction, {})
   const [materialConsent, setMaterialConsent] = useState(false)
+  const [lessonDate, setLessonDate] = useState('')
 
   function onGenerate(e?: React.FormEvent) {
     e?.preventDefault()
@@ -115,6 +123,7 @@ function ScenarioForm({
       durationMin: fd.get('durationMin'),
       format: fd.get('format'),
       planTopicId: fd.get('planTopicId') || undefined,
+      lessonDate: fd.get('lessonDate') || undefined,
       material: materialAnalysis.ok
         ? { text: materialAnalysis.ok.original, consent: materialConsent }
         : undefined,
@@ -162,6 +171,13 @@ function ScenarioForm({
         <span className="text-neutral-700">{label}</span>
       </div>
       <h1 className="mb-6 text-3xl font-semibold text-neutral-900">Новый сценарий — {label}</h1>
+      {lessonType === 'rov' && (
+        <div className="mb-6 rounded-md bg-accent-50 p-4 text-sm text-accent-700 ring-1 ring-accent-100">
+          <strong>«Разговоры о важном»</strong> — федеральный курс, 1-й урок понедельника, 30 минут,
+          цикл из 34 занятий за учебный год. Структура: эмоциональный вход с видео → раскрытие
+          смыслов через обсуждение → рефлексия.
+        </div>
+      )}
       <Card className="animate-fade-up">
         <CardHeader>
           <CardTitle>Параметры занятия</CardTitle>
@@ -250,6 +266,11 @@ function ScenarioForm({
                     </option>
                   ))}
                 </select>
+                {lessonType === 'rov' && (
+                  <p className="text-xs italic text-neutral-500">
+                    УМК группа: {rovGroupLabel(grade)}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="durationMin">Длительность</Label>
@@ -286,6 +307,37 @@ function ScenarioForm({
                 ))}
               </select>
             </div>
+
+            {lessonType === 'rov' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="lessonDate">Дата проведения (понедельник, необязательно)</Label>
+                <input
+                  id="lessonDate"
+                  name="lessonDate"
+                  type="date"
+                  className={selectClass}
+                  value={lessonDate}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (!v) {
+                      setLessonDate('')
+                      return
+                    }
+                    // Если выбран не понедельник — снэп на ближайший.
+                    setLessonDate(isMonday(v) ? v : nearestMonday(v))
+                  }}
+                />
+                {lessonDate && isMonday(lessonDate) && (
+                  <p className="text-xs text-neutral-500">
+                    {formatLessonDateRu(lessonDate)}
+                    {(() => {
+                      const n = rovLessonNumber(lessonDate)
+                      return n !== null ? ` (занятие №${n} цикла)` : ''
+                    })()}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2">
               {(

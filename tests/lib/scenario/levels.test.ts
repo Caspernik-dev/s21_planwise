@@ -3,6 +3,7 @@ import {
   gradeToLevel,
   gradeToRovGroup,
   levelLabel,
+  rovGroupLabel,
 } from '@/lib/scenario/levels'
 import { describe, expect, it } from 'vitest'
 
@@ -69,5 +70,20 @@ describe('levelLabel', () => {
     expect(levelLabel('NOO')).toBe('НОО')
     expect(levelLabel('OOO')).toBe('ООО')
     expect(levelLabel('SOO')).toBe('СОО')
+  })
+})
+
+describe('rovGroupLabel', () => {
+  it('grade 1 → 1–2 классы', () => {
+    expect(rovGroupLabel(1)).toBe('1–2 классы')
+  })
+  it('grade 7 → 5–7 классы', () => {
+    expect(rovGroupLabel(7)).toBe('5–7 классы')
+  })
+  it('grade 11 → 10–11 классы', () => {
+    expect(rovGroupLabel(11)).toBe('10–11 классы')
+  })
+  it('grade 12 → СПО', () => {
+    expect(rovGroupLabel(12)).toBe('СПО')
   })
 })

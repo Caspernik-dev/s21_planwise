@@ -9,9 +9,9 @@ import { coerceActivityType } from './coerce'
 import { type GeneratedBlock, buildRunningContext } from './context'
 import { gradeToLevel } from './levels'
 import { generateValidated } from './llm-retry'
+import { getMetaCatalog, selectMetaResults } from './meta-results'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
-import { getMetaCatalog, selectMetaResults } from './meta-results'
 import { getCatalog, selectPersonalResults } from './personal-results'
 import {
   type RagChunkForPrompt,
@@ -31,6 +31,7 @@ import {
   skeletonSchema,
 } from './schema'
 import { chunksForStage } from './stage-chunks'
+import { selectValues } from './values-809'
 
 export type StreamEvent =
   | { type: 'queued'; position: number }
@@ -202,6 +203,22 @@ export async function* streamScenario(
       skeleton = Event.applyPersonalResultsWhitelist(skeleton, input)
     }
 
+    // Whitelist ценностей Указа № 809 — только для rov (нормативное ядро РоВ).
+    // Для event/krujok/literacy/subject_extension ценности 809 неуместны как обязательный каркас.
+    if (input.lessonType === 'rov') {
+      const { leadingValue, secondaryValues, valueFormulations } = selectValues(
+        {
+          leadingValue: skeleton.leadingValue,
+          secondaryValues: skeleton.secondaryValues,
+          valueFormulations: skeleton.valueFormulations,
+        },
+        input.direction,
+      )
+      skeleton.leadingValue = leadingValue
+      skeleton.secondaryValues = secondaryValues
+      skeleton.valueFormulations = valueFormulations
+    }
+
     // Whitelist метапредметных УУД — применяется для всех типов (УУД универсальны по ФГОС).
     const metaCatalog = getMetaCatalog(gradeToLevel(input.grade))
     skeleton.metaSubjectResults = selectMetaResults(skeleton.metaSubjectResults, metaCatalog)
@@ -256,6 +273,10 @@ export async function* streamScenario(
       coreMeanings: skeleton.coreMeanings,
       personalResults: skeleton.personalResults,
       metaSubjectResults: skeleton.metaSubjectResults,
+      leadingValue: skeleton.leadingValue,
+      secondaryValues: skeleton.secondaryValues,
+      valueFormulations: skeleton.valueFormulations,
+      lessonDate: input.lessonDate,
       materials: skeleton.materials ?? [],
       // мягкие адаптации каркаса доводим дефолтами по-полю (модель шлёт {} или частичный объект)
       adaptations: {

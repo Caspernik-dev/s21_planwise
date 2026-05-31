@@ -3,6 +3,7 @@ import {
   type ExportMeta,
   buildScenarioDocument,
 } from '@/lib/export/document-model'
+import { formatLessonDateRu, rovLessonNumber } from '@/lib/scenario/rov-date'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import { describe, expect, it } from 'vitest'
 
@@ -50,6 +51,7 @@ describe('buildScenarioDocument', () => {
       { label: 'Тема', value: 'О дружбе' },
       { label: 'Направление воспитания', value: 'Патриотическое' },
       { label: 'Класс / уровень', value: '3 класс (НОО)' },
+      { label: 'Группа РоВ', value: '3–4 классы' },
       { label: 'Длительность', value: '40 мин' },
       { label: 'Формат', value: 'Беседа' },
       { label: 'Форма проведения', value: 'беседа с элементами дискуссии' },
@@ -58,13 +60,16 @@ describe('buildScenarioDocument', () => {
     ])
   })
 
-  it('выводит цели списком', () => {
+  it('выводит цели: первая — абзацем, остальные — задачами списком', () => {
     const blocks = buildScenarioDocument(content, meta)
     const idx = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Цель')
     expect(idx).toBeGreaterThan(-1)
-    expect(blocks[idx + 1]).toEqual({
+    expect(blocks[idx + 1]).toEqual({ type: 'paragraph', text: 'Понять ценность дружбы' })
+    const idxTasks = blocks.findIndex((b) => b.type === 'heading' && b.text === 'Задачи')
+    expect(idxTasks).toBeGreaterThan(-1)
+    expect(blocks[idxTasks + 1]).toEqual({
       type: 'bullets',
-      items: ['Понять ценность дружбы', 'Научиться договариваться'],
+      items: ['Научиться договариваться'],
     })
   })
 
@@ -211,7 +216,14 @@ describe('document-model — адаптация по lessonType', () => {
     title: 'Тестовый сценарий',
     goals: ['Цель'],
     materials: [],
-    stages: [{ kind: 'engage', title: 'Вход', duration_min: 5, activities: [{ type: 'discussion', text: 'X' }] }],
+    stages: [
+      {
+        kind: 'engage',
+        title: 'Вход',
+        duration_min: 5,
+        activities: [{ type: 'discussion', text: 'X' }],
+      },
+    ],
     adaptations: { simpler: 's', harder: 'h' },
   } as any
   const baseMeta = {
@@ -237,7 +249,9 @@ describe('document-model — адаптация по lessonType', () => {
     )
     const metaBlock = doc.find((b: any) => b.type === 'metaTable')
     if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
-    expect(metaBlock.rows.some((r: any) => r.label === 'Предмет' && r.value === 'Физика')).toBe(true)
+    expect(metaBlock.rows.some((r: any) => r.label === 'Предмет' && r.value === 'Физика')).toBe(
+      true,
+    )
     expect(metaBlock.rows.some((r: any) => r.label === 'Направление воспитания')).toBe(false)
   })
 
@@ -248,14 +262,29 @@ describe('document-model — адаптация по lessonType', () => {
     )
     const metaBlock = doc.find((b: any) => b.type === 'metaTable')
     if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
-    expect(metaBlock.rows.some((r: any) => r.label === 'Вид грамотности' && r.value === 'Математическая грамотность')).toBe(true)
+    expect(
+      metaBlock.rows.some(
+        (r: any) => r.label === 'Вид грамотности' && r.value === 'Математическая грамотность',
+      ),
+    ).toBe(true)
   })
 
   it('krujok: главный классификатор скрыт', () => {
-    const doc = buildScenarioDocument(baseContent, { ...baseMeta, lessonType: 'krujok', direction: undefined })
+    const doc = buildScenarioDocument(baseContent, {
+      ...baseMeta,
+      lessonType: 'krujok',
+      direction: undefined,
+    })
     const metaBlock = doc.find((b: any) => b.type === 'metaTable')
     if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
-    expect(metaBlock.rows.some((r: any) => r.label === 'Направление воспитания' || r.label === 'Предмет' || r.label === 'Вид грамотности')).toBe(false)
+    expect(
+      metaBlock.rows.some(
+        (r: any) =>
+          r.label === 'Направление воспитания' ||
+          r.label === 'Предмет' ||
+          r.label === 'Вид грамотности',
+      ),
+    ).toBe(false)
   })
 
   it('блок «Метапредметные результаты» — рендерится только при непустом', () => {
@@ -302,5 +331,165 @@ describe('buildScenarioDocument — блок личностных результ
         doc.some((b) => b.type === 'heading' && b.text === 'Планируемые личностные результаты'),
       ).toBe(false)
     }
+  })
+})
+
+// Minimal fixture for РоВ-compliance tests
+const rovContent: ScenarioContent = {
+  title: 'Тест',
+  goals: ['Одна цель'],
+  materials: [],
+  stages: [
+    {
+      kind: 'engage',
+      title: 'Вход',
+      duration_min: 5,
+      activities: [{ type: 'discussion', text: 'X' }],
+    },
+  ],
+  adaptations: { simpler: 's', harder: 'h' },
+}
+
+const rovMeta: ExportMeta = {
+  topic: 'Дружба',
+  direction: 'Патриотическое',
+  grade: 7,
+  durationMin: 30,
+  format: 'беседа',
+  lessonType: 'rov',
+}
+
+describe('buildScenarioDocument — РоВ-compliance fields', () => {
+  it('1. rov + leadingValue + secondaryValues → строки «Формируемая ценность» и «Сопутствующие ценности» в шапке', () => {
+    const doc = buildScenarioDocument(
+      { ...rovContent, leadingValue: 'дружба', secondaryValues: ['честность', 'смелость'] },
+      rovMeta,
+    )
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    const leading = metaBlock.rows.find((r) => r.label === 'Формируемая ценность (ведущая)')
+    expect(leading?.value).toBe('дружба')
+    const secondary = metaBlock.rows.find((r) => r.label === 'Сопутствующие ценности')
+    expect(secondary?.value).toBe('честность, смелость')
+  })
+
+  it('2. rov + lessonDate (понедельник в цикле РоВ) → «Дата проведения» с датой и номером занятия', () => {
+    // 2026-09-07 = first Monday of September 2026 = lesson #1
+    const date = '2026-09-07'
+    const doc = buildScenarioDocument({ ...rovContent, lessonDate: date }, rovMeta)
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    const row = metaBlock.rows.find((r) => r.label === 'Дата проведения')
+    expect(row).toBeDefined()
+    expect(row?.value).toContain(formatLessonDateRu(date))
+    const lessonNum = rovLessonNumber(date)
+    expect(lessonNum).not.toBeNull()
+    expect(row?.value).toContain(`(занятие №${lessonNum} цикла РоВ)`)
+  })
+
+  it('3. rov + lessonDate (понедельник вне цикла РоВ) → «Дата проведения» без суффикса №N', () => {
+    // 2026-08-03 = Monday, but school year hasn't started → rovLessonNumber returns null
+    const date = '2026-08-03'
+    const doc = buildScenarioDocument({ ...rovContent, lessonDate: date }, rovMeta)
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    const row = metaBlock.rows.find((r) => r.label === 'Дата проведения')
+    expect(row).toBeDefined()
+    expect(row?.value).toContain(formatLessonDateRu(date))
+    expect(rovLessonNumber(date)).toBeNull()
+    expect(row?.value).not.toContain('цикла РоВ')
+  })
+
+  it('4. rov + grade=7 → «Группа РоВ: 5–7 классы» в шапке', () => {
+    const doc = buildScenarioDocument(rovContent, rovMeta) // grade=7
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    const row = metaBlock.rows.find((r) => r.label === 'Группа РоВ')
+    expect(row?.value).toBe('5–7 классы')
+  })
+
+  it('5. rov + leadingValue + legacy values → только новый ряд, без устаревшего «Формируемые ценности»', () => {
+    const doc = buildScenarioDocument(
+      { ...rovContent, leadingValue: 'дружба', values: ['память', 'долг'] },
+      rovMeta,
+    )
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r) => r.label === 'Формируемые ценности')).toBe(false)
+    expect(metaBlock.rows.some((r) => r.label === 'Формируемая ценность (ведущая)')).toBe(true)
+  })
+
+  it('6. non-rov (krujok) + leadingValue + lessonDate → РоВ-специфичные строки не появляются', () => {
+    const krujokMeta: ExportMeta = { ...rovMeta, lessonType: 'krujok', direction: undefined }
+    const doc = buildScenarioDocument(
+      { ...rovContent, leadingValue: 'дружба', lessonDate: '2026-09-07' },
+      krujokMeta,
+    )
+    const metaBlock = doc.find((b) => b.type === 'metaTable')
+    if (metaBlock?.type !== 'metaTable') throw new Error('expected metaTable')
+    expect(metaBlock.rows.some((r) => r.label === 'Группа РоВ')).toBe(false)
+    expect(metaBlock.rows.some((r) => r.label === 'Дата проведения')).toBe(false)
+    expect(metaBlock.rows.some((r) => r.label === 'Формируемая ценность (ведущая)')).toBe(false)
+    expect(metaBlock.rows.some((r) => r.label === 'Сопутствующие ценности')).toBe(false)
+  })
+
+  it('7. goals с одним элементом → heading «Цель» + paragraph, без «Задачи»', () => {
+    const doc = buildScenarioDocument({ ...rovContent, goals: ['только одна цель'] }, rovMeta)
+    const idx = doc.findIndex((b) => b.type === 'heading' && b.text === 'Цель')
+    expect(idx).toBeGreaterThan(-1)
+    expect(doc[idx + 1]).toEqual({ type: 'paragraph', text: 'только одна цель' })
+    expect(doc.some((b) => b.type === 'heading' && b.text === 'Задачи')).toBe(false)
+  })
+
+  it('8. goals с тремя элементами → «Цель» + paragraph(goals[0]) + «Задачи» + bullets(goals[1..])', () => {
+    const doc = buildScenarioDocument(
+      { ...rovContent, goals: ['главная цель', 'задача 1', 'задача 2'] },
+      rovMeta,
+    )
+    const idxGoal = doc.findIndex((b) => b.type === 'heading' && b.text === 'Цель')
+    expect(idxGoal).toBeGreaterThan(-1)
+    expect(doc[idxGoal + 1]).toEqual({ type: 'paragraph', text: 'главная цель' })
+    const idxTasks = doc.findIndex((b) => b.type === 'heading' && b.text === 'Задачи')
+    expect(idxTasks).toBeGreaterThan(-1)
+    expect(doc[idxTasks + 1]).toEqual({ type: 'bullets', items: ['задача 1', 'задача 2'] })
+    // Tasks heading is after Goal heading
+    expect(idxTasks).toBeGreaterThan(idxGoal)
+  })
+
+  it('9. rov + valueFormulations → блок «Формулировки ценностей на занятии» с буллетами', () => {
+    const doc = buildScenarioDocument(
+      {
+        ...rovContent,
+        valueFormulations: [
+          { text: 'Родина — это место', basedOn: 'патриотизм' as never },
+          { text: 'Дружба важна', basedOn: 'дружба' as never },
+        ],
+      },
+      rovMeta,
+    )
+    const idx = doc.findIndex(
+      (b) => b.type === 'heading' && b.text === 'Формулировки ценностей на занятии',
+    )
+    expect(idx).toBeGreaterThan(-1)
+    const next = doc[idx + 1]
+    expect(next.type).toBe('bullets')
+    if (next.type === 'bullets') {
+      expect(next.items).toContain('Родина — это место (патриотизм)')
+      expect(next.items).toContain('Дружба важна (дружба)')
+    }
+  })
+
+  it('10. non-rov + valueFormulations → блок «Формулировки ценностей» не добавляется', () => {
+    const krujokMeta: ExportMeta = { ...rovMeta, lessonType: 'krujok', direction: undefined }
+    const doc = buildScenarioDocument(
+      {
+        ...rovContent,
+        valueFormulations: [{ text: 'Текст', basedOn: 'дружба' as never }],
+      },
+      krujokMeta,
+    )
+    expect(
+      doc.some((b) => b.type === 'heading' && b.text === 'Формулировки ценностей на занятии'),
+    ).toBe(false)
   })
 })

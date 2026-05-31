@@ -23,10 +23,13 @@ describe('buildMessages', () => {
     expect(msgs[1].role).toBe('user')
   })
 
-  it('system message forbids real children names and demands JSON', () => {
+  it('system message demands JSON output and forbids fabricated facts', () => {
+    // Легаси buildMessages — single-shot путь, используется только gen-seed.ts.
+    // Запрет «реальных имён детей» добавлен только в per-block путь (buildSkeletonMessages/buildBlockMessages),
+    // здесь его нет осознанно. Этот тест фиксирует два инварианта легаси-промпта: JSON-формат и факт-политика.
     const sys = buildMessages(input)[0].content
     expect(sys.toLowerCase()).toContain('json')
-    expect(sys.toLowerCase()).toContain('имена детей')
+    expect(sys).toContain('Не выдумывай')
   })
 
   it('user message embeds all context fields', () => {
@@ -151,6 +154,6 @@ describe('buildBlockMessages', () => {
       '',
     )
     const sys = msgs[0].content
-    expect(sys).toContain('НЕ выдумывай')
+    expect(sys).toContain('Не выдумывай')
   })
 })
