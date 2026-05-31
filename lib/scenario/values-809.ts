@@ -59,7 +59,9 @@ export function selectValues(
       ? (input.leadingValue as Value809)
       : direction !== undefined
         ? DIRECTION_TO_LEADING_VALUE[direction]
-        : VALUES_809[0]
+        : // аварийный fallback: ни валидной ведущей, ни направления — первая из 17 («жизнь»).
+          // На штатных путях `direction` всегда задан, сюда попадаем только при ручном вызове без него.
+          VALUES_809[0]
 
   // 2. secondaryValues
   const rawSecondary = Array.isArray(input.secondaryValues) ? input.secondaryValues : []

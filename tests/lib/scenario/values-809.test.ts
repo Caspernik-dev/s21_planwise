@@ -2,6 +2,8 @@ import type { Direction } from '@/lib/scenario/options'
 import { VALUES_809, selectValues } from '@/lib/scenario/values-809'
 import { describe, expect, it } from 'vitest'
 
+// Сентинели порядка — порядок зафиксирован Указом № 809 и менять его без правки
+// нормативной базы нельзя.
 describe('VALUES_809', () => {
   it('содержит ровно 17 ценностей', () => {
     expect(VALUES_809).toHaveLength(17)
