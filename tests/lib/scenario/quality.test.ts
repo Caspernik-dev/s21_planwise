@@ -348,9 +348,15 @@ describe('checkScenario — физкультминутка', () => {
     expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(true)
   })
 
-  it('нет warning физкультминутки для ООО (grade=5)', () => {
+  it('warning физкультминутки для ООО (grade=5) при 40+ мин', () => {
     const content = makeNooContent(padText(700))
     const { warnings } = checkScenario(content, { grade: 5, durationMin: 40 })
+    expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(true)
+  })
+
+  it('нет warning физкультминутки для СОО (grade=10)', () => {
+    const content = makeNooContent(padText(700))
+    const { warnings } = checkScenario(content, { grade: 10, durationMin: 40 })
     expect(warnings.some((w) => w.includes('физкультминутк'))).toBe(false)
   })
 
