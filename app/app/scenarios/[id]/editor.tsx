@@ -273,21 +273,46 @@ export function ScenarioEditor({
             Первая строка — цель занятия (одна ведущая). Остальные — задачи (опционально).
           </p>
           {content.goals.map((g, i) => (
-            <Input
-              // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
-              key={`goal-${i}`}
-              value={g}
-              aria-label={`Цель ${i + 1}`}
-              placeholder={i === 0 ? 'Цель занятия (одна ведущая)' : 'Задача (опционально)'}
-              onChange={(e) =>
-                update((c) => {
-                  const goals = c.goals.slice()
-                  goals[i] = e.target.value
-                  return { ...c, goals }
-                })
-              }
-            />
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+            <div key={`goal-${i}`} className="flex gap-2">
+              <Input
+                value={g}
+                aria-label={i === 0 ? 'Цель занятия' : `Задача ${i}`}
+                placeholder={i === 0 ? 'Цель занятия (одна ведущая)' : 'Задача (опционально)'}
+                onChange={(e) =>
+                  update((c) => {
+                    const goals = c.goals.slice()
+                    goals[i] = e.target.value
+                    return { ...c, goals }
+                  })
+                }
+              />
+              {/* удалить можно только задачи (i>0): цель должна остаться по схеме (min 1) */}
+              {i > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
+                    update((c) => ({
+                      ...c,
+                      goals: c.goals.filter((_, j) => j !== i),
+                    }))
+                  }
+                  aria-label={`Удалить задачу ${i}`}
+                >
+                  ✕
+                </Button>
+              )}
+            </div>
           ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => update((c) => ({ ...c, goals: [...c.goals, ''] }))}
+          >
+            + Добавить задачу
+          </Button>
         </CardContent>
       </Card>
 
