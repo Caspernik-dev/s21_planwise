@@ -30,6 +30,13 @@ export const scenarioContentSchema = z.object({
   values: z.array(z.string()).optional(), // формируемые ценности (РоВ)
   coreMeanings: z.array(z.string()).optional(), // основные смыслы (РоВ)
   personalResults: z.array(z.string().min(1)).max(8).optional(),
+  metaSubjectResults: z
+    .object({
+      cognitive: z.array(z.string().min(1)).max(3).optional(),
+      communicative: z.array(z.string().min(1)).max(3).optional(),
+      regulatory: z.array(z.string().min(1)).max(3).optional(),
+    })
+    .optional(),
   metaResults: z.array(z.string().min(1)).max(10).optional(),
   subjectResults: z.array(z.string().min(1)).max(10).optional(),
   subject: z.string().min(1).max(80).optional(),
@@ -110,6 +117,13 @@ export const skeletonSchema = z.object({
   values: z.array(z.string()).optional(),
   coreMeanings: z.array(z.string()).optional(),
   personalResults: z.array(z.string()).optional(),
+  metaSubjectResults: z
+    .object({
+      cognitive: z.array(z.string()).optional(),
+      communicative: z.array(z.string()).optional(),
+      regulatory: z.array(z.string()).optional(),
+    })
+    .optional(),
   metaResults: z.array(z.string()).optional(),
   subjectResults: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
