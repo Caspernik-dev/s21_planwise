@@ -6,11 +6,12 @@ export type IngestDoc = {
   title: string
   direction: string | null
   gradeRange: string | null
-  gradeMin: number
-  gradeMax: number
+  gradeMin: number | null
+  gradeMax: number | null
   rawUrl: string
   text: string
   lang: string
+  extraMeta?: Record<string, unknown>
 }
 
 export type IngestDb = {
@@ -88,6 +89,7 @@ export async function ingestDocument(
         grade_max: doc.gradeMax,
         section_kind: c.sectionKind,
         ...(c.stageIdx !== undefined ? { stage_idx: c.stageIdx } : {}),
+        ...(doc.extraMeta ?? {}),
       },
       embedding: embeddings[i],
       lang: doc.lang,

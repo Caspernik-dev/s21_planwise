@@ -61,8 +61,8 @@ async function queryCandidatesLive(args: QueryArgs): Promise<CandidateRow[]> {
       (1 - (embedding <=> ${vec}::vector)) AS cosine,
       ts_rank(tsv, plainto_tsquery(${args.lang}::regconfig, ${args.topic})) AS bm25
     FROM rag_chunks
-    WHERE (chunk_meta->>'grade_min')::int <= ${args.grade}
-      AND (chunk_meta->>'grade_max')::int >= ${args.grade}
+    WHERE (chunk_meta->>'grade_min' IS NULL OR (chunk_meta->>'grade_min')::int <= ${args.grade})
+      AND (chunk_meta->>'grade_max' IS NULL OR (chunk_meta->>'grade_max')::int >= ${args.grade})
       ${dirFilter}
       ${typeFilter}
     ORDER BY (embedding <=> ${vec}::vector) ASC
@@ -98,7 +98,11 @@ export async function retrieveChunks(
     limit: d.candidates,
   }
 
-  const rows = await d.queryCandidates({ ...base, direction: query.direction, lessonType: query.lessonType })
+  const rows = await d.queryCandidates({
+    ...base,
+    direction: query.direction,
+    lessonType: query.lessonType,
+  })
 
   const ranked = rankAndDiversify(
     rows.map((r) => ({

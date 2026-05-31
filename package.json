@@ -19,6 +19,7 @@
     "gen:seed": "NODE_OPTIONS=--use-system-ca tsx scripts/gen-seed.ts",
     "ingest:seed": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-seed.ts",
     "ingest:razgovor": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-razgovor.ts",
+    "ingest:materials": "NODE_OPTIONS=--use-system-ca tsx scripts/ingest-materials.ts",
     "calibrate": "NODE_OPTIONS=--use-system-ca tsx scripts/calibrate-threshold.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "seed:shared": "NODE_OPTIONS=--use-system-ca tsx scripts/seed-shared.ts",
