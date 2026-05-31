@@ -333,102 +333,166 @@ export function ScenarioEditor({
         <CardHeader>
           <CardTitle>Метапредметные результаты (УУД)</CardTitle>
           <p className="text-sm text-neutral-500">
-            Универсальные учебные действия: познавательные, коммуникативные, регулятивные.
+            Универсальные учебные действия по ФГОС {levelLabel(gradeToLevel(meta.grade))}: три
+            группы.
           </p>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {(content.metaResults ?? []).map((r, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
-            <div key={`mr-${i}`} className="flex gap-2">
-              <Textarea
-                value={r}
-                onChange={(e) =>
-                  update((c) => {
-                    const metaResults = (c.metaResults ?? []).slice()
-                    metaResults[i] = e.target.value
-                    return { ...c, metaResults }
-                  })
-                }
-                rows={2}
-                className="flex-1"
-                aria-label={`Метапредметный результат ${i + 1}`}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update((c) => ({
-                    ...c,
-                    metaResults: (c.metaResults ?? []).filter((_, k) => k !== i),
-                  }))
-                }
-                aria-label="Удалить метапредметный результат"
-              >
-                ✕
-              </Button>
+        <CardContent className="space-y-5">
+          {(
+            [
+              { key: 'cognitive', label: 'Познавательные УУД' },
+              { key: 'communicative', label: 'Коммуникативные УУД' },
+              { key: 'regulatory', label: 'Регулятивные УУД' },
+            ] as const
+          ).map((group) => {
+            const items = content.metaSubjectResults?.[group.key] ?? []
+            return (
+              <div key={group.key} className="space-y-2">
+                <div className="text-sm font-medium text-neutral-700">{group.label}</div>
+                {items.map((r, i) => (
+                  <div key={`${group.key}-${i}`} className="flex gap-2">
+                    <Textarea
+                      value={r}
+                      onChange={(e) =>
+                        update((c) => {
+                          const msr = { ...(c.metaSubjectResults ?? {}) }
+                          const arr = (msr[group.key] ?? []).slice()
+                          arr[i] = e.target.value
+                          msr[group.key] = arr
+                          return { ...c, metaSubjectResults: msr }
+                        })
+                      }
+                      rows={2}
+                      className="flex-1"
+                      aria-label={`${group.label} ${i + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        update((c) => {
+                          const msr = { ...(c.metaSubjectResults ?? {}) }
+                          msr[group.key] = (msr[group.key] ?? []).filter((_, k) => k !== i)
+                          return { ...c, metaSubjectResults: msr }
+                        })
+                      }
+                      aria-label={`Удалить: ${group.label.toLowerCase()}`}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update((c) => {
+                      const msr = { ...(c.metaSubjectResults ?? {}) }
+                      msr[group.key] = [...(msr[group.key] ?? []), '']
+                      return { ...c, metaSubjectResults: msr }
+                    })
+                  }
+                >
+                  + Добавить
+                </Button>
+              </div>
+            )
+          })}
+          {content.metaResults && content.metaResults.length > 0 ? (
+            <div className="space-y-2 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+              <div className="text-xs text-neutral-600">
+                Из старой версии сценария (плоский список). Перенесите в нужные группы выше и
+                удалите.
+              </div>
+              {content.metaResults.map((r, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+                <div key={`legacy-mr-${i}`} className="flex gap-2">
+                  <Textarea
+                    value={r}
+                    onChange={(e) =>
+                      update((c) => {
+                        const metaResults = (c.metaResults ?? []).slice()
+                        metaResults[i] = e.target.value
+                        return { ...c, metaResults }
+                      })
+                    }
+                    rows={2}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      update((c) => ({
+                        ...c,
+                        metaResults: (c.metaResults ?? []).filter((_, k) => k !== i),
+                      }))
+                    }
+                    aria-label="Удалить устаревший пункт"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ))}
             </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => update((c) => ({ ...c, metaResults: [...(c.metaResults ?? []), ''] }))}
-          >
-            + Добавить
-          </Button>
+          ) : null}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Планируемые предметные результаты</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {(content.subjectResults ?? []).map((r, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
-            <div key={`sr-${i}`} className="flex gap-2">
-              <Textarea
-                value={r}
-                onChange={(e) =>
-                  update((c) => {
-                    const subjectResults = (c.subjectResults ?? []).slice()
-                    subjectResults[i] = e.target.value
-                    return { ...c, subjectResults }
-                  })
-                }
-                rows={2}
-                className="flex-1"
-                aria-label={`Предметный результат ${i + 1}`}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update((c) => ({
-                    ...c,
-                    subjectResults: (c.subjectResults ?? []).filter((_, k) => k !== i),
-                  }))
-                }
-                aria-label="Удалить предметный результат"
-              >
-                ✕
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              update((c) => ({ ...c, subjectResults: [...(c.subjectResults ?? []), ''] }))
-            }
-          >
-            + Добавить
-          </Button>
-        </CardContent>
-      </Card>
+      {meta.lessonType !== 'rov' && meta.lessonType !== 'event' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Планируемые предметные результаты</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(content.subjectResults ?? []).map((r, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
+              <div key={`sr-${i}`} className="flex gap-2">
+                <Textarea
+                  value={r}
+                  onChange={(e) =>
+                    update((c) => {
+                      const subjectResults = (c.subjectResults ?? []).slice()
+                      subjectResults[i] = e.target.value
+                      return { ...c, subjectResults }
+                    })
+                  }
+                  rows={2}
+                  className="flex-1"
+                  aria-label={`Предметный результат ${i + 1}`}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update((c) => ({
+                      ...c,
+                      subjectResults: (c.subjectResults ?? []).filter((_, k) => k !== i),
+                    }))
+                  }
+                  aria-label="Удалить предметный результат"
+                >
+                  ✕
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                update((c) => ({ ...c, subjectResults: [...(c.subjectResults ?? []), ''] }))
+              }
+            >
+              + Добавить
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>
