@@ -9,6 +9,7 @@ export type RetrieveQuery = {
   grade: number
   topic: string
   lang?: string
+  lessonType?: string
 }
 
 export type RetrievedChunk = {
@@ -32,6 +33,7 @@ type QueryArgs = {
   lang: string
   direction: string | null
   limit: number
+  lessonType?: string
 }
 
 export type RetrieveDeps = {
@@ -47,6 +49,9 @@ async function queryCandidatesLive(args: QueryArgs): Promise<CandidateRow[]> {
   const dirFilter = args.direction
     ? sql`AND (chunk_meta->>'direction' = ${args.direction} OR chunk_meta->>'direction' IS NULL)`
     : sql``
+  const typeFilter = args.lessonType
+    ? sql`AND (chunk_meta->>'lesson_type' = ${args.lessonType} OR chunk_meta->>'lesson_type' IS NULL)`
+    : sql``
   const rows = await db.execute(sql`
     SELECT
       id,
@@ -59,6 +64,7 @@ async function queryCandidatesLive(args: QueryArgs): Promise<CandidateRow[]> {
     WHERE (chunk_meta->>'grade_min')::int <= ${args.grade}
       AND (chunk_meta->>'grade_max')::int >= ${args.grade}
       ${dirFilter}
+      ${typeFilter}
     ORDER BY (embedding <=> ${vec}::vector) ASC
     LIMIT ${args.limit}
   `)
@@ -92,7 +98,7 @@ export async function retrieveChunks(
     limit: d.candidates,
   }
 
-  const rows = await d.queryCandidates({ ...base, direction: query.direction })
+  const rows = await d.queryCandidates({ ...base, direction: query.direction, lessonType: query.lessonType })
 
   const ranked = rankAndDiversify(
     rows.map((r) => ({

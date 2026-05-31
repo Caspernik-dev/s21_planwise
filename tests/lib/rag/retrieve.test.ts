@@ -39,4 +39,16 @@ describe('retrieveChunks', () => {
     expect(queryCandidates).toHaveBeenCalledTimes(1)
     expect(out.length).toBe(2)
   })
+
+  it('передаёт lessonType в queryCandidates', async () => {
+    const embed = vi.fn(async () => [[0.1]])
+    const queryCandidates = vi.fn(async () => [row('1', 'A', 0.9, 5)])
+    await retrieveChunks(
+      { direction: null, grade: 5, topic: 'робототехника', lang: 'russian', lessonType: 'krujok' },
+      { embed, queryCandidates, topK: 3, maxPerDoc: 2, candidates: 24 },
+    )
+    expect(queryCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ lessonType: 'krujok' }),
+    )
+  })
 })

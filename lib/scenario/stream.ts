@@ -54,6 +54,7 @@ type RetrieveFn = (q: {
   direction: string | null
   grade: number
   topic: string
+  lessonType?: string
 }) => Promise<Array<{ id: string; chunkText: string; documentTitle: string; sectionKind: string }>>
 
 export type StreamDeps = {
@@ -117,6 +118,7 @@ export async function* streamScenario(
         direction: input.direction ?? null,
         grade: input.grade,
         topic: input.topic,
+        lessonType: input.lessonType,
       })
       ragChunks = found.map((c) => ({
         text: c.chunkText,
