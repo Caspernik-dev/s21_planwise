@@ -82,7 +82,7 @@ export function rovLessonNumber(date: string): number | null {
   const diffMs = d.getTime() - firstMonday.getTime()
   if (diffMs < 0) return null
 
-  const weekIndex = Math.round(diffMs / 86_400_000 / 7)
+  const weekIndex = Math.floor(diffMs / 86_400_000 / 7)
   const lessonNumber = weekIndex + 1
   return lessonNumber >= 1 && lessonNumber <= 34 ? lessonNumber : null
 }
