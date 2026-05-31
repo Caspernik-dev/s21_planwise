@@ -266,6 +266,48 @@ describe('generationInputSchema — lessonType', () => {
   })
 })
 
+describe('generationInputSchema — lessonDate (РоВ понедельник)', () => {
+  const base = {
+    lessonType: 'rov' as const,
+    direction: 'Патриотическое' as const,
+    grade: 6,
+    topic: 'День народного единства',
+    durationMin: 30,
+    format: 'беседа',
+  }
+
+  it('rov + lessonDate понедельник 2026-09-07 → ok', () => {
+    const r = generationInputSchema.safeParse({ ...base, lessonDate: '2026-09-07' })
+    expect(r.success).toBe(true)
+  })
+
+  it('rov + lessonDate вторник 2026-09-08 → ошибка на lessonDate', () => {
+    const r = generationInputSchema.safeParse({ ...base, lessonDate: '2026-09-08' })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.includes('lessonDate'))).toBe(true)
+      expect(r.error.issues.some((i) => i.message.includes('понедельник'))).toBe(true)
+    }
+  })
+
+  it('rov без lessonDate → ok (поле опциональное)', () => {
+    const r = generationInputSchema.safeParse(base)
+    expect(r.success).toBe(true)
+  })
+
+  it('krujok + lessonDate вторник 2026-09-08 → ok (проверка только для rov)', () => {
+    const r = generationInputSchema.safeParse({
+      lessonType: 'krujok',
+      grade: 6,
+      topic: 'Робототехника',
+      durationMin: 30,
+      format: 'беседа',
+      lessonDate: '2026-09-08',
+    })
+    expect(r.success).toBe(true)
+  })
+})
+
 describe('scenarioContentSchema — новые опц. поля', () => {
   const baseContent = {
     title: 'X',

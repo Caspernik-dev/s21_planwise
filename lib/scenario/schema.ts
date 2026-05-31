@@ -8,6 +8,8 @@ import {
   SPO_GRADE,
   formatGrade,
 } from './options'
+import { isMonday } from './rov-date'
+import { VALUES_809 } from './values-809'
 
 export const activitySchema = z.object({
   type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
@@ -37,6 +39,21 @@ export const scenarioContentSchema = z.object({
       regulatory: z.array(z.string().min(1)).max(3).optional(),
     })
     .optional(),
+  lessonDate: z.string().optional(),
+  leadingValue: z.enum(VALUES_809 as unknown as [string, ...string[]]).optional(),
+  secondaryValues: z
+    .array(z.enum(VALUES_809 as unknown as [string, ...string[]]))
+    .max(3)
+    .optional(),
+  valueFormulations: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        basedOn: z.enum(VALUES_809 as unknown as [string, ...string[]]),
+      }),
+    )
+    .max(8)
+    .optional(),
   metaResults: z.array(z.string().min(1)).max(10).optional(),
   subjectResults: z.array(z.string().min(1)).max(10).optional(),
   subject: z.string().min(1).max(80).optional(),
@@ -62,6 +79,7 @@ export const generationInputSchema = z
     topic: z.string().trim().min(1, 'Укажите тему').max(200),
     durationMin: z.coerce.number().int().min(5).max(120),
     format: z.enum(FORMATS),
+    lessonDate: z.string().optional(),
     userMaterial: z.string().max(20_000).optional(),
   })
   .superRefine((data, ctx) => {
@@ -91,6 +109,13 @@ export const generationInputSchema = z
         code: 'custom',
         path: ['literacyKind'],
         message: 'Выберите вид функциональной грамотности.',
+      })
+    }
+    if (data.lessonType === 'rov' && data.lessonDate !== undefined && !isMonday(data.lessonDate)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['lessonDate'],
+        message: 'Дата проведения РоВ — только понедельник.',
       })
     }
   })
@@ -126,6 +151,12 @@ export const skeletonSchema = z.object({
     .optional(),
   metaResults: z.array(z.string()).optional(),
   subjectResults: z.array(z.string()).optional(),
+  lessonDate: z.string().optional(),
+  leadingValue: z.string().optional(),
+  secondaryValues: z.array(z.string()).optional(),
+  valueFormulations: z
+    .array(z.object({ text: z.string(), basedOn: z.string() }).partial())
+    .optional(),
   materials: z.array(z.string()).optional(),
   // адаптации в каркасе мягкие: модель часто шлёт {} или частичный объект; недостающие
   // поля доводятся дефолтами при сборке (см. stream.ts). Строгая проверка — на финальном
