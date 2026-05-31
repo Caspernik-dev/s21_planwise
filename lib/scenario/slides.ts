@@ -30,8 +30,19 @@ export function buildSlides(content: ScenarioContent, meta: SlideMeta): Slide[] 
     durationMin: stage.duration_min,
     blocks: stage.activities.map((activity) => {
       const typeLabel = ACTIVITY_TYPE_LABEL[activity.type] ?? activity.type
+      // Для video-активности с videoSearchQuery — отдельный буллет с поисковым запросом
+      // под существующими вопросами/текстом. Учителю видно, что искать, прямо в показе.
+      const rutubeBullet =
+        activity.type === 'video' && activity.videoSearchQuery
+          ? `🔍 RuTube: ${activity.videoSearchQuery}`
+          : null
+
       if (activity.questions && activity.questions.length > 0) {
-        return { typeLabel, questions: activity.questions }
+        const questions = rutubeBullet ? [...activity.questions, rutubeBullet] : activity.questions
+        return { typeLabel, questions }
+      }
+      if (rutubeBullet) {
+        return { typeLabel, questions: [rutubeBullet], text: activity.text }
       }
       return { typeLabel, text: activity.text }
     }),
