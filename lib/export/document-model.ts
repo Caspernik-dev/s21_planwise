@@ -7,6 +7,7 @@ import {
   literacyKindLabel,
 } from '@/lib/scenario/options'
 import { formatLessonDateRu, isMonday, rovLessonNumber } from '@/lib/scenario/rov-date'
+import { buildSearchUrl } from '@/lib/scenario/rutube'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export type ExportMeta = {
@@ -23,6 +24,7 @@ export type DocBlock =
   | { type: 'paragraph'; text: string }
   | { type: 'bullets'; items: string[] }
   | { type: 'metaTable'; rows: { label: string; value: string }[] }
+  | { type: 'videoLink'; query: string; url: string }
 
 const FORM_LABEL: Record<string, string> = {
   беседа: 'беседа с элементами дискуссии',
@@ -182,6 +184,13 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
       blocks.push({ type: 'paragraph', text: `${label}. ${act.text}` })
       if (act.questions && act.questions.length > 0) {
         blocks.push({ type: 'bullets', items: act.questions })
+      }
+      if (act.type === 'video' && act.videoSearchQuery) {
+        blocks.push({
+          type: 'videoLink',
+          query: act.videoSearchQuery,
+          url: buildSearchUrl(act.videoSearchQuery),
+        })
       }
     }
   }
