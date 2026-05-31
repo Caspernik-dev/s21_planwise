@@ -603,11 +603,11 @@ export function ScenarioEditor({
               onChange={(e) => {
                 const v = e.target.value
                 if (!v) {
-                  setContent((c) => ({ ...c, lessonDate: undefined }))
+                  update((c) => ({ ...c, lessonDate: undefined }))
                   return
                 }
                 const snap = isMonday(v) ? v : nearestMonday(v)
-                setContent((c) => ({ ...c, lessonDate: snap }))
+                update((c) => ({ ...c, lessonDate: snap }))
               }}
               className="flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
             />
@@ -625,7 +625,7 @@ export function ScenarioEditor({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setContent((c) => ({ ...c, lessonDate: undefined }))}
+                onClick={() => update((c) => ({ ...c, lessonDate: undefined }))}
               >
                 Очистить
               </Button>
@@ -653,7 +653,7 @@ export function ScenarioEditor({
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      setContent((c) => {
+                      update((c) => {
                         const fallback: Value809 =
                           (DIRECTION_TO_LEADING_VALUE as Record<string, Value809>)[
                             meta.direction
@@ -682,7 +682,7 @@ export function ScenarioEditor({
                 id="leadingValue"
                 value={content.leadingValue ?? ''}
                 onChange={(e) =>
-                  setContent((c) => ({ ...c, leadingValue: e.target.value || undefined }))
+                  update((c) => ({ ...c, leadingValue: e.target.value || undefined }))
                 }
                 className="flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
               >
@@ -709,7 +709,7 @@ export function ScenarioEditor({
                       key={i}
                       value={current}
                       onChange={(e) => {
-                        setContent((c) => {
+                        update((c) => {
                           const next = [...(c.secondaryValues ?? [])]
                           const val = e.target.value
                           if (!val) {
@@ -750,7 +750,7 @@ export function ScenarioEditor({
                       placeholder="живая формулировка"
                       value={f.text}
                       onChange={(e) =>
-                        setContent((c) => {
+                        update((c) => {
                           const arr = [...(c.valueFormulations ?? [])]
                           arr[i] = { ...arr[i], text: e.target.value }
                           return { ...c, valueFormulations: arr }
@@ -760,7 +760,7 @@ export function ScenarioEditor({
                     <select
                       value={f.basedOn}
                       onChange={(e) =>
-                        setContent((c) => {
+                        update((c) => {
                           const arr = [...(c.valueFormulations ?? [])]
                           arr[i] = { ...arr[i], basedOn: e.target.value as Value809 }
                           return { ...c, valueFormulations: arr }
@@ -778,7 +778,7 @@ export function ScenarioEditor({
                       type="button"
                       variant="ghost"
                       onClick={() =>
-                        setContent((c) => ({
+                        update((c) => ({
                           ...c,
                           valueFormulations: (c.valueFormulations ?? []).filter((_, j) => j !== i),
                         }))
@@ -793,7 +793,7 @@ export function ScenarioEditor({
                     type="button"
                     variant="outline"
                     onClick={() =>
-                      setContent((c) => ({
+                      update((c) => ({
                         ...c,
                         valueFormulations: [
                           ...(c.valueFormulations ?? []),
