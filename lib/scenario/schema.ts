@@ -15,6 +15,9 @@ export const activitySchema = z.object({
   type: z.enum(['discussion', 'quiz', 'game', 'task', 'video']),
   text: z.string().min(1),
   questions: z.array(z.string().min(1)).optional(),
+  // Поисковой запрос на RuTube для type:'video'. Не URL, не название ролика — 3-5 ключевых слов.
+  // Санитизация и fallback — в lib/scenario/rutube.ts.
+  videoSearchQuery: z.string().min(1).max(120).optional(),
 })
 
 export const stageSchema = z.object({

@@ -87,4 +87,86 @@ describe('buildSlides', () => {
       expect(block.questions).toBeUndefined()
     }
   })
+
+  it('video с videoSearchQuery → буллет «🔍 RuTube: {query}» добавляется в конец questions', () => {
+    const c: ScenarioContent = {
+      ...content,
+      stages: [
+        {
+          kind: 'engage',
+          title: 'Видеовход',
+          duration_min: 5,
+          activities: [
+            {
+              type: 'video',
+              text: 'Учитель показывает ролик.',
+              questions: ['Что увидели?', 'Что важно?'],
+              videoSearchQuery: 'Дружба школьники',
+            },
+          ],
+        },
+      ],
+    }
+    const slides = buildSlides(c, meta)
+    const stage = slides[1]
+    if (stage.kind === 'stage') {
+      const block = stage.blocks[0]
+      expect(block.questions).toEqual(['Что увидели?', 'Что важно?', '🔍 RuTube: Дружба школьники'])
+    }
+  })
+
+  it('video без questions с videoSearchQuery → буллет создаётся единственным вместо text', () => {
+    const c: ScenarioContent = {
+      ...content,
+      stages: [
+        {
+          kind: 'engage',
+          title: 'Видеовход',
+          duration_min: 5,
+          activities: [
+            {
+              type: 'video',
+              text: 'Учитель показывает ролик.',
+              videoSearchQuery: 'Дружба школьники',
+            },
+          ],
+        },
+      ],
+    }
+    const slides = buildSlides(c, meta)
+    const stage = slides[1]
+    if (stage.kind === 'stage') {
+      const block = stage.blocks[0]
+      expect(block.questions).toEqual(['🔍 RuTube: Дружба школьники'])
+      expect(block.text).toBe('Учитель показывает ролик.')
+    }
+  })
+
+  it('non-video активность с videoSearchQuery → не добавляет буллет', () => {
+    const c: ScenarioContent = {
+      ...content,
+      stages: [
+        {
+          kind: 'engage',
+          title: 'Обсуждение',
+          duration_min: 5,
+          activities: [
+            {
+              type: 'discussion',
+              text: '...',
+              questions: ['Вопрос?'],
+              // posited videoSearchQuery (should be ignored for non-video)
+              videoSearchQuery: 'foo',
+            },
+          ],
+        },
+      ],
+    }
+    const slides = buildSlides(c, meta)
+    const stage = slides[1]
+    if (stage.kind === 'stage') {
+      const block = stage.blocks[0]
+      expect(block.questions).toEqual(['Вопрос?'])
+    }
+  })
 })

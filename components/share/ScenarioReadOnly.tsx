@@ -36,6 +36,17 @@ export function ScenarioReadOnly({ blocks }: { blocks: DocBlock[] }) {
             </ul>
           )
         }
+        if (b.type === 'videoLink') {
+          return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static non-reordered render
+            <p key={i} className="text-sm text-brand-700">
+              Поиск видео:{' '}
+              <a href={b.url} target="_blank" rel="noopener noreferrer" className="underline">
+                {b.query}
+              </a>
+            </p>
+          )
+        }
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: static non-reordered render
           <div key={i} className="flex flex-wrap gap-2">

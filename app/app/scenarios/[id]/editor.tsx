@@ -33,6 +33,7 @@ import {
   nearestMonday,
   rovLessonNumber,
 } from '@/lib/scenario/rov-date'
+import { buildSearchUrl } from '@/lib/scenario/rutube'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 import { DIRECTION_TO_LEADING_VALUE, VALUES_809, type Value809 } from '@/lib/scenario/values-809'
 import Link from 'next/link'
@@ -1009,6 +1010,32 @@ export function ScenarioEditor({
                             aria-label="Вопрос"
                           />
                         ))}
+                      </div>
+                    )}
+                    {a.type === 'video' && (
+                      <div className="mt-2 space-y-1.5 rounded-md bg-brand-50 p-3 ring-1 ring-brand-100">
+                        <Label htmlFor={`videoQuery-${si}-${ai}`}>Поисковой запрос на RuTube</Label>
+                        <Input
+                          id={`videoQuery-${si}-${ai}`}
+                          placeholder="3-5 ключевых слов: «Дружба школьники мультфильм»"
+                          value={a.videoSearchQuery ?? ''}
+                          onChange={(e) =>
+                            setActivity(si, ai, {
+                              videoSearchQuery: e.target.value || undefined,
+                            })
+                          }
+                          aria-label="Поисковой запрос на RuTube"
+                        />
+                        {a.videoSearchQuery && a.videoSearchQuery.trim() !== '' && (
+                          <a
+                            href={buildSearchUrl(a.videoSearchQuery)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-brand-700 underline hover:text-brand-800"
+                          >
+                            🔍 Открыть на RuTube
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>

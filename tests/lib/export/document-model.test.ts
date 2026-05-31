@@ -493,3 +493,54 @@ describe('buildScenarioDocument — РоВ-compliance fields', () => {
     ).toBe(false)
   })
 })
+
+describe('buildScenarioDocument — videoLink', () => {
+  it('video с videoSearchQuery даёт videoLink после paragraph активности', () => {
+    const doc = buildScenarioDocument(
+      {
+        ...rovContent,
+        stages: [
+          {
+            kind: 'engage',
+            title: 'Вход',
+            duration_min: 5,
+            activities: [
+              { type: 'video', text: 'Посмотрите ролик', videoSearchQuery: 'Дружба школьники' },
+            ],
+          },
+        ],
+      },
+      rovMeta,
+    )
+    const paraIdx = doc.findIndex(
+      (b) => b.type === 'paragraph' && b.text.includes('Посмотрите ролик'),
+    )
+    expect(paraIdx).toBeGreaterThan(-1)
+    const next = doc[paraIdx + 1]
+    expect(next.type).toBe('videoLink')
+    if (next.type === 'videoLink') {
+      expect(next.query).toBe('Дружба школьники')
+      expect(next.url).toBe(
+        'https://rutube.ru/search/?query=%D0%94%D1%80%D1%83%D0%B6%D0%B1%D0%B0%20%D1%88%D0%BA%D0%BE%D0%BB%D1%8C%D0%BD%D0%B8%D0%BA%D0%B8',
+      )
+    }
+  })
+
+  it('video без videoSearchQuery НЕ даёт videoLink', () => {
+    const doc = buildScenarioDocument(
+      {
+        ...rovContent,
+        stages: [
+          {
+            kind: 'engage',
+            title: 'Вход',
+            duration_min: 5,
+            activities: [{ type: 'video', text: 'Посмотрите ролик' }],
+          },
+        ],
+      },
+      rovMeta,
+    )
+    expect(doc.some((b) => b.type === 'videoLink')).toBe(false)
+  })
+})

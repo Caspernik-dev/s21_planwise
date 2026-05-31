@@ -254,7 +254,14 @@ export async function* streamScenario(
         input.userMaterial ?? '',
       )
 
-      const r = await generateBlockWithGate(chat, msgs, st.kind, { lessonType: input.lessonType })
+      const r = await generateBlockWithGate(chat, msgs, st.kind, {
+        lessonType: input.lessonType,
+        videoCtx: {
+          topic: input.topic,
+          direction: input.direction,
+          leadingValue: skeleton.leadingValue,
+        },
+      })
       if (!r) throw new Error(`Не удалось сгенерировать блок «${brief.focus}»`)
       if (r.repaired) repaired = true
       if (!r.accepted) thinBlocks++

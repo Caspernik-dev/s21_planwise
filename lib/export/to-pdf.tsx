@@ -5,6 +5,7 @@ import {
   Font,
   G,
   Image,
+  Link,
   Page,
   Path,
   StyleSheet,
@@ -14,6 +15,7 @@ import {
   renderToBuffer,
 } from '@react-pdf/renderer'
 import { type DocBlock, type ExportMeta, buildScenarioDocument } from './document-model'
+import { renderQrDataUrl } from './qr'
 
 let fontsRegistered = false
 function ensureFonts() {
@@ -113,6 +115,23 @@ const styles = StyleSheet.create({
   promoFlow: { width: PROMO_W, height: PROMO_H, marginTop: 22 },
   // Финал: пришпилено к низу последней страницы над футером (Image → без бага глифов).
   promoPinned: { position: 'absolute', bottom: 44, left: 48, width: PROMO_W, height: PROMO_H },
+  // Карточка ссылки на поиск RuTube под video-активностью: brand-50 фон, brand-700 акцент.
+  videoLinkCard: {
+    flexDirection: 'row',
+    backgroundColor: c.brand50,
+    borderLeftWidth: 3,
+    borderLeftColor: c.brand700,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginTop: 6,
+    marginBottom: 10,
+    borderRadius: 4,
+  },
+  videoLinkText: { flex: 1, marginRight: 8 },
+  videoLinkTitle: { fontSize: 10, fontWeight: 'bold', color: c.brand700, marginBottom: 3 },
+  videoLinkQuery: { fontSize: 10, color: c.neutral800, marginBottom: 3 },
+  videoLinkUrl: { fontSize: 8, color: c.brand700 },
+  videoLinkQr: { width: 64, height: 64 },
 })
 
 function LogoMark() {
@@ -132,7 +151,7 @@ function LogoMark() {
   )
 }
 
-function renderBlock(b: DocBlock, i: number) {
+function renderBlock(b: DocBlock, i: number, qrByUrl?: Map<string, string>) {
   switch (b.type) {
     case 'heading':
       if (b.level === 1) {
@@ -178,6 +197,21 @@ function renderBlock(b: DocBlock, i: number) {
           ))}
         </View>
       )
+    case 'videoLink': {
+      const qr = qrByUrl?.get(b.url)
+      return (
+        <View key={i} style={styles.videoLinkCard} wrap={false}>
+          <View style={styles.videoLinkText}>
+            <Text style={styles.videoLinkTitle}>🔍 Поиск на RuTube</Text>
+            <Text style={styles.videoLinkQuery}>{b.query}</Text>
+            <Link src={b.url} style={styles.videoLinkUrl}>
+              {b.url}
+            </Link>
+          </View>
+          {qr && <Image src={qr} style={styles.videoLinkQr} />}
+        </View>
+      )
+    }
   }
 }
 
@@ -191,7 +225,13 @@ export function ScenarioPdf({
   content,
   meta,
   promo = 'pinned',
-}: { content: ScenarioContent; meta: ExportMeta; promo?: PromoMode }) {
+  qrByUrl,
+}: {
+  content: ScenarioContent
+  meta: ExportMeta
+  promo?: PromoMode
+  qrByUrl?: Map<string, string>
+}) {
   const allBlocks = buildScenarioDocument(content, meta)
   // Дисклеймер об ИИ выносим в фирменный футер (он есть на каждой странице).
   const disclaimer = allBlocks.find(
@@ -213,7 +253,7 @@ export function ScenarioPdf({
             <Text style={styles.tagline}>Сценарий внеурочного занятия</Text>
           </View>
         </View>
-        {blocks.map(renderBlock)}
+        {blocks.map((b, i) => renderBlock(b, i, qrByUrl))}
         {promo === 'flow' && <Image src={PROMO_PATH} style={styles.promoFlow} />}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>{disclaimerText}</Text>
@@ -237,17 +277,30 @@ export async function renderScenarioPdf(
   meta: ExportMeta,
 ): Promise<Buffer> {
   ensureFonts()
+
+  // Pre-render QR для всех videoLink блоков один раз: react-pdf требует синхронный
+  // src в <Image>, поэтому собираем dataUrl-ы заранее и прокидываем как Map.
+  const allBlocks = buildScenarioDocument(content, meta)
+  const qrByUrl = new Map<string, string>()
+  for (const b of allBlocks) {
+    if (b.type === 'videoLink' && !qrByUrl.has(b.url)) {
+      qrByUrl.set(b.url, await renderQrDataUrl(b.url, 160))
+    }
+  }
+
   const withoutPromo = await renderToBuffer(
-    <ScenarioPdf content={content} meta={meta} promo="none" />,
+    <ScenarioPdf content={content} meta={meta} promo="none" qrByUrl={qrByUrl} />,
   )
   // Промо добавляем, только если оно влезает на последнюю страницу без новой:
   // сравниваем число страниц «как есть» и «с промо в потоке».
   const withFlowPromo = await renderToBuffer(
-    <ScenarioPdf content={content} meta={meta} promo="flow" />,
+    <ScenarioPdf content={content} meta={meta} promo="flow" qrByUrl={qrByUrl} />,
   )
   if (countPages(withFlowPromo) !== countPages(withoutPromo)) {
     return withoutPromo
   }
   // Влезает → финальный рендер с картинкой, пришпиленной к низу последней страницы.
-  return renderToBuffer(<ScenarioPdf content={content} meta={meta} promo="pinned" />)
+  return renderToBuffer(
+    <ScenarioPdf content={content} meta={meta} promo="pinned" qrByUrl={qrByUrl} />,
+  )
 }

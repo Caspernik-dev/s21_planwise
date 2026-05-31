@@ -37,6 +37,11 @@ export async function regenerateActivity(
   )
   const res = await generateBlockWithGate(chat, msgs, args.stage.kind, {
     lessonType: args.input.lessonType,
+    videoCtx: {
+      topic: args.input.topic,
+      direction: args.input.direction,
+      leadingValue: args.skeleton.leadingValue,
+    },
   })
   if (!res) throw new Error('GigaChat вернул невалидный блок при регенерации')
   return { ...res.value, type: coerceActivityType(args.targetType) as Activity['type'] }
