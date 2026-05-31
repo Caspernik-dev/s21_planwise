@@ -121,7 +121,8 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
     }
   }
 
-  if (content.metaResults && content.metaResults.length > 0) {
+  // metaResults — fallback для старых сценариев без каталожных metaSubjectResults
+  if (!content.metaSubjectResults && content.metaResults && content.metaResults.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Планируемые метапредметные результаты' })
     blocks.push({ type: 'bullets', items: content.metaResults })
   }
