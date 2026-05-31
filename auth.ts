@@ -85,7 +85,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .where(eq(users.id, token.id as string))
           .limit(1)
         if (!row) return null
-        if (row.pv !== (token.passwordVersion as number)) return null
+        const tokenPv = token.passwordVersion as number | undefined
+        if (tokenPv === undefined) {
+          // legacy-токен (выдан до того, как passwordVersion попал в JWT) — бэкфилл, не инвалидируем
+          token.passwordVersion = row.pv
+        } else if (row.pv !== tokenPv) {
+          return null
+        }
         token.emailVerified = row.ev ? row.ev.toISOString() : null
         token.pvCheckedAt = nowSec
       }
