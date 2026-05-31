@@ -23,6 +23,22 @@ export type DocBlock =
   | { type: 'bullets'; items: string[] }
   | { type: 'metaTable'; rows: { label: string; value: string }[] }
 
+const FORM_LABEL: Record<string, string> = {
+  беседа: 'беседа с элементами дискуссии',
+  игра: 'дидактическая игра',
+  'мастер-класс': 'практикум / мастер-класс',
+  дебаты: 'групповая дискуссия / дебаты',
+  'проектная сессия': 'проектная деятельность',
+  киноклуб: 'просмотр и обсуждение',
+  исследование: 'исследовательская деятельность',
+  лаборатория: 'лабораторная работа',
+  эксперимент: 'практический эксперимент',
+}
+
+function deriveFormLabel(format: string): string {
+  return FORM_LABEL[format.toLowerCase()] ?? format
+}
+
 export const ACTIVITY_TYPE_LABEL: Record<string, string> = {
   discussion: 'Обсуждение',
   quiz: 'Викторина',
@@ -59,6 +75,7 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
     { label: 'Класс / уровень', value: audience },
     { label: 'Длительность', value: `${meta.durationMin} мин` },
     { label: 'Формат', value: meta.format },
+    { label: 'Форма проведения', value: deriveFormLabel(meta.format) },
     { label: 'Цель занятия', value: goalValue },
   ]
   if (content.values && content.values.length > 0) {
@@ -80,6 +97,28 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   if (content.personalResults && content.personalResults.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Планируемые личностные результаты' })
     blocks.push({ type: 'bullets', items: content.personalResults })
+  }
+
+  if (
+    content.metaSubjectResults &&
+    (content.metaSubjectResults.cognitive?.length ||
+      content.metaSubjectResults.communicative?.length ||
+      content.metaSubjectResults.regulatory?.length)
+  ) {
+    blocks.push({ type: 'heading', level: 2, text: 'Планируемые метапредметные результаты' })
+    const msr = content.metaSubjectResults
+    if (msr.cognitive?.length) {
+      blocks.push({ type: 'paragraph', text: 'Познавательные УУД:' })
+      blocks.push({ type: 'bullets', items: msr.cognitive })
+    }
+    if (msr.communicative?.length) {
+      blocks.push({ type: 'paragraph', text: 'Коммуникативные УУД:' })
+      blocks.push({ type: 'bullets', items: msr.communicative })
+    }
+    if (msr.regulatory?.length) {
+      blocks.push({ type: 'paragraph', text: 'Регулятивные УУД:' })
+      blocks.push({ type: 'bullets', items: msr.regulatory })
+    }
   }
 
   if (content.metaResults && content.metaResults.length > 0) {
