@@ -1,3 +1,5 @@
+import { gradeToLevel } from '../levels'
+import { buildMetaCatalogSection, getMetaCatalog } from '../meta-results'
 import { type LiteracyKind, formatGradeForPrompt, literacyKindLabel } from '../options'
 import type { GenerationInput, ScenarioSkeleton } from '../schema'
 import {
@@ -12,7 +14,7 @@ import type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt } from './s
 
 export type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt }
 
-export const PROMPT_VERSION = 'v1-literacy-2026-05-30'
+export const PROMPT_VERSION = 'v10-uud-2026-05-31'
 
 function buildSystemPrompt(input: GenerationInput): string {
   return `Ты — методист функциональной грамотности. Занятие — практикум, не урок.
@@ -40,6 +42,11 @@ const SKELETON_HINT = `Верни JSON каркаса со структурой:
   "goals": string[],            // 2-3 цели — что научится делать / что узнает
   "materials": string[],
   "subjectResults": string[],   // ОБЯЗАТЕЛЬНО ≥2 пункта: что научились делать (конкретные формулируемые умения функциональной грамотности)
+  "metaSubjectResults": {
+    "cognitive": string[],   // 1-2 ДОСЛОВНЫХ из [META_RESULTS_CATALOG] Познавательные
+    "communicative": string[], // 1-2 ДОСЛОВНЫХ → Коммуникативные
+    "regulatory": string[]    // 1-2 ДОСЛОВНЫХ → Регулятивные
+  },
   "stages": [
     {
       "kind": "engage" | "main" | "reflection",
@@ -69,6 +76,9 @@ export function buildLiteracySkeletonMessages(
   sharedExamples: SharedExampleForPrompt[] = [],
   userMaterial = '',
 ): ChatMessage[] {
+  const metaCatalog = getMetaCatalog(gradeToLevel(input.grade))
+  const metaCatalogBlock = buildMetaCatalogSection(metaCatalog)
+
   const user = [
     'Построй каркас практикума функциональной грамотности:',
     `- Тема: ${input.topic}`,
@@ -79,6 +89,7 @@ export function buildLiteracySkeletonMessages(
     buildMaterialBlock(userMaterial),
     buildMethodologyBlock(ragChunks),
     buildGoodExamplesBlock(sharedExamples),
+    ...metaCatalogBlock,
     '',
     SKELETON_HINT,
   ]

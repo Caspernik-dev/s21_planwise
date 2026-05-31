@@ -1,3 +1,5 @@
+import { gradeToLevel } from '../levels'
+import { buildMetaCatalogSection, getMetaCatalog } from '../meta-results'
 import { formatGradeForPrompt } from '../options'
 import type { GenerationInput, ScenarioSkeleton } from '../schema'
 import {
@@ -12,7 +14,7 @@ import type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt } from './s
 
 export type { ChatMessage, RagChunkForPrompt, SharedExampleForPrompt }
 
-export const PROMPT_VERSION = 'v1-subject-2026-05-30'
+export const PROMPT_VERSION = 'v10-uud-2026-05-31'
 
 function buildSystemPrompt(input: GenerationInput): string {
   return `Ты — методист предметного внеурочного занятия. Занятие — углубление, опыт, проект или олимпиадная задача по школьному предмету.
@@ -40,6 +42,11 @@ const SKELETON_HINT = `Верни JSON каркаса со структурой:
   "goals": string[],             // 2-3 цели — что научится делать / что исследует / что откроет
   "materials": string[],
   "subjectResults": string[],    // ОБЯЗАТЕЛЬНО ≥2 пункта: что научились делать, что измерили, что открыли — конкретные предметные результаты
+  "metaSubjectResults": {
+    "cognitive": string[],   // 1-2 ДОСЛОВНЫХ из [META_RESULTS_CATALOG] Познавательные
+    "communicative": string[], // 1-2 ДОСЛОВНЫХ → Коммуникативные
+    "regulatory": string[]    // 1-2 ДОСЛОВНЫХ → Регулятивные
+  },
   "stages": [
     {
       "kind": "engage" | "main" | "reflection",
@@ -69,6 +76,9 @@ export function buildSubjectSkeletonMessages(
   sharedExamples: SharedExampleForPrompt[] = [],
   userMaterial = '',
 ): ChatMessage[] {
+  const metaCatalog = getMetaCatalog(gradeToLevel(input.grade))
+  const metaCatalogBlock = buildMetaCatalogSection(metaCatalog)
+
   const user = [
     'Построй каркас предметного внеурочного занятия:',
     `- Тема: ${input.topic}`,
@@ -79,6 +89,7 @@ export function buildSubjectSkeletonMessages(
     buildMaterialBlock(userMaterial),
     buildMethodologyBlock(ragChunks),
     buildGoodExamplesBlock(sharedExamples),
+    ...metaCatalogBlock,
     '',
     SKELETON_HINT,
   ]
