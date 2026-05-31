@@ -57,7 +57,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      const intervalSec = Number(process.env.PV_CHECK_INTERVAL_SEC ?? '60')
+      const intervalSec = Number(process.env.PV_CHECK_INTERVAL_SEC ?? '300')
+      const recheckTimeoutMs = Number(process.env.PV_CHECK_TIMEOUT_MS ?? '2000')
       const nowSec = Math.floor(Date.now() / 1000)
       if (user) {
         const u = user as {
@@ -80,11 +81,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const { db } = await import('@/db')
           const { users } = await import('@/db/schema')
           const { eq } = await import('drizzle-orm')
-          const [row] = await db
+          // Гонка с таймаутом: если пул postgres-js перегружен или БД долго отвечает,
+          // лучше скипнуть recheck и продолжить со старым токеном, чем висеть и
+          // получить nginx 504. Окно атаки увеличивается на recheckTimeoutMs/intervalSec
+          // — приемлемо для soft-инвалидации после reset.
+          type Row = { pv: number; ev: Date | null }
+          const query = db
             .select({ pv: users.passwordVersion, ev: users.emailVerified })
             .from(users)
             .where(eq(users.id, token.id as string))
             .limit(1)
+            .then((rows): Row | undefined => rows[0])
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('pv-recheck timeout')), recheckTimeoutMs),
+          )
+          const row = await Promise.race([query, timeout])
           if (!row) return null
           const tokenPv = token.passwordVersion as number | undefined
           if (tokenPv === undefined) {
@@ -96,10 +107,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.emailVerified = row.ev ? row.ev.toISOString() : null
           token.pvCheckedAt = nowSec
         } catch (err) {
-          // БД недоступна (например, jwt-callback запущен из middleware на Edge-рантайме,
-          // где postgres-js не работает). Не валим сессию — оставляем токен как есть и не
-          // обновляем pvCheckedAt; следующий запрос из node-рантайма (server action,
-          // page render) повторит проверку и реально подтянет/инвалидирует.
+          // БД недоступна / таймаут пула / Edge-рантайм без postgres-js. Не валим сессию,
+          // оставляем токен как есть и НЕ обновляем pvCheckedAt — следующий запрос
+          // попробует снова, как только пул освободится.
           console.warn('[auth] pv-recheck skipped (DB unavailable):', err)
         }
       }
