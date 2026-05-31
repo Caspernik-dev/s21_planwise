@@ -11,6 +11,7 @@ import { gradeToLevel } from './levels'
 import { generateValidated } from './llm-retry'
 import { normalizeChronometry } from './normalize'
 import { parsePartialJson } from './partial'
+import { getMetaCatalog, selectMetaResults } from './meta-results'
 import { getCatalog, selectPersonalResults } from './personal-results'
 import {
   type RagChunkForPrompt,
@@ -199,6 +200,10 @@ export async function* streamScenario(
       skeleton = Event.applyPersonalResultsWhitelist(skeleton, input)
     }
 
+    // Whitelist метапредметных УУД — применяется для всех типов (УУД универсальны по ФГОС).
+    const metaCatalog = getMetaCatalog(gradeToLevel(input.grade))
+    skeleton.metaSubjectResults = selectMetaResults(skeleton.metaSubjectResults, metaCatalog)
+
     // STAGE 2: детали ПО БЛОКАМ — отдельный фокусный вызов на каждый блок (РоВ-глубина).
     // Объём масштабируется числом блоков; катящийся контекст держит связность;
     // локальный гейт перегенерирует тонкие блоки.
@@ -248,6 +253,7 @@ export async function* streamScenario(
       values: skeleton.values,
       coreMeanings: skeleton.coreMeanings,
       personalResults: skeleton.personalResults,
+      metaSubjectResults: skeleton.metaSubjectResults,
       materials: skeleton.materials ?? [],
       // мягкие адаптации каркаса доводим дефолтами по-полю (модель шлёт {} или частичный объект)
       adaptations: {
