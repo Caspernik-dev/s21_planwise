@@ -1,11 +1,16 @@
 'use client'
 
 import { resendVerificationAction } from '@/app/(auth)/actions/resend-verify'
-import { useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useState, useTransition } from 'react'
 
-export function VerifyEmailBanner({ email }: { email: string }) {
+function BannerInner({ email }: { email: string }) {
+  const sp = useSearchParams()
+  const justVerified = sp.get('verified') === '1'
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  if (justVerified) return null
 
   return (
     <div className="bg-warm-50 border-b border-warm-200 px-6 py-3 text-sm">
@@ -36,5 +41,13 @@ export function VerifyEmailBanner({ email }: { email: string }) {
         </div>
       </div>
     </div>
+  )
+}
+
+export function VerifyEmailBanner({ email }: { email: string }) {
+  return (
+    <Suspense fallback={null}>
+      <BannerInner email={email} />
+    </Suspense>
   )
 }
