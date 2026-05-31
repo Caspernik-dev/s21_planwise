@@ -4,6 +4,7 @@ import { generateValidated } from './llm-retry'
 import type { LessonType } from './options'
 import { parsePartialJson } from './partial'
 import { checkBlock } from './quality'
+import { extractOrFallbackQuery, sanitizeRutubeText } from './rutube'
 import { type ScenarioContent, activitySchema } from './schema'
 
 type ChatFn = (messages: GigaMessage[], opts?: { temperature?: number }) => Promise<ChatResult>
@@ -25,11 +26,17 @@ export function parseBlock(raw: string): Activity | null {
 
 // Сгенерировать ОДИН блок с детерминированным гейтом качества: при «тонкости»
 // заострить промпт и повторить до maxRetries. Возвращает лучший результат + флаги.
+export type VideoCtx = {
+  topic: string
+  direction: string | undefined
+  leadingValue: string | undefined
+}
+
 export async function generateBlockWithGate(
   chat: ChatFn,
   messages: GigaMessage[],
   stageKind: string,
-  opts: { maxRetries?: number; lessonType?: LessonType } = {},
+  opts: { maxRetries?: number; lessonType?: LessonType; videoCtx?: VideoCtx } = {},
 ): Promise<{ value: Activity; repaired: boolean; accepted: boolean } | null> {
   const maxRetries = opts.maxRetries ?? DEFAULT_MAX_RETRIES
   let msgs = messages
@@ -70,5 +77,17 @@ export async function generateBlockWithGate(
   }
 
   if (!best) return null
+
+  // Для video-блоков: вырезаем прямые URL из text (модель регулярно их выдумывает),
+  // и добиваем videoSearchQuery, если она пустая/мусорная. Контекст fallback берётся из stream.ts.
+  if (best.type === 'video' && opts.videoCtx) {
+    const sanitizedText = sanitizeRutubeText(best.text)
+    const query = extractOrFallbackQuery(
+      { type: 'video', text: sanitizedText, videoSearchQuery: best.videoSearchQuery },
+      opts.videoCtx,
+    )
+    best = { ...best, text: sanitizedText, videoSearchQuery: query }
+  }
+
   return { value: best, repaired, accepted }
 }
