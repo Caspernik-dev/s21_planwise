@@ -1,4 +1,4 @@
-import { gradeToLevel, levelLabel } from '@/lib/scenario/levels'
+import { gradeToLevel, levelLabel, rovGroupLabel } from '@/lib/scenario/levels'
 import {
   type LessonType,
   type LiteracyKind,
@@ -6,6 +6,7 @@ import {
   lessonTypeLabel,
   literacyKindLabel,
 } from '@/lib/scenario/options'
+import { formatLessonDateRu, isMonday, rovLessonNumber } from '@/lib/scenario/rov-date'
 import type { ScenarioContent } from '@/lib/scenario/schema'
 
 export type ExportMeta = {
@@ -73,12 +74,29 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
     { label: 'Тема', value: meta.topic || '—' },
     ...(mainClassifier ? [mainClassifier] : []),
     { label: 'Класс / уровень', value: audience },
+  ]
+  if (meta.lessonType === 'rov') {
+    metaRows.push({ label: 'Группа РоВ', value: rovGroupLabel(meta.grade) })
+    if (content.lessonDate && isMonday(content.lessonDate)) {
+      const dateStr = formatLessonDateRu(content.lessonDate)
+      const lessonNum = rovLessonNumber(content.lessonDate)
+      const suffix = lessonNum !== null ? ` (занятие №${lessonNum} цикла РоВ)` : ''
+      metaRows.push({ label: 'Дата проведения', value: `${dateStr}${suffix}` })
+    }
+  }
+  metaRows.push(
     { label: 'Длительность', value: `${meta.durationMin} мин` },
     { label: 'Формат', value: meta.format },
     { label: 'Форма проведения', value: deriveFormLabel(meta.format) },
     { label: 'Цель занятия', value: goalValue },
-  ]
-  if (content.values && content.values.length > 0) {
+  )
+  if (meta.lessonType === 'rov' && content.leadingValue) {
+    metaRows.push({ label: 'Формируемая ценность (ведущая)', value: content.leadingValue })
+    if (content.secondaryValues && content.secondaryValues.length > 0) {
+      metaRows.push({ label: 'Сопутствующие ценности', value: content.secondaryValues.join(', ') })
+    }
+  }
+  if (content.values && content.values.length > 0 && !content.leadingValue) {
     metaRows.push({ label: 'Формируемые ценности', value: content.values.join(', ') })
   }
   if (content.materials.length > 0) {
@@ -87,7 +105,11 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   blocks.push({ type: 'metaTable', rows: metaRows })
 
   blocks.push({ type: 'heading', level: 2, text: 'Цель' })
-  blocks.push({ type: 'bullets', items: content.goals })
+  blocks.push({ type: 'paragraph', text: content.goals[0] })
+  if (content.goals.length > 1) {
+    blocks.push({ type: 'heading', level: 2, text: 'Задачи' })
+    blocks.push({ type: 'bullets', items: content.goals.slice(1) })
+  }
 
   if (content.coreMeanings && content.coreMeanings.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Основные смыслы' })
@@ -130,6 +152,18 @@ export function buildScenarioDocument(content: ScenarioContent, meta: ExportMeta
   if (content.subjectResults && content.subjectResults.length > 0) {
     blocks.push({ type: 'heading', level: 2, text: 'Планируемые предметные результаты' })
     blocks.push({ type: 'bullets', items: content.subjectResults })
+  }
+
+  if (
+    meta.lessonType === 'rov' &&
+    content.valueFormulations &&
+    content.valueFormulations.length > 0
+  ) {
+    blocks.push({ type: 'heading', level: 2, text: 'Формулировки ценностей на занятии' })
+    blocks.push({
+      type: 'bullets',
+      items: content.valueFormulations.map((f) => `${f.text} (${f.basedOn})`),
+    })
   }
 
   let stageNum = 0
