@@ -9,6 +9,7 @@ import { ShareLinkControls } from '@/components/share/ShareLinkControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
   addActivity,
@@ -26,7 +27,14 @@ import {
   formatGrade,
   lessonTypeLabel,
 } from '@/lib/scenario/options'
+import {
+  formatLessonDateRu,
+  isMonday,
+  nearestMonday,
+  rovLessonNumber,
+} from '@/lib/scenario/rov-date'
 import type { ScenarioContent } from '@/lib/scenario/schema'
+import { DIRECTION_TO_LEADING_VALUE, VALUES_809, type Value809 } from '@/lib/scenario/values-809'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { regenerateActivityAction, saveScenarioAction } from './actions'
@@ -258,15 +266,19 @@ export function ScenarioEditor({
 
       <Card>
         <CardHeader>
-          <CardTitle>Цели</CardTitle>
+          <CardTitle>Цель и задачи</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
+          <p className="mb-2 text-xs italic text-neutral-500">
+            Первая строка — цель занятия (одна ведущая). Остальные — задачи (опционально).
+          </p>
           {content.goals.map((g, i) => (
             <Input
               // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
               key={`goal-${i}`}
               value={g}
               aria-label={`Цель ${i + 1}`}
+              placeholder={i === 0 ? 'Цель занятия (одна ведущая)' : 'Задача (опционально)'}
               onChange={(e) =>
                 update((c) => {
                   const goals = c.goals.slice()
@@ -554,27 +566,222 @@ export function ScenarioEditor({
         </CardContent>
       </Card>
 
-      {content.values && content.values.length > 0 && (
+      {meta.lessonType === 'rov' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Дата проведения</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <input
+              type="date"
+              value={content.lessonDate ?? ''}
+              onChange={(e) => {
+                const v = e.target.value
+                if (!v) {
+                  setContent((c) => ({ ...c, lessonDate: undefined }))
+                  return
+                }
+                const snap = isMonday(v) ? v : nearestMonday(v)
+                setContent((c) => ({ ...c, lessonDate: snap }))
+              }}
+              className="flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+            />
+            {content.lessonDate && isMonday(content.lessonDate) && (
+              <p className="text-xs text-neutral-500">
+                {formatLessonDateRu(content.lessonDate)}
+                {(() => {
+                  const n = rovLessonNumber(content.lessonDate)
+                  return n !== null ? ` (занятие №${n} цикла)` : ''
+                })()}
+              </p>
+            )}
+            {content.lessonDate && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setContent((c) => ({ ...c, lessonDate: undefined }))}
+              >
+                Очистить
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {meta.lessonType === 'rov' && (
         <Card>
           <CardHeader>
             <CardTitle>Формируемые ценности</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {content.values.map((v, i) => (
-              <Input
-                // biome-ignore lint/suspicious/noArrayIndexKey: ordered string array, no stable id
-                key={`val-${i}`}
-                value={v}
-                aria-label={`Ценность ${i + 1}`}
+          <CardContent className="space-y-4">
+            {content.values &&
+              content.values.length > 0 &&
+              !content.leadingValue &&
+              (!content.valueFormulations || content.valueFormulations.length === 0) && (
+                <div className="mb-4 rounded-md bg-warm-50 p-3 text-sm text-warm-700 ring-1 ring-warm-100">
+                  <p className="mb-2">
+                    <strong>Унаследованный формат:</strong> {content.values.join('; ')}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setContent((c) => {
+                        const fallback: Value809 =
+                          (DIRECTION_TO_LEADING_VALUE as Record<string, Value809>)[
+                            meta.direction
+                          ] ?? VALUES_809[0]
+                        const formulations = (c.values ?? []).map((t) => ({
+                          text: t,
+                          basedOn: fallback,
+                        }))
+                        return {
+                          ...c,
+                          values: [],
+                          leadingValue: fallback,
+                          valueFormulations: formulations,
+                        }
+                      })
+                    }
+                  >
+                    Конвертировать в новый формат
+                  </Button>
+                </div>
+              )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="leadingValue">Ведущая ценность (из Указа № 809)</Label>
+              <select
+                id="leadingValue"
+                value={content.leadingValue ?? ''}
                 onChange={(e) =>
-                  update((c) => {
-                    const values = (c.values ?? []).slice()
-                    values[i] = e.target.value
-                    return { ...c, values }
-                  })
+                  setContent((c) => ({ ...c, leadingValue: e.target.value || undefined }))
                 }
-              />
-            ))}
+                className="flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+              >
+                <option value="">— не выбрано —</option>
+                {VALUES_809.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Сопутствующие ценности (до 3, кроме ведущей)</Label>
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => {
+                  const sv = content.secondaryValues ?? []
+                  const current = sv[i] ?? ''
+                  const taken = new Set(
+                    [content.leadingValue, ...sv.filter((_, j) => j !== i)].filter(Boolean),
+                  )
+                  return (
+                    <select
+                      key={i}
+                      value={current}
+                      onChange={(e) => {
+                        setContent((c) => {
+                          const next = [...(c.secondaryValues ?? [])]
+                          const val = e.target.value
+                          if (!val) {
+                            next.splice(i, 1)
+                          } else {
+                            next[i] = val
+                          }
+                          return { ...c, secondaryValues: next.filter(Boolean) as Value809[] }
+                        })
+                      }}
+                      className="flex h-10 w-full rounded-md bg-neutral-0 px-3 text-sm ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    >
+                      <option value="">— не выбрано —</option>
+                      {VALUES_809.filter((v) => v === current || !taken.has(v)).map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Формулировки темы (связаны с одной из базовых)</Label>
+              <p className="text-xs italic text-neutral-500">
+                Например: «Родина» (патриотизм). Каждая формулировка должна ссылаться на одну из 17
+                базовых ценностей.
+              </p>
+              <div className="space-y-2">
+                {(content.valueFormulations ?? []).map((f, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: ordered array, no stable id
+                  <div key={i} className="flex gap-2">
+                    <Textarea
+                      rows={2}
+                      className="flex-1"
+                      placeholder="живая формулировка"
+                      value={f.text}
+                      onChange={(e) =>
+                        setContent((c) => {
+                          const arr = [...(c.valueFormulations ?? [])]
+                          arr[i] = { ...arr[i], text: e.target.value }
+                          return { ...c, valueFormulations: arr }
+                        })
+                      }
+                    />
+                    <select
+                      value={f.basedOn}
+                      onChange={(e) =>
+                        setContent((c) => {
+                          const arr = [...(c.valueFormulations ?? [])]
+                          arr[i] = { ...arr[i], basedOn: e.target.value as Value809 }
+                          return { ...c, valueFormulations: arr }
+                        })
+                      }
+                      className="flex h-10 w-48 rounded-md bg-neutral-0 px-2 text-sm ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    >
+                      {VALUES_809.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() =>
+                        setContent((c) => ({
+                          ...c,
+                          valueFormulations: (c.valueFormulations ?? []).filter((_, j) => j !== i),
+                        }))
+                      }
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                {(content.valueFormulations?.length ?? 0) < 8 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setContent((c) => ({
+                        ...c,
+                        valueFormulations: [
+                          ...(c.valueFormulations ?? []),
+                          { text: '', basedOn: VALUES_809[0] },
+                        ],
+                      }))
+                    }
+                  >
+                    + Добавить формулировку
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
