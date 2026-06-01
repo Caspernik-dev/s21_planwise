@@ -412,7 +412,7 @@ function ScenarioForm({
               size="lg"
               className="w-full"
             >
-              {matching ? 'Ищем похожие…' : 'Подобрать похожие'}
+              {matching ? 'Создаём…' : 'Создать сценарий'}
             </Button>
           </form>
 
